@@ -163,17 +163,27 @@ Recorded plainly rather than left to be discovered.
   list being rewritten in order.
 * **The crossing animation's numbers are spent** — see section 4.
 
-What is still not exercised:
+* **Every module is reached by a played game.** A constant generator never fires an
+  event, so `PART.LIB`, `LF.LIB` and the rest were unreachable; with
+  `rng.SequenceRnd` -- a deterministic but *varied* test generator that is not the
+  game's -- four games of about half a second each between them reach `PART.LIB`,
+  all three of `LF.LIB`, `HUNT.LIB`, `PACE.LIB`, `RATION.LIB`, `TALK.LIB`,
+  `TRADE.LIB`, `BUY.LIB`, `MAP.LIB` and a gravesite. `tests/test_playthrough.py`
+  asserts that, and also that four varied games reach Oregon, fire several hundred
+  events, bury people, and leave every number inside the limits the game sets.
+  Those four runs found, among others, the missing oxen path, a duplicated draw in
+  `LF.LIB`, `TOMB.LIB` 50000 falling through into 50005, a division by zero when
+  the last member dies, and the Barlow Road never writing the hand-over.
 
-* `PART.LIB`'s repair prompt, `LF.LIB`'s fire and thief, `HUNT.LIB` and `PACE.LIB`
-  and `RATION.LIB` and `TALK.LIB` are written and commented with their line numbers,
-  and the draw sequences they use are counted in `tests/test_rng.py`, but none of
-  them is reached by a played game, because the scripted party meets no events. A
-  run with a varied generator would reach them; that is the obvious next test.
+Still not exercised:
+
 * `WIN`'s "would you like to make any changes?" loop is not driven to a second
   pass.
 * The management program's tombstone erasure is tested at the file level but not
   through the menu.
+* `FLOAT`'s landing at position 17 -- the win rather than the missed landing -- is
+  reached by steering, and a scripted run has nothing to steer with, so every
+  scripted raft misses the landing at pass 225.
 * `TALK.LIB` reads its text from `docs/Appendix D Dialogue records.md` at run time
   rather than holding it in the repository, because the dialogue is MECC's and
   `docs/` is git-ignored. A game played without `docs/` will raise a clear error at

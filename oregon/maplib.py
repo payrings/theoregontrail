@@ -35,8 +35,11 @@ def show(c):
     c.ui.print()
     visited = []
     for i in range(0, max(1, min(st.Q1 - 1, 17))):
-        n = st.Q[i]
-        if n and n not in visited:
+        # Q(0) may not be a landmark at all: a fort purchase or a trade writes the
+        # fort tier or the rounded holding there. That is the cosmetic half of
+        # Q's double life, and the map really does plot it. See GAPS.md.
+        n = num.as_int(st.Q[i])
+        if n and 0 <= n < 18 and n not in visited:
             visited.append(n)
     if st.LM not in visited:
         visited.append(st.LM)
