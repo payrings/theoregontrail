@@ -1,0 +1,8 @@
+docs/
+rom/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data/
+*.egg-info/

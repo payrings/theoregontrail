@@ -1,0 +1,188 @@
+# GAPS.md — everything approximated, replaced or missing
+
+Private research project. This file says what is **not** a faithful transcription,
+with the reason and the source reference, so that a reader never has to guess.
+
+Ordered by how much it matters.
+
+---
+
+## 1. Parity: what is and is not achieved
+
+**Achieved.** Every arithmetic operation the game performs is executed by a genuine
+Apple IIe ROM (release 1.4's Applesoft, at `$D000`–`$F7FF`) running under a py65 6502
+emulator. That means the real `FADDT`, `FSUBT`, `FMULTT`, `FDIVT`, `ROUND.FAC`,
+`INT`/`QINT`, `MOVAF` and `RND` — the real alignment truncation, the real single
+guard byte, the real shift-and-add multiply, the real `ROUND.FAC` rounding points
+and the real generator, with its seed at `$C9`. The game never holds a host float for
+state; it passes five bytes in and out of emulated memory.
+
+**Achieved.** The two `RND` constants are read out of the ROM image rather than
+guessed: the five bytes at `$EFA6` (`98 35 44 7A 68`) and at `$EFAA`
+(`68 28 B1 46 20`). Both have only four significant bytes and each is read together
+with the byte that follows it — the addend's fifth byte is the opcode of the `JSR`
+at `$EFAE` itself. The addend works out at about 1.9 × 10⁻⁸ against products of order
+10⁷, which is why the paper says "the addition has almost no effect".
+
+**Achieved.** Decimal literals are converted by multiply-by-ten and add through the
+ROM, so `.8` is `80 4C CC CC CD` and `.2` is `7E 4C CC CC CD`, both classic Applesoft
+values and neither the nearest float.
+
+**Not achieved — and not achievable from this ROM alone.** The paper (section 12.4)
+notes that `STR$` and `PRINT` formatting live in the ROM's own number-to-text
+routine, and `VAL` in its text-to-number routine. Neither entry point has been
+isolated, so `oregon/applesoft/pure.py:format_applesoft` is a Python implementation
+of the rules the Applesoft manual states. It is used for display only; the game's
+money text does **not** go through it, because the money pattern
+(`V = INT (V * 100 + .5)`, then `STR$` and `RIGHT$`) is reproduced byte for byte in
+`oregon.applesoft.fac.str_dollar_int`. The residual exposure is `STR$(PF)`, the
+pounds of food, and the fractional miles in a tombstone record. **Next step**: find
+the `FOUT` and `FIN` entry points in this ROM and call them.
+
+**Not achieved.** The extension byte is not carried between the operators of one
+BASIC expression. Each operator here rounds as if its result had been stored in a
+variable, which is what Applesoft does at a `LET` but not in the middle of an
+expression. It shows: `1/3 + 1/3 + 1/3` is exactly `1.0` here, where the original's
+single-guard-byte evaluation gives 0.9999999998. `num.Chain` exists for the
+expressions where the original's own value matters and it is used for the health
+total (line 3230), the daily travel (3245), the base speed (660), the climate lookup
+(105) and the freeze factor (3225). The remaining exposure is the other long chains —
+`FN W`, the accumulation of rain and snow (3240), and the event chances at 3160.
+
+**Not a parity claim.** The `--num pure` backend is a fast path, not a second
+authority. It is exact for addition and for `INT`; for multiplication and subtraction
+it can differ from the ROM by one unit in the last place, because the ROM keeps a
+single guard bit during a shift-and-add and truncates the rest while the Python model
+keeps a whole guard byte and rounds. `tests/test_parity.py` measures this and
+`tests/test_game.py::test_the_games_own_formulas_agree_with_the_rom` holds the
+formulas the game itself uses to within one ulp. **Use `--num rom` for anything that
+matters.** The ROM is the default.
+
+---
+
+## 2. Where the paper and the code disagree, and the code wins
+
+| # | Paper | Code | What this does |
+| --- | --- | --- | --- |
+| A1 | §8.1: "the loop does not stop after the first event … so two events can occur on one day" | line 3180 ends with `L8 = 20` after **every** firing event, so `NEXT L8` leaves the loop | **At most one event per day.** `trail.event_loop` breaks after one. If the paper is right about the original's behaviour, this is the single most consequential divergence and it should be checked against a real run. |
+| A2 | §9.3: rough fording, "each good has a 10% to 40% chance" | line 50070 draws `V = .1 + RND (1) * .3` **once**, then all six goods share it | one V per tipping; the draw order is tip?, V, then six goods draws |
+| A3 | §4.2 item 4: "At a landmark with a second segment, the player chooses a branch" | line 2110 asks, but `Z$ = "3"` also shows the map and `IF Z = 3 THEN GOSUB 4200` | choice 3 shows the map and then takes the **first** segment |
+| A4 | §10.1: the Barlow toll is paid "only if `MY > V`" | line 50020 is exactly that, so a party holding precisely the toll is refused | reproduced; `endl.the_dalles` |
+| A5 | §2.3 Table 4 | the two layouts are as stated | reproduced exactly, including that `FLOAT` reads the oxen from 909 and the bullets from 904/905 while the store wrote the yokes to 905 and the boxes to 909 |
+| A6 | §4.1: "The shortest route … is 1,771 miles to The Dalles and 1,871 by the Barlow Road" | summing Table 8's own miles along the shortest route gives **1,821** and **1,921** | the table is used as printed, since it is what `LM(Z,0)` holds; the paper's two totals are 50 miles short. Worth checking against a real run. |
+
+---
+
+## 3. Deliberately replaced
+
+| What | Why | Where |
+| --- | --- | --- |
+| All graphics, pictures, images and sound | non-goal; the formats were never decoded (Appendix H, table H1) | the `PEEK 278,170` colour test at line 312 and every `& IMAGE`, `& PUT`, `& TAKE`, `& UIM`, `& DUN`, `& BOX` call site has no text equivalent. `GAPS.md` records them; the UI interface keeps the methods so the call sites stay visible. |
+| `& CDN` disk-volume check | no disk | `common.check_side` prompts and changes `S`, which is the part that matters, because the two sides hold one grave each |
+| `& INP`'s beep count `ZN` and the allowed-character set | no speaker, and the terminal filters instead | `ui.ALLOWED` keeps the sets the BASIC passes, for the record |
+| The travel screen's six labels at columns 95, 70, 81, 95, 23, 20 | no hi-res screen | `trail.travel_screen` prints the same six labels and values one per line, in the listing's order |
+| `MAP.LIB`'s plotted route | no map picture | `maplib.show` lists the landmarks passed, plus the miles to the next one |
+| `B` as both the status-screen column array and the cannot-continue flag | cosmetic aliasing | the five label columns come from Appendix E.5 and are not aliased; the flag itself is modelled |
+| `TEST FLOAT`, the developer's test program on side 2 | dead code | not implemented |
+| `HELLO`, side-2 `HELLO`, `MENU` side 2's boot path | boot machinery | `flip.py` covers the two flip directions, which is the part with behaviour |
+
+---
+
+## 4. Approximations inside otherwise faithful code
+
+| What | The honest description |
+| --- | --- |
+| `hunt.approximate_movement` | Animal **movement and hit testing were never analysed** (paper section 1.4, Appendix H table H1). This one function decides whether a shot connects; it is an approximation and says so in its own docstring. Everything the paper *does* specify is reproduced: six types and where they appear, the weights, at most two animals, no new animal after four shots, the 2500-pass session, one bullet per shot, firing refused at zero, and the hundred-pound carry limit. `hunt.HuntRng` is a **separate** generator because the routine reads the Applesoft seed and never writes it (Appendix G.6) — `tests/test_rng.py` checks that a hunt draws nothing from the game and leaves the seed bytes alone. The 2500-pass figure is taken from the paper, not derived from the bytes. |
+| `floatraft` | The BASIC loop is transcribed; the drawing is text. The rock spawn, motion, box overlap and landing passes follow the listing. The **loss routines are shared with the river crossings** exactly as `FLOAT` 700-760 does, and the raft's ten-or-more-losses destruction is reproduced. The speed is not paced to a 1 MHz machine, because there is no interpreter to be slow. |
+| The crossing animation | `RIVER.LIB` is preceded by `CROSS.LIB`, whose water marks use `RND` to place pixels. Appendix G.5 says 106 draws for the first half, then 122 for a successful crossing, none for a failed float or ferry, and 22 single draws each followed by 2 more for a failed ford — and that these advance the generator even though they change nothing. **These draws are not implemented.** Every subsequent draw is therefore offset by up to 228 numbers from the original. This is the largest known divergence in the draw sequence. |
+| `RND`'s "2,500 passes" | The count is from the paper; Appendix Z's outer loop at `$E0C4` confirms at most two animals and a pass structure, but 2,500 is not derivable from the bytes and is treated as a constant of unknown origin. |
+| `WIN`'s rating and the multiplier sentence | Transcribed from the listing. The paper's rating rule `R = (SC < 6000) + (SC < 3000)` is implemented as `win.rating`. |
+
+---
+
+## 5. Bugs reproduced on purpose
+
+All nine from paper section 13, plus one more found in the source. Each is marked in
+the code with the BASIC line that causes it.
+
+| Bug | Where reproduced |
+| --- | --- |
+| No one falls ill or dies while waiting at a river | `trail.day_body` step 7 checks `W1`; `river.crossing` sets `W1 = 1`; `trail.event_loop` returns early when `SD` |
+| The starve factor has no cap, so a very long wait kills the party at once | `trail.health_today`, line 3225 — `FS` rises by 0.8 a day and only halves on a good one |
+| "Error 53 at line #50050" once the year passes 2055 | `mem.poke` raises `ApplesoftError(53, 50050)`; `endl.write_handover` POKEs 901 |
+| The final screen shows the wrong century after 1899 | `win.run` prints `"18" + PEEK(901)` |
+| A broken arm has no effect, and wipes any illness | `events.event_8` stores 0, which means healthy |
+| A thief never takes money | `lf.thief` draws only items 2, 3, 4 and 8; the cash branch at line 52020 tests for item 0 and is dead |
+| The Portland climate row is never used | `trail.climate_zone` produces five zones |
+| A party with exactly the Barlow toll cannot pay | `endl.the_dalles` tests `MY > V` |
+| February always has 28 days | `trail.advance_date`, `MONTH_DAYS` |
+| **Found in the source, not in the paper:** on the trail leaving a fort, menu choice 8 "Buy supplies" runs the **hunt**, and choice 9 "Hunt for food" does nothing | line 4090's `Z = Z * (VAL(Z$) > 7) + VAL(Z$)` with `Z = 2` on the trail. `action.action_menu` reproduces it and says so. |
+| **Found in the source:** `Q` is one variable used both as the map's landmark history and as a scalar by `BUY.LIB` (fort tier) and `TRADE.LIB` (rounded holding), so trading at a fort corrupts the map's first point and the drowning-death index in `TOMB.LIB` | modelled faithfully: `state.Q` is one array and the scalar uses write `Q(0)`. See `PLAN.md` B3. |
+| **Found in the source:** the paper's §9.3 "rough" ford wording implies a per-good draw; the code draws one `V` for the whole crossing | A2 above |
+
+---
+
+## 6. Ambiguities in the code, and how each was resolved
+
+These are listed in full in `PLAN.md` section 4.2 (B1 to B16). The two that most
+affect the numbers:
+
+**B1 — the climate zone before line 1000 sets it.** Line 29000 computes
+`W = INT ((FN W (0) + 10) / 20)` and `FN W` reads `WC$(ZO)`, but `ZO` is not one of
+the variables `VAR.BIN` restores (Appendix E.1), so it is 0. The initial temperature
+class and the first month's rain chance therefore come from climate row 0 whatever
+the departure month. `trail.load_state` sets `ZO = 0` and says so.
+
+**B6 — `FOR L = 1 TO X` with a fractional oxen count.** `RIVER.LIB` 50185 loops over
+the oxen, and the count can end in a half. Applesoft's `FOR` stops at the last whole
+number below the limit, so five and a half oxen give five draws (Appendix G.5).
+`river._lose_oxen` uses `range(int(x))`.
+
+**B9 — which `& INP` argument is the length.** Appendix F says the order is *length*,
+*allowed set*, *flag*, *variable*, while `MENU` 500 is written
+`& INP,ZN,"-AZ-az '.-",ZZ,Z$` and `ZN` reads like a count. Cross-checking
+`& INP,4,"-09",1,Z$` for a four-digit food prompt settles it: `ZN` is the length and
+`ZZ` is the flag, so a name is at most nine characters.
+
+---
+
+## 7. What is not finished
+
+Recorded plainly rather than left to be discovered.
+
+* **The end-to-end journey is not yet driven to Oregon.** A scripted run currently
+  gets from Independence through the Kansas River and the Big Blue River crossings —
+  265 miles, 16 days — and then stops, because the scripted screen runs out of
+  answers for the next river menu. Everything before that point runs: the store, the
+  hand-over, the daily cycle, the event loop, the weather, the health model and both
+  river crossings. What is *not* yet exercised by a run is `PART.LIB`, `LF.LIB`,
+  `BUY.LIB`, `TRADE.LIB`, `TOMB.LIB`'s epitaph path, `FLOAT` and `WIN`'s top-ten
+  insertion. Their individual formulas are in place and commented with their line
+  numbers, but they are untested end to end. **This is the first thing to finish.**
+* `TALK.LIB` reads its text from `docs/Appendix D Dialogue records.md` at run time
+  rather than holding it in the repository, because the dialogue is MECC's and
+  `docs/` is git-ignored. A game played without `docs/` will raise a clear error at
+  the first conversation rather than silently having nothing to say.
+* The management program's teacher menu is reachable but the top-ten *insertion*
+  routine (`win.insert`) has not been run against a real list.
+* `CROSS.LIB`'s animation draws (section 4 above) would shift every later draw in the
+  sequence; that is the highest-value remaining item for anyone with a trace to
+  compare against.
+
+---
+
+## 8. Reference traces
+
+There are none. Appendix H says so, and paper section 12.6 says the next step is to
+execute the ROM and confirm the stored bytes of the constants, the first `RND` values
+for a known seed, and a day-by-day comparison. The **constants** and the **generator**
+are now confirmed — they were read out of this ROM and the sequence runs on it. What
+is missing is a day-by-day comparison against the original, which needs the game
+running under an emulator. `oregon/trace.py` writes exactly the line format that
+comparison needs: the date, `D`, `M`, `H`, `FS`, `H0`, `HR`, `W`, `TM`, `PP`, `AR`,
+`AS`, `PF`, `I(2)` to `I(8)`, `MY`, `H1()`, `H2()`, the event that fired, and the five
+seed bytes at `$C9` to `$CD` in hexadecimal, one line per game day. The seed bytes are
+what make a missing or an extra draw visible on the day it happens.
+
+**No test in this repository compares against a "known good" output**, because none
+exists. Every expectation is worked out by hand from the BASIC line named beside it.
