@@ -61,8 +61,10 @@ def action_menu(c):
             if not st.B:
                 return "CONTINUE"
         if st.B and x == 1:
-            # line 4070: "You must trade for " + T$(B = 2) + S$(B - 2, 2)
-            art = "a " if st.B == 2 else "an "
+            # line 4070: T$(0) = "a ", T$(1) = "an ", then T$(B = 2) picks one.
+            # So B = 2 gives "an ox" and B = 5 gives "a wheel": the article is
+            # the wrong way round for oxen, which is in the shipped game.
+            art = "an " if st.B == 2 else "a "
             what = G.UNIT[0] if st.B == 2 else G.UNIT[st.B - 2]
             c.ui.print("You must trade for " + art + what
                        + " to be able to continue.")

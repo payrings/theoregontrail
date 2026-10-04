@@ -47,25 +47,24 @@ def main_menu(c) -> str:
         a = c.ui.key(ALLOWED["CHOICE"], 1)
         if not a:
             continue
-        digit = ord(a[0]) - 48
-        # Z = RND(-(PEEK(78) + PEEK(79) * 256))
+        # The allowed set is CHR$(1) + "-14", so the answer is a character code.
+        # A = ASC(Z$): the teacher menu is opened by the literal character 1,
+        # which is Control-A, *not* by the digit 1. The digit 1 is "travel".
+        code = ord(a[0])
+        # Z = RND(-(PEEK(78) + PEEK(79) * 256)) -- the only reseeding in the game
         c.rng.seed_from_keyboard(c.mem.keyboard_counter)
-        if digit == 1:
+        if code == 1:                         # Control-A
             c.set_program("MANAGEMENT")
             c.ui.print("Getting Management Options...")
             management(c)
             continue
+        digit = code - 48
         if digit == 2:
             learn(c)
         elif digit == 3:
             top_ten(c)
         elif digit == 4:
             toggle_sound(c)
-        elif digit == 0:                      # chr$(1), the Control-A route
-            c.set_program("MANAGEMENT")
-            c.ui.print("Getting Management Options...")
-            management(c)
-            continue
         else:
             start(c)
             return "BUY SUPPLIES"
@@ -93,6 +92,8 @@ def profession(c) -> int:
     is what makes the harder ones worth choosing.
     """
     while True:
+        # 4005-4010 draws the four choices, and 4025 ends with "IF Z = 4 THEN
+        # GOSUB 4100: GOTO 4005", so any answer at all redraws the screen.
         c.ui.clear()
         c.ui.print("Many kinds of people made the trip to Oregon.")
         c.ui.print()
@@ -113,8 +114,6 @@ def profession(c) -> int:
             dollars = (1600, 800, 400)[z - 1]
             c.mem.poke_word(913, dollars * 10, 4030)
             return z
-        c.ui.print("What is your choice? ")
-        c.ui.key(ALLOWED["PROFESSION"], 1)
 
 
 def difficulty_text(c):

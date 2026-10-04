@@ -33,7 +33,7 @@ from .context import Context
 from .files import Files
 from .rng import SeededRnd
 from .trace import Tracer
-from .ui import ScriptedUI, TerminalUI
+from .ui import AutoUI, ScriptedUI, TerminalUI
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -51,6 +51,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="where HISCORE.SEQ and TOMB.SEQ are kept")
     p.add_argument("--no-interrupt", action="store_true",
                    help="never break out of the daily cycle")
+    p.add_argument("--demo", action="store_true",
+                   help="watch the game play itself, quietly, to the end")
+    p.add_argument("--verbose-demo", action="store_true",
+                   help="like --demo, but show the screens as well")
     p.add_argument("--list", action="store_true",
                    help="show the numeric backend and the ROM, then stop")
     return p
@@ -73,24 +77,32 @@ def main(argv=None) -> int:
         print(f"arithmetic backend : {backend.name}")
         print(f"Apple IIe ROM      : {applesoft.rom_status()}")
         return 0
-    ui = (ScriptedUI(answers_from(args.inputs)) if args.inputs
-          else TerminalUI(interrupt=not args.no_interrupt))
+    if args.demo or args.verbose_demo:
+        ui = AutoUI(quiet=not args.verbose_demo)
+    elif args.inputs:
+        ui = ScriptedUI(answers_from(args.inputs))
+    else:
+        ui = TerminalUI(interrupt=not args.no_interrupt)
     rng = SeededRnd()
     tracer = Tracer(args.trace)
     c = Context(ui=ui, rng=rng, files=Files(args.data), trace=tracer)
     if args.seed is not None:
         rng.seed_from_keyboard(args.seed)
-    from . import menu, trail, win
+    from . import buysupplies, menu, trail, win
     try:
+        # the order is the original's: MENU fixes the year and takes the
+        # profession and the names, then BUY SUPPLIES asks the month and sells,
+        # then OREGON TRAIL reads the hand-over back out of memory and travels
         menu.main_menu(c)
-        from . import buysupplies
-        while True:
-            buysupplies.init_state(c)
-            buysupplies.store(c)
-            where = trail.run(c)
-            if where == "WIN":
-                win.run(c)
-                break
+        buysupplies.departure_month(c)
+        buysupplies.init_state(c)
+        buysupplies.store(c)
+        trail.load_state(c)
+        where = trail.run(c)
+        if where in ("WIN", "FLOAT"):
+            # END.LIB 50050 has already written the hand-over, whichever way the
+            # party arrived -- by the Barlow Road or down the Columbia
+            win.run(c)
     except KeyboardInterrupt:
         print()
         print("Broken.")

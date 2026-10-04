@@ -33,6 +33,7 @@ replaced; the map and the travel screen are drawn as text instead.
 
 from __future__ import annotations
 
+import copy
 import sys
 
 __all__ = ["UI", "TerminalUI", "ScriptedUI", "RETURN"]
@@ -185,6 +186,14 @@ class TerminalUI(UI):
             pass
         self._saved = None
 
+    def _at_eof(self) -> bool:
+        """Whether stdin has run out, so a prompt cannot loop for ever."""
+        import sys as _sys
+        try:
+            return not _sys.stdin.isatty() and _sys.stdin.read() == ""
+        except Exception:                          # noqa: BLE001
+            return False
+
     def _read_char(self):
         """One character, without waiting for a newline, or None."""
         self._enter_raw()
@@ -213,6 +222,8 @@ class TerminalUI(UI):
         while True:
             ch = self._read_char()
             if ch is None:
+                if self._at_eof():
+                    return ""
                 continue
             if ch in ("\x1b",):
                 self._read_char()                  # swallow the rest of an escape
@@ -225,6 +236,10 @@ class TerminalUI(UI):
         while len(got) < maxlen:
             ch = self._read_char()
             if ch is None:
+                if self._at_eof():
+                    # stdin is exhausted: a prompt with no answer would spin for
+                    # ever, so stop the game cleanly instead
+                    raise SystemExit("input ended while waiting for an answer")
                 continue
             if ch in ("\x1b",):
                 self._read_char()
@@ -357,3 +372,116 @@ class ScriptedUI(UI):
     def flip_disk(self, side: int, title: str = "OREGON TRAIL") -> str:
         self.record.append(("flip", side))
         return str(2 - side) if side in (1, 2) else str(side)
+
+class AutoUI(UI):
+    """Plays the game by itself, so it can be watched rather than played.
+
+    Not a game feature -- the original has nothing like it. It answers each prompt
+    with a sensible default, which is enough to watch a whole crossing from
+    Independence to the Willamette Valley: it takes the shops, fords what can be
+    forded, takes the ferry and the guide where it cannot, continues from the
+    action menu, and pays the Barlow toll. ``--demo`` uses it.
+
+    A prompt it does not recognise is answered with a bare Return, which the game
+    treats as "no" or as choice 1, so it cannot spin.
+    """
+
+    #: The first rule that matches wins, and each is the text that was printed
+    #: plus the answer. Sequences are consumed one entry per time that prompt is
+    #: asked, so the store's item and quantity questions can be interleaved
+    #: correctly: the item menu is 1 to 5 then Return to leave, and the quantity
+    #: prompts are yoke, food, clothing, ammunition, then the three spare parts.
+    RULES = (
+        ("first name of the wagon leader", "Zeke"),
+        ("Are these names correct", "Y"),
+        ("Ask for advice", "3"),                 # leave in April
+        ("Which item would you like to buy?", ["1", "2", "3", "4", "5", ""]),
+        ("want?", ["4", "1000", "6", "6"]),      # yoke, food, clothes, ammo
+        ("How many wagon", ["1", "1", "1"]),      # wheel, axle, tongue
+        ("Would you like to look around?", "N"),
+        ("River depth:", ["1", "1", "3", "3"]),
+        ("Are you willing to do this?", "Y"),
+        ("Will you accept this offer?", "Y"),
+        ("The trail divides here", ["1", "1"]),
+        ("float down the Columbia River", "2"),
+        ("to travel the Barlow road", "Y"),
+        # These three come before "Continue on trail", which is on every action
+        # menu and would otherwise take the answer before they can.
+        #   * "You must trade for ..." is what line 4070 says when the wagon
+        #     cannot move. Line 4070 refuses choice 1 outright, and line 4090
+        #     consumes a spare part only when some *other* option is taken, so the
+        #     answer is "check supplies" -- which is how the original gets unstuck.
+        ("You must trade for", "2"),
+        ("another emigrant", ["Y"] * 40),
+        ("Broken wagon", "Y"),
+        ("Continue on trail", "1"),
+        ("What is your choice?", "1"),
+    )
+
+    def __init__(self, quiet: bool = True, max_prompts: int = 4000, **kw):
+        super().__init__()
+        self.quiet = quiet
+        self.max_prompts = max_prompts
+        self.rules = copy.deepcopy(list(self.RULES))
+        self._since = 0
+        self.prompts = 0
+        self.log = []
+
+    #: how many printed lines back to look for a rule. Wide, because the action
+    #: menu redraws the whole screen around a message, which pushes the message
+    #: itself out of range.
+    LOOKBACK = 24
+
+    def _ask(self) -> str:
+        recent = "\n".join(self.out[self._since:])
+        for needle, answer in self.rules:
+            if needle in recent:
+                if isinstance(answer, (list, tuple)):
+                    if answer:
+                        return str(answer.pop(0))
+                    continue
+                return str(answer)
+        return ""
+
+    def print(self, text: str = ""):
+        self.out.append(text)
+        if not self.quiet:
+            import sys
+            sys.stdout.write(text + "\n")
+            sys.stdout.flush()
+
+    def clear(self):
+        self.out.append("<clear>")
+        if not self.quiet:
+            import sys
+            sys.stdout.write("\x0c")
+            sys.stdout.flush()
+
+    def line_to(self):
+        pass
+
+    def key(self, allowed: str = "", maxlen: int = 1, default: str = "") -> str:
+        ask = self.out[-1].strip()[-60:] if self.out else ""
+        a = self._ask()
+        self._since = len(self.out)
+        self.prompts += 1
+        if self.prompts > self.max_prompts:
+            raise SystemExit(
+                f"the demo asked {self.prompts} questions and gave up; the last "
+                f"was {ask!r} answered {a!r}. The party is probably stuck.")
+        self.log.append((ask, a))
+        return a[:maxlen] if maxlen else a
+
+    def wait_key(self, allowed: str = "", prompt: str = "Press SPACE BAR to continue"):
+        return " "
+
+    def poll_key(self):
+        return None
+
+    def flip_disk(self, side: int, title: str = "OREGON TRAIL") -> str:
+        return str(2 - side) if side in (1, 2) else str(side)
+
+    def progress(self):
+        """A one-line report of how the crossing is going."""
+        st = self.out
+        return len(self.log), len(st)
