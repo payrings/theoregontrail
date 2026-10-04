@@ -459,10 +459,14 @@ def daily_cycle(c):
 
     ``L0 = NOT D: NEXT L0`` at 3499 ends the loop only when ``D`` is exactly zero,
     which the clamp in step 9 guarantees.
+
+    :func:`day_body` returns False when the party has all died, which abandons the
+    cycle: the original's TOMB.LIB chains to the menu and never returns.
     """
     st = c.st
     while st.D != num.ZERO:
-        day_body(c)
+        if not day_body(c):
+            break            # the last member died; the journey is over
     st.I[8] = st.PF
 
 
@@ -481,6 +485,11 @@ def day_body(c):
     if num.gt(st.H, num.parse("139")):
         st.H = num.parse("139")
     event_loop(c)
+    if num.as_int(st.NP) <= 0:
+        # TOMB.LIB 50005 runs the tombstone and ends with & RNH,"MENU", so it never
+        # comes back: the day and the journey both stop here. Coming back would go
+        # on to divide the clothing by NP = 0, which is Applesoft error 10.
+        return False
     count_ill(c)
     weather(c)
     health_today(c)
@@ -494,6 +503,7 @@ def day_body(c):
     advance_date(c)
     c.trace.day(st, stopped=bool(st.SD))
     st.I[8] = st.PF
+    return True
 
 
 def poll_key(c):
@@ -545,7 +555,7 @@ def event_loop(c):
             continue
         from . import events
         events.fire(c, which)
-        if num.gt(st.B, num.ZERO):
+        if st.B > 0:
             from . import action
             action.action_menu(c)
         break                     # L8 = 20: at most one event a day
@@ -559,10 +569,6 @@ def choose_segment(c):
     """
     st = c.st
     from . import common
-    if st.LM == 16:
-        from . import endl
-        endl.the_dalles(c)
-        return
     travel_screen(c)
     second = L.LM_SEGMENT2[st.LM]
     if not second:
@@ -650,14 +656,20 @@ def run(c):
             from . import action
             action.action_menu(c)
             st.LL = 1
+            if num.as_int(st.NP) <= 0:
+                return "DIED"
         # 1015: a river crossing, then the check for oxen, then the segment
         while True:
             if L.LM_TYPE[st.LM] == 2:
                 from . import river
                 river.crossing(c)
+                if num.as_int(st.NP) <= 0:
+                    return "DIED"
                 if st.B > 0:
                     from . import action
                     action.action_menu(c)
+                    if num.as_int(st.NP) <= 0:
+                        return "DIED"
                     continue
             # line 21000 sets B = 2 when there are no oxen, and line 1015 then does
             # "ON B > 0 GOTO 4000": the action menu takes over and the party cannot
@@ -671,6 +683,12 @@ def run(c):
                 from . import action
                 action.action_menu(c)
                 continue
+            if st.LM == 16:
+                # The Dalles ends the journey one way or the other, and END.LIB runs
+                # the last hundred miles itself, so there is no segment to load
+                from . import endl
+                where = endl.the_dalles(c)
+                return where
             seg = choose_segment(c)
             break
         from . import endl
@@ -683,6 +701,8 @@ def run(c):
         start_segment(c)
         travel_screen(c)
         daily_cycle(c)
+        if num.as_int(st.NP) <= 0:
+            return "DIED"
         st.LM = st.NM
         if st.LM == 5:
             from . import flip

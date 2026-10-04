@@ -107,14 +107,15 @@ def event_7(c):
     """
     st = c.st
     from . import common, trail
-    if num.gt(st.LM, num.parse("11")) and num.lt(st.TM, num.parse("5")):
+    # LM is the landmark number, a plain integer
+    if st.LM > 11 and num.lt(st.TM, num.parse("5")):
         # line 10700: the draw happens first, then ON Z + 1 chooses delay or not
         z = c.rng.below("10700 fog delay", num.HALF)
         if not z:
             common.message(c, "Heavy fog")
         else:
             trail.lose_days(c, "10700 fog days", 1, "Heavy fog")
-    elif num.le(st.LM, num.parse("11")) and num.gt(st.TM, num.parse("4")):
+    elif st.LM <= 11 and num.gt(st.TM, num.parse("4")):
         common.message(c, "Hail storm.")
 
 

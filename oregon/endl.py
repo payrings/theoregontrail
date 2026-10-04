@@ -64,6 +64,9 @@ def the_dalles(c):
             trail.travel_screen(c)
             trail.daily_cycle(c)
             st.LM = 17
+            # arriving at the Willamette Valley by road is line 1020 reaching
+            # END.LIB 50050, exactly as the river route is
+            write_handover(c)
             return "WIN"
         c.ui.print()
         c.ui.print("You do not have enough cash.")

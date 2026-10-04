@@ -162,3 +162,35 @@ class CountingRnd(Rnd):
     def rnd(self, arg: Fac) -> Fac:
         self.count += 1
         return self.fac
+
+class SequenceRnd(Rnd):
+    """A deterministic but *varied* stream, for tests that need events to happen.
+
+    This is **not** the game's generator and never touches the Applesoft seed: it
+    exists so that a played game meets illnesses, breakdowns, fires and thieves,
+    which a constant 0.5 never produces. The values come from a plain
+    multiplicative generator over integers, so a test is reproducible from its seed
+    and nothing about the real ``RND`` is implied.
+    """
+
+    def __init__(self, seed: int = 1, span: int = 1000):
+        super().__init__()
+        self.state = (seed * 2654435761) & 0xFFFFFFFF
+        self.span = span
+        self.count = 0
+
+    def rnd(self, arg: Fac) -> Fac:
+        self.count += 1
+        # a full-period LCG modulo 2**32, then a slice into [0, 1)
+        self.state = (1103515245 * self.state + 12345) & 0xFFFFFFFF
+        v = ((self.state >> 8) % self.span) / float(self.span)
+        out = num.parse(f"{v:.12g}")
+        self.log.note("sequence", arg, out)
+        return out
+
+    def rnd1(self, tag: str = "") -> Fac:
+        v = self.rnd(num.ONE)
+        if tag:
+            self.log.entries[-1] = (tag, self.log.entries[-1][1],
+                                    self.log.entries[-1][2])
+        return v

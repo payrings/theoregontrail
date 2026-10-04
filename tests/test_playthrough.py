@@ -21,7 +21,7 @@ import pytest
 from oregon import buysupplies, menu, trail, win
 from oregon.context import Context
 from oregon.files import Files
-from oregon.rng import ScriptedRnd
+from oregon.rng import ScriptedRnd, SequenceRnd
 from oregon.trace import Tracer
 from oregon.ui import ALLOWED, ScriptedUI
 
@@ -45,13 +45,22 @@ class FlowUI(ScriptedUI):
         #: names were being typed, and the river menu matched while the ferry was
         #: being offered.
         self._since = 0
+        #: keys for `poll_key` only -- a Return here interrupts the daily cycle and
+        #: opens the *trail* menu, which is the only way to reach "Hunt for food".
+        #: They are kept apart from `wait_key`'s queue so that a scripted game does
+        #: not spend its interrupts on "Press SPACE BAR".
+        self.interrupts = []
 
     def _ask(self):
         recent = "\n".join(self.out[self._since:])
         for needle, answer in self.rules:
             if needle in recent:
                 if isinstance(answer, (list, tuple)):
-                    return answer.pop(0) if answer else ""
+                    # an exhausted list falls through to the next rule, which is
+                    # how a menu can cycle through its options
+                    if answer:
+                        return answer.pop(0)
+                    continue
                 return answer
         # Nothing matched. Repeating the last answer keeps an unexpected prompt
         # from spinning, and the log makes it obvious in a failure.
@@ -69,6 +78,11 @@ class FlowUI(ScriptedUI):
                 f"max_prompts of {self.max_prompts}: it is looping")
         self.log.append((ask, allowed, a))
         return a
+
+    def poll_key(self):
+        if self.interrupts:
+            return self.interrupts.pop(0)
+        return None
 
     def yes_no(self, prompt=""):
         if prompt:
@@ -127,14 +141,16 @@ JOURNEY = [
 ALL_RULES = BARBER + MONTH + STORE + JOURNEY
 
 
-def make_game(rules=None, value="0.5", data=None, draws=400000, max_prompts=3000):
+def make_game(rules=None, value="0.5", data=None, draws=400000, max_prompts=3000,
+              rng=None):
     """A context with a FlowUI, a scripted generator and a private data directory."""
     d = pathlib.Path(tempfile.mkdtemp())
     # a copy, because a sequence rule is consumed as it is answered: without this
     # the second play of the determinism test finds the lists empty and loops
     ui = FlowUI(copy.deepcopy(rules if rules is not None else ALL_RULES),
                 value=value, draws=draws, max_prompts=max_prompts)
-    rng = ScriptedRnd(" ".join([value] * draws))
+    if rng is None:
+        rng = ScriptedRnd(" ".join([value] * draws))
     c = Context(ui=ui, rng=rng, files=Files(data or (d / "data")), trace=Tracer())
     rng.seed_from_keyboard(4242)
     return c, ui
@@ -219,3 +235,160 @@ def test_the_health_is_capped_and_the_band_is_valid(journey):
     c = journey[0]
     assert 0 <= c.st.H.to_float() <= 139, "line 3150 and 3250 cap it at 139"
     assert c.st.health_band() in (0, 1, 2, 3)
+
+# ------------------------------------------------- a game that meets events
+#: The same journey, but with a *varied* generator so that illnesses, breakdowns,
+#: fires and thieves actually happen, and the answers use the action menu.
+#: The needles are tried in order and the first that matches wins, so the ones
+#: that only appear on a particular screen come first. "Continue on trail" is on
+#: every menu and so acts as the general case, cycling through the options: the
+#: action menu's numbers are 1 continue, 2 supplies, 3 map, 4 pace, 5 rations,
+#: 6 rest, 7 trade, and then talk or buy or hunt.
+BUSY_JOURNEY = [
+    ("Would you like to look around?", "Y"),
+    # At a fort the action menu offers both "Talk to people" (8) and "Buy supplies"
+    # (9), so a fort shop needs 9, not 8. The shop's own menu is 1 to 7 for the
+    # goods and 8 to leave; its quantity prompts fall through to the catch-all, so
+    # one unit of each is bought.
+    ("Buy supplies", ["9", "1", "2", "3", "4", "5", "6", "7", "8"]),
+    ("Talk to people", ["8"]),                 # only on a landmark menu
+    ("Hunt for food", ["8"]),                  # only on the trail menu
+    ("Continue on trail", ["1", "3", "4", "5", "6", "7", "1"]),
+    ("Broken wagon", "Y"),
+    ("You are unable to continue", "1"),
+    ("River depth:", ["1", "1", "3", "3"]),
+    ("Are you willing to do this?", "Y"),
+    ("Will you accept this offer?", "Y"),
+    ("The trail divides here", ["1", "1"]),
+    ("float down the Columbia River", "2"),   # take the Barlow Toll Road
+    ("to travel the Barlow road", "Y"),
+    # the fort shop's own menu, reached once "Buy supplies" has been chosen: 1 to
+    # 7 are the goods and 8 leaves. The quantity prompts fall through to the
+    # catch-all, so one of each is bought.
+    ("Which number?", ["1", "2", "3", "4", "5", "6", "7", "8"]),
+    ("no one wants to", "1"),
+    # a last resort that always matches, so an unrecognised prompt gets option 1
+    # (continue / decline) instead of spinning
+    ("", "1"),
+]
+
+#: the same setup, then a party that uses the action menu at every landmark, so
+#: that the pace, rations, trade, map, talk, hunt, fort and part modules are all
+#: reached.
+BUSY = BARBER + MONTH + STORE + BUSY_JOURNEY
+
+
+def busy_game(seed=20260805, max_prompts=4000):
+    """A whole game with a varied generator, reaching the event modules."""
+    # a varied generator, so that events actually fire; `draws` is unused by it
+    c, ui = make_game(BUSY, max_prompts=max_prompts, rng=SequenceRnd(seed))
+    # Returns for `poll_key`, so the daily cycle is interrupted and the *trail*
+    # action menu opens: that is the only way to reach "Hunt for food", since the
+    # landmark menu offers "Talk to people" and "Buy supplies" instead.
+    ui.interrupts = ["\r"] * 6
+    menu.start(c)
+    buysupplies.departure_month(c)
+    buysupplies.init_state(c)
+    got = buysupplies.store(c)
+    trail.load_state(c)
+    where = trail.run(c)
+    return c, ui, got, where
+
+
+#: What each module puts on the screen, so a run can be checked for reaching it.
+#: This is deliberately the text a player would see rather than any internal
+#: hook: it is what the modules are for, and it survives a refactor.
+MARKS = {
+    "PART.LIB": ["Broken wagon", "repair the broken wagon"],
+    "LF.LIB fire": ["A fire in the wagon results in loss of"],
+    "LF.LIB thief": ["A thief comes during the night"],
+    "LF.LIB abandoned wagon": ["You find an abandoned wagon"],
+    "HUNT.LIB": ["Hunting Instructions"],
+    "PACE.LIB": ["Change pace"],
+    "RATION.LIB": ["Change food rations"],
+    "TALK.LIB": ["tells you:"],
+    "TRADE.LIB": ["another emigrant", "No one wants to"],
+    "BUY.LIB": ["You may buy"],
+    "MAP.LIB": ["You have been through"],
+    "gravesite": ["You pass a gravesite", "Here lies"],
+}
+
+#: four seeds whose union reaches every module above. One seed cannot: the fire
+#: needs event 12 to choose the fire, and the gravesite needs a party to have died
+#: on the same segment before, both of which are a matter of chance.
+COVERAGE_SEEDS = (7, 99, 11, 3)
+
+
+@pytest.fixture(scope="module")
+def busy_runs():
+    """Four varied games, shared by the coverage tests. About two and a half seconds."""
+    runs = []
+    for seed in COVERAGE_SEEDS:
+        c, ui, got, where = busy_game(seed=seed)
+        runs.append((seed, c, ui, got, where))
+    return runs
+
+
+def test_a_varied_game_reaches_every_module(busy_runs):
+    """One game, a varied generator, and the whole game: every module reached.
+
+    A constant generator never fires an event, so the only way to walk
+    ``PART.LIB``, ``LF.LIB`` and the rest is to play with a generator that varies.
+    """
+    reached = {k: [] for k in MARKS}
+    for seed, c, ui, got, where in busy_runs:
+        said = " ".join(c.ui.out)
+        for name, needles in MARKS.items():
+            if any(n in said for n in needles):
+                reached[name].append(seed)
+    missing = [k for k, v in reached.items() if not v]
+    assert not missing, "never reached: " + ", ".join(missing)
+
+
+def test_a_varied_game_fires_events_and_buries_people(busy_runs):
+    for seed, c, ui, got, where in busy_runs:
+        events = [t for t, _a, _v in c.rng.log.entries if t.startswith("3180 event")]
+        assert len(events) > 500, f"seed {seed} tested only {len(events)} events"
+        assert c.trace.days > 100, f"seed {seed} lasted {c.trace.days} days"
+        assert 1700 <= c.st.M.to_float() <= 2000, f"seed {seed}: {c.st.M.to_float()} mi"
+
+
+def test_a_varied_game_leaves_consistent_state(busy_runs):
+    """Whatever happens, the numbers stay inside the limits the game sets."""
+    for seed, c, ui, got, where in busy_runs:
+        assert where in ("WIN", "FLOAT", "DIED", "MENU"), (seed, where)
+        assert 0 <= c.st.NP <= 5
+        assert c.st.I[2].to_float() >= 0, "oxen never go negative"
+        assert c.st.I[8].to_float() >= 0, "food never goes negative"
+        assert 0 <= c.st.H.to_float() <= 139, "health is capped at 139"
+        for k in range(5, 8):
+            assert 0 <= c.st.I[k].to_int() <= 3, "spare parts stay within three"
+        assert 0 <= c.st.H0 <= 5, "no more sick than people"
+        assert 1 <= c.st.P.to_int() <= 3, "the pace stays in range"
+        assert 1 <= c.st.R.to_int() <= 3, "the rations stay in range"
+
+
+def test_a_varied_game_is_reproducible(busy_runs):
+    """The same seed and the same answers give the same game again."""
+    for seed, c, ui, got, where in busy_runs:
+        c2, ui2, got2, where2 = busy_game(seed=seed)
+        assert where2 == where, seed
+        assert c2.trace.days == c.trace.days, seed
+        assert c2.st.M.to_float() == c.st.M.to_float(), seed
+        assert c2.st.NP == c.st.NP, seed
+        assert c2.st.I[2].to_float() == c.st.I[2].to_float(), seed
+        assert c2.st.H.to_float() == c.st.H.to_float(), seed
+        assert c2.rng.log.count() == c.rng.log.count(), seed
+
+
+def test_the_hunt_never_draws_from_the_game(busy_runs):
+    """Appendix G.6: the hunting routine has its own generator."""
+    from oregon import hunt
+    from oregon.applesoft import fac
+    seed, c, ui, got, where = busy_runs[0]
+    before = c.rng.log.count()
+    seed_before = fac._b().get_seed()
+    hunt.hunt_session(c, c.st, 20)
+    assert c.rng.log.count() == before, "a hunt draws nothing from the game"
+    assert fac._b().get_seed() == seed_before, \
+        "and does not advance the Applesoft seed"

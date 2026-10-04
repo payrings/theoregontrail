@@ -85,14 +85,18 @@ def die(c, who: int):
     st.H2[who] = st.H2[np_after]
     st.N[who], st.N[np_after] = st.N[np_after], st.N[who]
     st.NP = np_after
-    from . import trail
-    trail.speed(c)
+    # OREGON TRAIL 8000 is "GOSUB 50000 ... GOSUB 190: GOSUB 650: RETURN", so the
+    # speed routine runs *after* the death handling -- and TOMB.LIB 50005 returns
+    # only "IF NP", so with nobody left it never comes back. Running line 650
+    # first would divide the clothing by NP = 0, which in Applesoft is error 10.
     if np_after <= 0:
         from . import tomb
         tomb.all_dead(c, who)
-    else:
-        from . import common as _c
-        _c.message(c, f"{st.N[np_after]} has died.")
+        return "DIED"
+    from . import trail
+    trail.speed(c)
+    common.message(c, f"{st.N[np_after]} has died.")
+    return "died"
 
 
 def check_party(c):
