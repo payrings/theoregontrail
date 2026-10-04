@@ -12,7 +12,6 @@ a second draw for the amount only when something is actually lost.
 from __future__ import annotations
 
 from . import num
-from .data import goods as G
 from .data import text as T
 
 __all__ = ["fire", "abandoned_wagon", "thief", "pluralise"]
@@ -43,17 +42,17 @@ def fire(c):
         held = st.I[item]
         # no short-circuit: the draw happens even when nothing is held
         if c.rng.below(f"50000 fire item {item}", num.HALF) and not held.is_zero():
-            x = num.trunc(num.add(
+            x = num.int_(num.add(
                 num.mul(c.rng.rnd1(f"50000 fire amount {item}"), num.ONE), num.ZERO))
             st.I[item] = num.sub(held, x)
             losses.append(_line(z, x, item))
             z += 1
     held = st.PF
     if not held.is_zero() and c.rng.below("50010 fire food", num.HALF):
-        x = num.trunc(num.add(num.mul(c.rng.rnd1("50010 fire food amount"),
-                                      num.ONE), num.ZERO))
-        x = num.trunc(num.add(num.mul(c.rng.rnd1("50010 fire food amount"), num.ONE),
-                              num.ZERO))
+        # one draw for the amount: Appendix G.4 lists exactly one here, and this
+        # line once drew twice, which shifted every later number in the game
+        x = num.int_(num.add(
+            num.mul(c.rng.rnd1("50010 fire food amount"), num.ONE), num.ZERO))
         st.PF = num.sub(held, x)
         st.I[8] = st.PF
         losses.append(_line(z, x, 8))
@@ -105,7 +104,7 @@ def thief(c):
     held = st.I[item]
     if not held.is_zero():
         most = 100 if num.gt(held, num.parse("100")) else held
-        x = num.trunc(num.add(
+        x = num.int_(num.add(
             num.mul(c.rng.rnd1("52010 amount"), num.ONE), num.ZERO))
         st.I[item] = num.sub(held, x)
         if item == 8:

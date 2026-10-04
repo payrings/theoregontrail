@@ -21,11 +21,10 @@ The Green's depth of 20 feet and the Snake's of 6 mean neither can ever be forde
 
 from __future__ import annotations
 
-from . import num
+from . import cross, num
 from .data import landmarks as L
 from .data import rivers as R
 from .data import text as T
-from .ui import ALLOWED
 
 __all__ = ["crossing", "conditions", "losses"]
 
@@ -61,9 +60,12 @@ def river_of(landmark: int) -> int:
 def crossing(c):
     """Lines 50000-50030: the menu, and whichever way the player chooses."""
     st = c.st
-    from . import common, losses
+    from . import common
     st.RC = river_of(st.LM)
     st.W1 = 1                       # line 3500: no one falls ill while waiting here
+    # line 3500 appends CROSS.LIB and calls it before the menu, so the first half
+    # of the animation spends its numbers on every river (see cross.py)
+    cross.first_half(c)
     conditions(c)
     c.ui.clear()
     c.ui.print(L.short_name(st.LM))
@@ -105,20 +107,28 @@ def crossing(c):
             continue
         # line 50030: the ferry is dispatched through the fourth slot
         v2 = v + 1 if (v == 3 and extra == 2) else v
-        ix = num.ONE
         if v2 == 1:
-            return ford(c)
+            cross.tail(c, "success" if ford(c) == "success" else "failed-ford")
+            _bury_drowned(c)
+            return True
         if v2 == 2:
             if float_crossing(c) is None:
                 continue
+            cross.tail(c, "success" if _st_settled(c) else "failed-float")
+            _bury_drowned(c)
             return None
         if v2 == 3:
             if guide(c) is None:
                 continue
+            cross.tail(c, "success" if _st_settled(c) else "failed-ford")
+            _bury_drowned(c)
             return None
         if v2 == 4:
             if ferry(c):
+                cross.tail(c, "success")
+                _bury_drowned(c)
                 return None
+            cross.tail(c, "failed-ferry")
             continue
 
 
@@ -140,7 +150,12 @@ def information(c, which: int):
 
 
 def ford(c, ix=None):
-    """Lines 50035-50075: fording, in the four cases."""
+    """Lines 50035-50075: fording, in the four cases.
+
+    Returns what happened -- ``success``, ``stuck``, ``wet``, ``tipped`` or
+    ``deep`` -- which is how :func:`crossing` knows how many numbers the
+    animation should spend afterwards.
+    """
     st = c.st
     from . import common, losses
     if ix is None:
@@ -151,14 +166,14 @@ def ford(c, ix=None):
         bottom = st.RB
         if bottom == R.muddy:
             if c.rng.below("50060 stuck in mud", num.div(num.parse(".4"), ix)):
-                lines = _lose_goods(c, num.parse(".5"))
+                _lose_goods(c, num.parse(".5"))
                 _say(c, "You become stuck in the mud.  Lose 1 day.")
                 st.SD = 1
                 from . import trail
                 trail.run_stopped_days(c)
-                return True
+                return "stuck"          # a day lost, but the wagon is across
             _say(c, "It was a muddy crossing, but you did not get stuck.")
-            return True
+            return "success"
         if bottom == R.rough:
             if c.rng.below("50070 wagon tips", num.div(num.parse(".16"), ix)):
                 # one V for the whole crossing, so every good shares the chance
@@ -167,17 +182,17 @@ def ford(c, ix=None):
                 lines = _lose_goods(c, num.div(v, ix))
                 _say(c, "The wagon tipped over" + (".  You lose:" if lines
                                                    else " but you did not lose anything."))
-            else:
-                _say(c, "It was a rough crossing, but you did not overturn.")
-            return True
+                return "tipped"
+            _say(c, "It was a rough crossing, but you did not overturn.")
+            return "success"
         _say(c, "You made the crossing successfully.")
-        return True
+        return "success"
     if num.lt(st.RD, num.parse("3")):
         _say(c, "Your supplies got wet.  Lose 1 day.")
         st.SD = 1
         from . import trail
         trail.run_stopped_days(c)
-        return True
+        return "wet"
     # line 50040: 3 feet or more
     lines = _lose_goods(c, num.div(num.div(st.RD, num.parse("10")), ix))
     lines += _lose_oxen(c, num.div(num.div(num.sub(st.RD, num.ONE), num.parse("10")),
@@ -186,7 +201,7 @@ def ford(c, ix=None):
                                           num.parse("10")), ix))
     _say(c, "The river is too deep to ford.  You lose:" if lines
           else "You made the crossing successfully.", lines)
-    return True
+    return "deep"
 
 
 def float_crossing(c, ix=None):
@@ -197,7 +212,7 @@ def float_crossing(c, ix=None):
     the number is spent either way.
     """
     st = c.st
-    from . import common, losses
+    from . import common
     from . import trail
     if ix is None:
         ix = st.IX
@@ -227,7 +242,7 @@ def float_crossing(c, ix=None):
 def ferry(c):
     """Lines 50100-50125: the ferry. True when the party is across."""
     st = c.st
-    from . import common, losses
+    from . import common
     if num.lt(st.RD, num.parse("2.5")):
         c.ui.clear()
         c.ui.print("The ferry is not operating today because the river is to "
@@ -235,8 +250,8 @@ def ferry(c):
         common.wait_key(c)
         return False
     # line 50101: the days of waiting are drawn before the player is asked
-    x = num.trunc(num.add(num.mul(c.rng.rnd1("50101 ferry wait"),
-                                  num.parse("5")), num.parse("2")))
+    x = num.int_(num.add(num.mul(c.rng.rnd1("50101 ferry wait"),
+                                 num.parse("5")), num.parse("2")))
     v = num.parse("5")
     c.ui.clear()
     c.ui.print("The ferry operator says that he will charge you $"
@@ -277,8 +292,8 @@ def guide(c):
     """
     st = c.st
     from . import common
-    x = num.trunc(num.add(num.mul(c.rng.rnd1("50130 sets asked"),
-                                  num.parse("2")), num.parse("2")))
+    x = num.int_(num.add(num.mul(c.rng.rnd1("50130 sets asked"),
+                                 num.parse("2")), num.parse("2")))
     c.ui.clear()
     c.ui.print("A Shoshoni guide says that he will take your wagon across the river "
                "in exchange for " + num.str_(x) + " sets of clothing.")
@@ -315,7 +330,9 @@ def losses(c, chance, item: int, tag: str):
     st = c.st
     got = None
     if c.rng.below(f"{tag} item {item}", chance) and not num.eq(st.I[item], num.ZERO):
-        amount = num.trunc(num.add(
+        # INT (RND (1) * X + 1): a quantity that is then taken off the holding, so
+        # it has to stay a five-byte value
+        amount = num.int_(num.add(
             num.mul(c.rng.rnd1(f"{tag} amount {item}"), num.ONE), num.ZERO))
         st.I[item] = num.sub(st.I[item], amount)
         from .lf import _line
@@ -379,3 +396,27 @@ def _lose_people(c, chance) -> list:
 def _say(c, text: str, lines=None):
     from . import common
     common.message(c, text, lines)
+
+
+def _bury_drowned(c) -> bool:
+    """OREGON TRAIL 3504: take the dead out of the party after a crossing.
+
+    Anyone the river marked with ``-2`` is removed. If that would leave nobody,
+    the tombstone sequence runs.
+    """
+    st = c.st
+    if not any(num.eq(st.H1[i], num.parse("-2")) for i in range(num.as_int(st.NP))):
+        return False
+    from . import trail
+    for slot in range(num.as_int(st.NP)):
+        st.H1[slot] = num.parse("0")
+        st.H2[slot] = num.ZERO
+    trail.remove_drowned(c)
+    return True
+
+
+def _st_settled(c) -> bool:
+    """Whether the last crossing attempt left the wagon on the far bank."""
+    said = " ".join(c.ui.out[-12:])
+    return not any(w in said for w in ("tipped over while floating",
+                                       "river is too deep to ford"))

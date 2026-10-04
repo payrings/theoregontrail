@@ -22,7 +22,7 @@ DESCRIPTIONS = [
 def change(c):
     """Lines 50000-50040."""
     st = c.st
-    from . import common, trail
+    from . import trail
     c.ui.clear()
     c.ui.print("Change food rations")
     c.ui.print(f'(currently "{T.RATIONS[num.as_int(st.R) - 1]}")')

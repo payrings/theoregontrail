@@ -93,3 +93,147 @@ def test_the_hunt_does_not_touch_the_games_generator(game):
 def _seed() -> bytes:
     from oregon.applesoft import fac
     return fac._b().get_seed()
+
+
+# ------------------------------------------------- the crossing animation
+def test_the_crossing_animation_spends_the_numbers_appendix_g_lists(game):
+    """Appendix G.5: 106 always, then 122, 0, or 22 groups of three.
+
+    The numbers place water marks and change nothing, but they advance the
+    generator, so every draw after a river crossing depends on them.
+    """
+    from oregon import cross
+    c = game
+
+    def spent(fn, *a):
+        c.rng.log.clear()
+        fn(c, *a)
+        return c.rng.log.count()
+
+    assert spent(cross.animate, "start") == cross.FIRST_HALF == 106
+    assert spent(cross.animate, "success") == 106 + 122
+    # a failed float or a lost ferry spends nothing after the first half
+    assert spent(cross.animate, "failed-float") == 106
+    assert spent(cross.animate, "failed-ferry") == 106
+    # a failed ford: 22 single draws, each followed by two more
+    assert spent(cross.animate, "failed-ford") == 106 + 22 * 3
+
+
+def test_a_river_crossing_spends_the_animation_numbers(game):
+    """The draws go through the game's own generator, in the right places."""
+    from oregon import num, river
+    c = game
+    c.st.LM = 1                      # the Kansas River
+    c.st.RC = river.river_of(1)
+    st = c.st
+    st.I[2] = num.parse("8")
+    st.I[3] = num.parse("6")
+    st.I[4] = num.parse("120")
+    st.I[8] = num.parse("900")
+    c.rng = ScriptedRnd(" ".join(["0.0"] * 20000))
+    game.ui.answers = ["1"]            # ford, which succeeds on the Kansas
+    before = c.rng.log.count()
+    river.crossing(c)
+    used = c.rng.log.count() - before
+    tags = [t for t, _a, _v in c.rng.log.entries[before:]]
+    # the first half is spent once, when the river is shown
+    assert sum(1 for t in tags if t.startswith("CROSS first half")) == 106
+    # the rain has made the Kansas three feet deep, so the ford goes wrong and the
+    # tail is the 22 groups of three
+    assert sum(1 for t in tags if t.startswith("CROSS failed ford")) == 22 * 3
+    assert not [t for t in tags if t.startswith("CROSS success tail")]
+    assert used >= 106 + 22 * 3
+
+
+def test_the_animation_numbers_are_tagged_so_a_count_is_possible(game):
+    from oregon import cross
+    c = game
+    c.rng.log.clear()
+    cross.animate(c, "failed-ford")
+    tags = [t for t, _a, _v in c.rng.log.entries]
+    assert len([t for t in tags if t.startswith("CROSS first half")]) == 106
+    assert len([t for t in tags if "failed ford 0 " in t]) == 3
+
+
+# ------------------------------------------------------- the Q aliasing
+def test_Q_is_one_variable_and_the_fort_tier_clobbers_the_map(game):
+    """BUY.LIB 50003 and TRADE.LIB 50011 write Q, and Q is the map's history.
+
+    This is the third bug the paper does not list. Faithful means the map's first
+    landmark really is lost, so the test asserts that it is.
+    """
+    from oregon import fortbuy, num
+    c = game
+    st = c.st
+    st.Q[1], st.Q[2] = 1, 2
+    st.Q[0] = 0                     # landmark 0, where the route starts
+    st.LM = 13                      # Fort Boise
+    st.I[2] = num.parse("8")
+    st.I[3] = num.parse("10")
+    st.I[8] = num.parse("500")
+    st.MY = num.parse("500")
+    c.ui.answers = ["8"]            # leave the store at once
+    fortbuy.fort_store(c)
+    assert num.as_int(st.Q[0]) == 5, "the fort tier landed in Q(0)"
+    assert st.Q[0].to_int() != 0, "so the map no longer knows landmark 0"
+
+
+def test_a_trade_also_clobbers_Q(game):
+    from oregon import num, trade
+    c = game
+    st = c.st
+    st.Q[0] = num.ZERO
+    st.I[2] = num.parse("8.5")      # five and a half oxen
+    st.I[3] = num.parse("10")
+    st.I[4] = num.parse("120")
+    st.I[8] = num.parse("500")
+    c.rng = ScriptedRnd(" ".join(["0.0"] * 2000))
+    c.ui.answers = ["N"]
+    trade.attempt(c)
+    assert st.Q[0].to_int() == 9, "INT (I(X+2) + .5) rounds 8.5 up to 9"
+
+def test_a_drowned_member_leaves_the_party(game):
+    """Line 3504: GOSUB 50000 falls through into 50005 and buries them."""
+    from oregon import num, trail
+    c = game
+    st = c.st
+    st.NP = 5
+    st.H = num.parse("120")
+    st.H1[2] = num.parse("-2")          # marked drowned by the river
+    before = list(st.N)
+    trail.remove_drowned(c)
+    assert st.NP == 4
+    assert st.H.to_float() == 105.0
+    assert st.N[2] == before[4], "the corpse is swapped into the last slot"
+    assert st.H1[4].to_int() == -1
+
+
+def test_the_Q_loop_overwrites_itself_so_there_is_no_bad_subscript(game):
+    """A reading of mine that the source does not support.
+
+    I had claimed that a fort tier left in Q would make line 50005 subscript
+    outside DIM H1(4) and raise error 5. It does not: line 3504 assigns Q from the
+    loop counter before using it. Kept as a test so the claim stays retracted, and
+    because it documents what Q's double life actually costs -- the map.
+    """
+    from oregon import num, trail
+    c = game
+    st = c.st
+    st.NP = 5
+    st.H = num.parse("120")
+    st.Q[0] = num.parse("6")          # a fort tier, well outside DIM H1(4)
+    st.H1[0] = num.parse("-2")
+    trail.remove_drowned(c)            # must not raise
+    assert st.NP == 4
+
+
+def test_the_hunt_seed_uses_the_keyboard_counter(game):
+    """Paper 11.1: the hunt is seeded from the Applesoft seed and the key counter."""
+    from oregon import hunt
+    c = game
+    c.mem.keyboard_counter = 0x0102
+    a = hunt._seed_bytes(c)
+    c.mem.keyboard_counter = 0x0304
+    b = hunt._seed_bytes(c)
+    assert a != b, "the counter is part of the hunt's seed"
+    assert len(a) == 5

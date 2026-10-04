@@ -30,7 +30,6 @@ from __future__ import annotations
 from . import num
 from .applesoft.fac import Fac
 from .data import climate as CL
-from .data import illnesses as ILL
 from .data import landmarks as L
 from .data import text as T
 
@@ -240,6 +239,27 @@ def travel_screen(c):
     ]
     for label, value in rows:
         c.ui.print(f"  {label:<16}{value}")
+
+
+def remove_drowned(c):
+    """Line 3504: take the party left by a river crossing.
+
+    ``FOR L1 = 0 TO 4: Q = L1: ON (H1(L1) = -2) GOSUB 50000`` -- the loop sets
+    ``Q`` itself and subscripts with ``L1``, and ``GOSUB 50000`` has no ``RETURN``,
+    so it falls through into 50005 and the whole death happens: health down to
+    105, the party one smaller, and the corpse swapped into the last slot.
+
+    The loop assigning ``Q`` before using it is what keeps this safe. An earlier
+    reading of mine held that a fort tier left in ``Q`` would make line 50005
+    subscript outside ``DIM H1(4)``; it does not, because ``Q`` is overwritten
+    first. What ``Q``'s double life really costs is the map -- see ``GAPS.md``.
+    """
+    from . import illness
+    st = c.st
+    for slot in range(num.as_int(st.NP)):
+        st.Q[0] = slot
+        if num.eq(st.H1[num.as_int(st.Q[0])], num.parse("-2")):
+            illness.die(c, num.as_int(st.Q[0]))
 
 
 def find_grave(c):
@@ -639,8 +659,18 @@ def run(c):
                     from . import action
                     action.action_menu(c)
                     continue
+            # line 21000 sets B = 2 when there are no oxen, and line 1015 then does
+            # "ON B > 0 GOTO 4000": the action menu takes over and the party cannot
+            # leave until a trade or a fort supplies oxen. Falling through instead
+            # leaves the wagon at speed zero for ever, which is what happened here
+            # the first time: fording the Green River at 20 feet always takes the
+            # last oxen.
             if num.eq(st.I[2], num.ZERO):
                 check_oxen(c)
+            if st.B > 0:
+                from . import action
+                action.action_menu(c)
+                continue
             seg = choose_segment(c)
             break
         from . import endl

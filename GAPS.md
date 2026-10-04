@@ -117,7 +117,7 @@ the code with the BASIC line that causes it.
 | A party with exactly the Barlow toll cannot pay | `endl.the_dalles` tests `MY > V` |
 | February always has 28 days | `trail.advance_date`, `MONTH_DAYS` |
 | **Found in the source, not in the paper:** on the trail leaving a fort, menu choice 8 "Buy supplies" runs the **hunt**, and choice 9 "Hunt for food" does nothing | line 4090's `Z = Z * (VAL(Z$) > 7) + VAL(Z$)` with `Z = 2` on the trail. `action.action_menu` reproduces it and says so. |
-| **Found in the source:** `Q` is one variable used both as the map's landmark history and as a scalar by `BUY.LIB` (fort tier) and `TRADE.LIB` (rounded holding), so trading at a fort corrupts the map's first point and the drowning-death index in `TOMB.LIB` | modelled faithfully: `state.Q` is one array and the scalar uses write `Q(0)`. See `PLAN.md` B3. |
+| **Found in the source:** `Q` is one variable used both as the map's landmark history (`Q(0 to 16)`) and as a scalar by `BUY.LIB` 50003 (the fort tier) and `TRADE.LIB` 50011 (the rounded holding) | modelled faithfully: `state.Q` is one array and both scalar uses write `Q(0)`. The consequences are that the map loses its first landmark, and an accepted trade **rounds the player's holding** -- `I(X+2) = Q - V`, so five and a half oxen become six minus whatever is taken. I first thought a fort tier would also make `TOMB.LIB` 50005 subscript outside `DIM H1(4)`; that is wrong, because line 3504 assigns `Q` from its own loop counter before using it, and `tests/test_rng.py` keeps the retraction. |
 | **Found in the source:** the paper's §9.3 "rough" ford wording implies a per-good draw; the code draws one `V` for the whole crossing | A2 above |
 
 ---
@@ -146,28 +146,44 @@ number below the limit, so five and a half oxen give five draws (Appendix G.5).
 
 ---
 
-## 7. What is not finished
+## 7. What is finished, and what is not
 
 Recorded plainly rather than left to be discovered.
 
-* **The end-to-end journey is not yet driven to Oregon.** A scripted run currently
-  gets from Independence through the Kansas River and the Big Blue River crossings —
-  265 miles, 16 days — and then stops, because the scripted screen runs out of
-  answers for the next river menu. Everything before that point runs: the store, the
-  hand-over, the daily cycle, the event loop, the weather, the health model and both
-  river crossings. What is *not* yet exercised by a run is `PART.LIB`, `LF.LIB`,
-  `BUY.LIB`, `TRADE.LIB`, `TOMB.LIB`'s epitaph path, `FLOAT` and `WIN`'s top-ten
-  insertion. Their individual formulas are in place and commented with their line
-  numbers, but they are untested end to end. **This is the first thing to finish.**
+* **The journey reaches Oregon.** `tests/test_playthrough.py` plays a whole game
+  from the store to the Willamette Valley — the Kansas and Big Blu Rivers by
+  fording, the ferry at the Green, the Shoshoni guide at the Snake, and the Barlow
+  Toll Road at The Dalles — and asserts the distance, the day count, the hand-over
+  and the health cap. It also asserts **determinism**: the same seed and answers
+  give the same game, draw for draw.
+* **All three endings are exercised.** `tests/test_endings.py` covers arrival and
+  the score (including the profession multiplier and the rating bands), the raft,
+  the whole party dying with a tombstone written, a death swapping the corpse into
+  the last slot, a second disease killing without naming itself, and the top-ten
+  list being rewritten in order.
+* **The crossing animation's numbers are spent** — see section 4.
+
+What is still not exercised:
+
+* `PART.LIB`'s repair prompt, `LF.LIB`'s fire and thief, `HUNT.LIB` and `PACE.LIB`
+  and `RATION.LIB` and `TALK.LIB` are written and commented with their line numbers,
+  and the draw sequences they use are counted in `tests/test_rng.py`, but none of
+  them is reached by a played game, because the scripted party meets no events. A
+  run with a varied generator would reach them; that is the obvious next test.
+* `WIN`'s "would you like to make any changes?" loop is not driven to a second
+  pass.
+* The management program's tombstone erasure is tested at the file level but not
+  through the menu.
 * `TALK.LIB` reads its text from `docs/Appendix D Dialogue records.md` at run time
   rather than holding it in the repository, because the dialogue is MECC's and
   `docs/` is git-ignored. A game played without `docs/` will raise a clear error at
   the first conversation rather than silently having nothing to say.
 * The management program's teacher menu is reachable but the top-ten *insertion*
   routine (`win.insert`) has not been run against a real list.
-* `CROSS.LIB`'s animation draws (section 4 above) would shift every later draw in the
-  sequence; that is the highest-value remaining item for anyone with a trace to
-  compare against.
+* **A day-by-day trace from the original.** This is the one that would settle
+  section 5's open questions — one event or two, and the 50 miles — and it needs the
+  game running under an emulator. `oregon/trace.py` already writes the line format
+  the comparison needs, including the five seed bytes.
 
 ---
 

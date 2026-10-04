@@ -12,8 +12,6 @@ copied into this repository; see :mod:`oregon.data.dialogue`.
 from __future__ import annotations
 
 from . import num
-from .data import landmarks as L
-from .data import text as T
 
 __all__ = ["talk"]
 

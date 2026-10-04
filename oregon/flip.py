@@ -11,8 +11,6 @@ matters, since the two sides hold one grave each.
 
 from __future__ import annotations
 
-from . import num
-
 __all__ = ["to_side_2", "to_side_1"]
 
 

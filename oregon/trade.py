@@ -58,7 +58,10 @@ def attempt(c):
         c.ui.print("trade with you today.")
         common.wait_key(c)
         return False
-    q = num.int_(num.add(st.I[x + 2], num.HALF))
+    # line 50011 writes the rounded holding into Q, clobbering the map's first
+    # landmark the same way the fort tier does. See GAPS.md.
+    st.Q[0] = num.int_(num.add(st.I[x + 2], num.HALF))
+    q = st.Q[0]
     want = v
     give = f
     word = _wording(x, num.as_int(want))

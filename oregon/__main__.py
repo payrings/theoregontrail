@@ -28,7 +28,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import applesoft, num
+from . import applesoft
 from .context import Context
 from .files import Files
 from .rng import SeededRnd
