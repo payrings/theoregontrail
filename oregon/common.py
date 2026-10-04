@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from . import num
 from .errors import ApplesoftError, handle
-from .ui import ALLOWED
 
 __all__ = ["money", "dollar_text", "date_text", "wait_key", "yes_no",
            "space_wait", "message", "error_handler", "check_side", "short_name"]

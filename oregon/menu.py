@@ -10,7 +10,7 @@ Control-A.
 
 from __future__ import annotations
 
-from . import common, num
+from . import common
 from .data import hiscore as HIS
 from .data import text as T
 from .ui import ALLOWED
@@ -308,7 +308,6 @@ def management(c):
     list and restores the original ten, 4 erases the tombstone messages, 5 returns
     to the main menu.
     """
-    from .menu import top_ten as show
     while True:
         c.set_program("MANAGEMENT")
         c.ui.clear()

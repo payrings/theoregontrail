@@ -9,8 +9,6 @@ boxes of bullets at 909 and the three spare parts at 910 to 912.
 from __future__ import annotations
 
 from . import common, num
-from .data import goods as G
-from .data import landmarks as L
 from .data import text as T
 from .ui import ALLOWED
 

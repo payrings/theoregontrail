@@ -61,11 +61,11 @@ def action_menu(c):
             if not st.B:
                 return "CONTINUE"
         if st.B and x == 1:
-            from .data import goods as goods
+            # line 4070: "You must trade for " + T$(B = 2) + S$(B - 2, 2)
             art = "a " if st.B == 2 else "an "
-            what = (G.UNIT[0] if st.B == 2
-                    else G.UNIT[st.B - 2])
-            c.ui.print("You must trade for " + art + what + " to be able to continue.")
+            what = G.UNIT[0] if st.B == 2 else G.UNIT[st.B - 2]
+            c.ui.print("You must trade for " + art + what
+                       + " to be able to continue.")
             common.wait_key(c)
             continue
         # line 4090: Z = Z * (X > 7) + X, then ON Z - 1
@@ -121,8 +121,8 @@ def show_supplies(c):
     c.ui.print("  Your Supplies")
     for item in range(2, 9):
         held = num.int_(num.add(st.I[item], num.parse(".51")))
-        c.ui.print(f"{G.I_NAMES[item] if hasattr(G, 'I_NAMES') else T.I_NAMES[item]}"
-                   .ljust(24) + num.str_(num.parse(str(held))).rjust(6))
+        c.ui.print(T.I_NAMES[item].ljust(24)
+                   + num.str_(num.parse(str(held))).rjust(6))
     c.ui.print("money left".ljust(24) + ("$" + common.money(c, st.MY)).rjust(6))
     common.wait_key(c)
 

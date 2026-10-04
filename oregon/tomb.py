@@ -13,7 +13,7 @@ passed the recorded distance from the next landmark.
 
 from __future__ import annotations
 
-from . import num
+from . import common, num
 from .ui import ALLOWED
 
 __all__ = ["all_dead", "read_grave"]
@@ -51,6 +51,7 @@ def all_dead(c, who: int):
 def write_record(c, who: int, epitaph: str):
     """Line 50035: the four fields, at offset 0 of the current side."""
     st = c.st
+    from . import common
     common.check_side(c, st.S + 1)
     segment = num.as_int(st.NM) * 100 + num.as_int(st.LM)
     c.files.write_tomb(st.S, segment, num.as_float(st.D), st.N[who], epitaph)

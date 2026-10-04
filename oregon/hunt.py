@@ -162,7 +162,7 @@ def hunt_session(c, st, bullets: int) -> dict:
     offering new ones once four have been shot, and spends a bullet per shot. No
     number comes from the game's generator.
     """
-    h = HuntRng(bytes(_seed_bytes()))
+    h = HuntRng(_seed_bytes(c))
     types = allowed_types(st.LM)
     animals = []
     shots = 0
@@ -192,12 +192,20 @@ def hunt_session(c, st, bullets: int) -> dict:
     return {"meat": meat, "bullets": bullets - spent, "shots": shots}
 
 
-def _seed_bytes() -> bytes:
+def _seed_bytes(c) -> bytes:
+    """The hunting module's own seed.
+
+    The paper (11.1) and Appendix G.6 both say the routine is "seeded at the start
+    of each hunt from the Applesoft seed bytes combined with the keyboard counter at
+    addresses 78 and 79". So the seed is a function of the game's seed *and* of how
+    long the player took to press the key, which is why a hunt is reproducible from
+    a recorded game but is not part of the game's own sequence.
+    """
     from .applesoft import fac
     try:
         seed = bytes(fac._b().get_seed())
     except Exception:                          # noqa: BLE001
         seed = bytes(5)
-    # the paper: seeded from the Applesoft seed bytes combined with the keyboard
-    # counter at 78 and 79
-    return bytes(((seed[i] + (78 + i)) & 0xFF) for i in range(5))
+    counter = c.mem.keyboard_counter & 0xFFFF
+    return bytes(((seed[i] + ((counter >> (8 * i)) & 0xFF)) & 0xFF)
+                 for i in range(5))

@@ -54,7 +54,7 @@ def illness(c):
         # new disease is never named (paper section 1.5, Table 1)
         st.T[0] = name + " " + ILL.DEATH_SENTENCE
         common.message(c, st.T[0])
-        st.H1[who] = num.neg(num.ONE)
+        st.H1[who] = num.parse("-1")
         die(c, who)
         return
     st.T[0] = name + " " + ILL.IL_NAMES[disease]
@@ -79,7 +79,9 @@ def die(c, who: int):
         return
     np_after = np_ - 1
     st.H1[who] = st.H1[np_after]
-    st.H1[np_after] = num.neg(num.ONE)
+    # the corpse is marked -1. Negating zero gives zero, so this cannot be
+    # `num.neg(num.ONE)`: the marker has to be a real minus one.
+    st.H1[np_after] = num.parse("-1")
     st.H2[who] = st.H2[np_after]
     st.N[who], st.N[np_after] = st.N[np_after], st.N[who]
     st.NP = np_after

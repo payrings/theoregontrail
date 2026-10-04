@@ -23,9 +23,18 @@ The loss routines are the same ones the river crossings use.
 
 from __future__ import annotations
 
+import time
+
 from . import num
 
-__all__ = ["run", "HP_START", "PASSES_TO_LAND", "PASSES_TO_MISS", "SIGN_PASSES"]
+__all__ = ["run", "HP_START", "PASSES_TO_LAND", "PASSES_TO_MISS", "SIGN_PASSES",
+           "PASSES_PER_SECOND"]
+
+#: The paper (11.2) notes that the speed of this game depends on how fast the
+#: interpreter runs its loop, and that a replica must pace the loop to match a
+#: 1 MHz machine. The inner loop here is a few hundred 6502 cycles on the original,
+#: which is a few thousand passes a second.
+PASSES_PER_SECOND = 4000
 
 HP_START = 16
 PASSES_TO_LAND = 205
@@ -57,22 +66,26 @@ def run(c):
     direction = -1
     rocks = [None, None]
     tc = 0
+    period = 1.0 / PASSES_PER_SECOND
     while True:
         tc += 1
+        started = time.perf_counter()
         # line 1070: the fill test is "IF NOT FL(n) AND INT(100 * RND(1) + 1) <= RF",
         # and there is no short-circuit, so the draw happens either way
         for slot in (0, 1):
             if rocks[slot] is None:
-                if num.trunc(num.add(num.mul(num.parse("100"),
-                                            c.rng.rnd1(f"1070 rock {slot}")),
-                                        num.ONE)) <= ROCK_CHANCE:
-                    kind = num.trunc(num.add(
+                # RF is 15, from line 1060
+                if num.le(num.int_(num.add(
+                        num.mul(num.parse("100"),
+                                c.rng.rnd1(f"1070 rock {slot}")),
+                        num.ONE)), num.parse(str(ROCK_CHANCE))):
+                    kind = num.int_(num.add(
                         num.mul(num.parse("100"),
                                 c.rng.rnd1(f"300 rock type {slot}")), num.ONE))
                     if num.lt(kind, num.parse("14")):
                         rx = num.int_(num.mul(
                             c.rng.rnd1(f"310 rock x {slot}"), num.parse("10")))
-                        rocks[slot] = {"x": num.trunc(num.mul(rx, num.parse("10"))),
+                        rocks[slot] = {"x": num.mul(rx, num.parse("10")),
                                       "y": num.parse("175")}
                     else:
                         rocks[slot] = {"x": num.ZERO,
@@ -111,6 +124,8 @@ def run(c):
                 break
         if tc in SIGN_PASSES:
             c.ui.print(f"[direction sign at pass {tc}]")
+        # pace to a 1 MHz interpreter, so a player can see the river
+        time.sleep(max(0.0, period - (time.perf_counter() - started)))
     return "WIN"
 
 

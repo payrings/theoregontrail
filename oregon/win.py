@@ -26,7 +26,6 @@ lists that in section 13 and it is reproduced.
 
 from __future__ import annotations
 
-from . import num
 from .data import hiscore as HIS
 from .data import text as T
 

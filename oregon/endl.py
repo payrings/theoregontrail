@@ -54,15 +54,16 @@ def the_dalles(c):
                    + " to travel the Barlow road.  Are you willing to do this? ")
         if common.yes_no(c) == "Y" and num.gt(st.MY, toll):
             st.MY = num.sub(st.MY, toll)
-            # the toll road is segment 18, a hundred miles to the Willamette Valley
+            # the toll road is segment 18: a hundred miles to the Willamette Valley,
+            # travelled exactly as any other segment is
             from . import trail
-            trail.st.LM = 16
+            st.LM = 16
+            st.LL = 1
             trail.load_segment(c, 18)
-            trail.st.LL = 1
             trail.start_segment(c)
             trail.travel_screen(c)
             trail.daily_cycle(c)
-            trail.st.LM = 17
+            st.LM = 17
             return "WIN"
         c.ui.print()
         c.ui.print("You do not have enough cash.")

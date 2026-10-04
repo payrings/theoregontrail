@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from . import num
 from .data import illnesses as ILL
-from .data import text as T
 
 __all__ = ["fire"]
 
