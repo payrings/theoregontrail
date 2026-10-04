@@ -79,39 +79,90 @@ section 1.
 
 ## Running it
 
+Everything is already set up in this directory: the virtual environment exists and
+`rom/apple2e.rom` is in place. Just:
+
 ```fish
+cd /home/xfx/oregon
+source .venv/bin/activate.fish
 python -m oregon
 ```
 
-Useful options:
+Then answer with the number of the choice you want, and Return. A crossing takes a
+few seconds to a few minutes depending on how much you fiddle.
+
+### Check it first
 
 ```fish
-python -m oregon --list                       # show the backend and the ROM
-python -m oregon --seed 4242                  # fix the 16-bit seed
-python -m oregon --trace /tmp/trail.log       # one line per game day
-python -m oregon --inputs script.txt          # play from a list of answers
-python -m oregon --data ~/.local/share/oregon # where the two files are kept
-python -m oregon --num pure                   # the fast, non-exact backend
-python -m oregon --no-interrupt               # never stop the daily cycle
+python -m oregon --list
 ```
 
-`--seed` takes the 16-bit counter the keyboard routine keeps at `$78`/`$79`, which
-is the only reseeding in the game (`MENU` 1015). Any game can be replayed from a seed,
-so this is what a reference trace would be recorded against.
+prints which arithmetic backend is in use and which ROM image it found:
+
+```
+arithmetic backend : apple2e-rom
+Apple IIe ROM      : /home/xfx/oregon/rom/apple2e.rom (32768 bytes)
+```
+
+### Watch a whole game without playing it
+
+The quickest way to see it work. The demo plays itself, quietly, from the store to
+the Willamette Valley — about 170 days and 1,921 miles, a few seconds:
+
+```fish
+python -m oregon --demo
+python -m oregon --demo --verbose-demo      # and show the screens
+```
+
+Add `--trace` to get one line per game day, which is the format a reference trace
+would be compared against:
+
+```fish
+python -m oregon --demo --seed 4242 --trace /tmp/trail.log
+tail -3 /tmp/trail.log
+```
+
+```
+# AD AM AY  D  M    H      FS      H0 HR W TM PP AR        AS PF   I2 I3 I4  I5 I6 I7 I8   MY      H1               H2              EVENT SEED
+02 05 1848 82 20 0   0      0       0  0  2  2  0  2.12082  0  985 8  6  120 1 1 1 1000 1138   [0,0,0,0,0]     [0,0,0,0,0]     -     7e456c06b2
+18 10 1848 0  1921 139  47.4672 0  20 3  3  0  0.008488 0  0   5  7  120 0 0 0 0   1125.5 [0,0,0,-1,-1]   [0,30,0,0,0]    -     804e9054f4
+```
+
+### Options
+
+| Option | What it does |
+| --- | --- |
+| `--seed N` | fix the 16-bit seed, which the original takes from the keyboard counter at `$78`/`$79`. Any game can be replayed from a seed. |
+| `--demo` / `--verbose-demo` | play itself, quietly or with the screens shown |
+| `--trace FILE` | write one line per game day |
+| `--inputs FILE` | play from a list of answers, one per line — nothing is displayed |
+| `--data DIR` | where `HISCORE.SEQ` and `TOMB.SEQ` are kept (default `data/`) |
+| `--num rom\|pure` | the arithmetic backend; `rom` is the emulated Apple IIe and the default |
+| `--no-interrupt` | never break out of the daily cycle, so the party travels on regardless |
+| `--list` | show the backend and the ROM, then stop |
+
+### Playing it
+
+Press **Return** at any time during the journey to stop and open the action menu —
+that is the original's "press Return to size up the situation", and it works here
+because the terminal is put into cbreak mode so a single keypress is read without
+waiting for a newline. `--no-interrupt` turns it off, which is what you want when
+piping input.
+
+The prompts that take a *line* of text rather than a single keypress are the party
+names and the epitaph.
 
 ### Played from a script
 
-`--inputs` takes one answer per line, in the order the game asks for them. A bare
-line means "Return", which is how the original reads most prompts. Nothing is
-displayed. An answer list that runs out is an error rather than a repeat, so a
-transcription bug shows up instead of hiding:
+`--inputs` takes one answer per line. The order of the questions changes with the
+route — taking the first branch at South Pass skips Fort Bridger and so asks one
+question fewer — which is why matching answers by position is fragile. The demo
+mode exists instead of a hand-built script: it answers each prompt by what the
+game printed, and is the honest way to replay a game.
 
 ```fish
-printf '1\nZeke\n\nY\n4\n1\n4\n2\n1200\n3\n6\n4\n6\n5\n1\n1\n1\n\n' > game.txt
-python -m oregon --seed 4242 --inputs game.txt --trace /tmp/trail.log
+python -m oregon --inputs my-answers.txt
 ```
-
----
 
 ## Tests
 

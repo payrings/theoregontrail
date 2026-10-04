@@ -392,3 +392,35 @@ def test_the_hunt_never_draws_from_the_game(busy_runs):
     assert c.rng.log.count() == before, "a hunt draws nothing from the game"
     assert fac._b().get_seed() == seed_before, \
         "and does not advance the Applesoft seed"
+
+
+def test_the_command_line_starts_a_journey(tmp_path):
+    """`python -m oregon --demo` must reach Oregon, not just print a menu.
+
+    The entry point chains the programs in the original's order: MENU, then the
+    month and the store, then reading the hand-over back out of memory before
+    travelling. Leaving out the month prompt or ``load_state`` still *looks*
+    plausible but starts the journey from an uninitialised state, so this test
+    drives the real command line rather than the library.
+    """
+    import subprocess
+    import sys
+    root = str(pathlib.Path(__file__).resolve().parents[1])
+    trace = tmp_path / "trace.log"
+    proc = subprocess.run(
+        [sys.executable, "-m", "oregon", "--demo", "--seed", "4242",
+         "--data", str(tmp_path / "data"), "--trace", str(trace)],
+        cwd=root, capture_output=True, text=True, timeout=600)
+    assert proc.returncode == 0, proc.stdout[-2000:] + proc.stderr[-2000:]
+    assert trace.is_file(), "no trace was written"
+    lines = [l for l in trace.read_text().splitlines() if not l.startswith("#")]
+    assert len(lines) > 100, f"only {len(lines)} days traced"
+    # FIELDS: AD AM AY D M H FS H0 HR W TM PP AR AS PF I2 ...
+    first = lines[0].split()
+    assert (first[0], first[1]) == ("02", "05"), \
+        f"the first day should be the 2nd of May: {lines[0]}"
+    last = lines[-1].split()
+    assert last[3] == "0", "the last day has no miles left: " + lines[-1]
+    assert int(last[4]) == 1921, f"the route is 1921 miles: {lines[-1]}"
+    assert (tmp_path / "data" / "HISCORE.SEQ").is_file(), \
+        "the top ten should have been written"
