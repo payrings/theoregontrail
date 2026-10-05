@@ -7,7 +7,7 @@ Read in this order:
 
 | | |
 | --- | --- |
-| [`01-analysis.md`](01-analysis.md) | The paper: fourteen sections, every claim carrying the BASIC line number that supports it. |
+| [`01-paper.md`](01-paper.md) | The paper: fourteen sections, every claim carrying the BASIC line number that supports it. |
 | [`02-appendix-d-dialogue.md`](02-appendix-d-dialogue.md) | Appendix D — the 51 dialogue records, as a research extract. |
 | [`03-appendices-e-to-h.md`](03-appendices-e-to-h.md) | Appendices E–H — the data tables decoded from `VAR.BIN`, the `&` command reference, the order of every random-number draw, and the remaining gaps. |
 | [`04-review.md`](04-review.md) | An independent peer review, verified against the source and by executing the ROM. Its findings corrected two statements in the paper itself (§8.1 and §12.2). |
