@@ -3,8 +3,9 @@
 The module map and the ambiguities found while transcribing. The paper itself is
 in `paper/`; this is the working document behind the translation in `oregon/`.
 
-Authority order used throughout: **Appendix X (BASIC source)** first, then the
-paper, then Appendices D–H, then Appendix Z (machine code). Where the paper
+Authority order used throughout: **the release 1.4 BASIC source
+listings** first, then the paper, then Appendices D–H, then the machine-code
+listings. Where the paper
 disagrees with the code, the code wins and the difference is recorded in
 `GAPS.md`.
 
@@ -13,7 +14,7 @@ disagrees with the code, the code wins and the difference is recorded in
 ## 1. What the sources give us, and what they do not
 
 The BASIC for every rule, formula, table and message is available in
-Appendix X. That covers: set-up, the store, the daily cycle, health, weather,
+the BASIC source listings. That covers: set-up, the store, the daily cycle, health, weather,
 the fifteen events, rivers, forts, trading, talking, broken parts, fires /
 thieves / abandoned wagons, tombstones, The Dalles, scoring and the top ten,
 plus the whole of the BASIC part of the rafting game.
@@ -208,7 +209,7 @@ listing, so the two can be diffed by eye.
 | A2 | §9.3 "Ford, rough: 16% chance of tipping, then each good has a 10% to 40% chance" | line 50070 draws `V = .1 + RND(1)*.3` **once**, then all six goods share it | one shared V per tipping; draw order = 1 (tip?) + 1 (V) + 6 goods draws |
 | A3 | §9.4 / Table 19 "price is `V = V + .25*Q*V`" | identical, but `K = 1 + 19*(L = 3)` means ammunition is bought in **boxes of 20**; `I(L+1) += Z*K` | reproduce the box multiplier |
 | A4 | §10.1 toll `$5 + 50c an ox` | line 50020 re-reads the *rounded* toll into `V`; exact-tie refuses | reproduced |
-| A5 | §11.1 "at most two animals on screen; 2500 passes" | Appendix Z confirms a 2-animal outer loop at `E0C4`–`E0EF`; the 2500 figure is not derivable from the bytes | keep 2500 as a documented constant of unknown origin |
+| A5 | §11.1 "at most two animals on screen; 2500 passes" | The machine-code listing confirms a 2-animal outer loop at `E0C4`–`E0EF`; the 2500 figure is not derivable from the bytes | keep 2500 as a documented constant of unknown origin |
 | A6 | §7 "an injury subtracts 0.5; a second injury … is reported as a death" | line 10820 does exactly that | ✓ agree |
 | A7 | §2.3 Table 4: address 904/905 = "bullets, low/high" at end of journey, "yokes of oxen" at start | correct; `END.LIB` 50050 POKEs `909 = I(2)+.5` (oxen) and 904/905 = bullets, then 50070 POKEs 910–912 = spares | reproduce both layouts exactly, including that `FLOAT` reads `I(2)` from 909 and `I(4)` from 904/905 |
 | A8 | §5.5 "TOMB.LIB … reduces NP by one and swaps the dead member with the last living one" | also leaves `H2(NP)` stale and marks the corpse `H1 = -1` | reproduce |
@@ -225,9 +226,9 @@ listing, so the two can be diffed by eye.
 | B6 | Appendix G.5: "The loop over oxen at rivers runs `FOR L = 1 TO X` with X the ox count, which may end in .5, so 5.5 oxen give 5 draws." | implement the loop as `for l in range(1, floor(x)+1)` semantics of Applesoft FOR with a fractional limit. |
 | B7 | Appendix G.5 ferry: "1 (days to wait) when the offer is made". | the draw is at 50101, i.e. **before** the money check and before the player answers — reproduced. |
 | B8 | Appendix G.4 event 8: "1 (part breaks?) … for an injury, 1 (victim) then 1 (arm or leg)" | confirmed by 10800/10810/10830; the 10810 draw happens whenever the part does not break. |
-| B9 | `& INP n,"-AZ-az '.-",1,Z$` at MENU 500 — Appendix F says the argument order is *length*, *allowed*, *flag*, *var*, so `ZN`=9 is the **length** and `ZZ`=1 the flag. Appendix X's variable names suggest the opposite. | trust Appendix F: `ZN` is the max length (9), `ZZ` is the flag. Cross-checked against `& INP,4,"-09",1,Z$` for a 4-digit food prompt. |
+| B9 | `& INP n,"-AZ-az '.-",1,Z$` at MENU 500 — Appendix F says the argument order is *length*, *allowed*, *flag*, *var*, so `ZN`=9 is the **length** and `ZZ`=1 the flag. The BASIC's variable names suggest the opposite. | trust Appendix F: `ZN` is the max length (9), `ZZ` is the flag. Cross-checked against `& INP,4,"-09",1,Z$` for a 4-digit food prompt. |
 | B10 | Episode-2 dialog: `W$(0 to 9)` from VAR.BIN vs `W$` used in `PACE.LIB`/`RATION.LIB`/`WIN`. | one `W$` array; the `P$`/`R$` name lists are separate and unambiguous. |
-| B11 | `HUNT` argument 4 is the constant `1` "if non-zero, halves the chance that an animal appears (from 4 in 1,000 to 2 in 1,000 per attempt)" (paper §11.1, Appendix Z) | keep 1, and keep the spawn chance as a documented constant with a comment citing that both figures come from a *reading* of the disassembly, not from execution. |
+| B11 | `HUNT` argument 4 is the constant `1` "if non-zero, halves the chance that an animal appears (from 4 in 1,000 to 2 in 1,000 per attempt)" (paper §11.1, and the machine-code listing) | keep 1, and keep the spawn chance as a documented constant with a comment citing that both figures come from a *reading* of the disassembly, not from execution. |
 | B12 | `RE(4) = (D < DL)` and `DL` is only recomputed at 3060 and 10410. If a grave is passed while the event loop is skipped (a stopped day), `D` does not change, so nothing is missed. | no action needed; verified. |
 | B13 | `MENU 6045` writes the five names to 1920 with a zero terminator each; `OREGON TRAIL 29010` reads them back by scanning for the zero byte. If a name is empty the reader still terminates correctly (next byte is 0). | reproduce via `mem.py`, so empty names round-trip. |
 | B14 | `WIN 601` prints `"18" + PEEK(901)`; after 1899 the century is wrong (paper Table 29). | reproduce. |

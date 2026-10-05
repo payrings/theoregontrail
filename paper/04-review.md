@@ -1,7 +1,7 @@
 # Peer review — *The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages*
 
 Reviewer: automated verification pass. Every finding below was checked against
-`Appendix X (private) Source listings.md` (the release 1.4 BASIC) and, for section 12,
+the release 1.4 BASIC source listings and, for section 12,
 against `rom/apple2e.rom` disassembled **and executed** under py65.
 
 **Recommendation: accept subject to major revision.** One serious error (§8.1), one
@@ -96,7 +96,7 @@ The *conclusion* drawn from it is correct, and I confirmed it against the ROM:
 ### 1.5 §2.1 — "fourteen small BASIC libraries", then lists fifteen
 
 `COMMON, RIVER, CROSS, BUY, TRADE, TALK, HUNT, MAP, PACE, RATION, PART, LF, TOMB, END,
-FLIP` = 15, matching the 15 distinct `## …LIB` sections in Appendix X.
+FLIP` = 15, matching the 15 distinct `## …LIB` sections in the BASIC listings.
 
 Related, minor: §2.1 says libraries are removed with `& DBL,50000,60000`. True for
 thirteen of them; `PART.LIB` is appended and removed with `& DBL,42000,42900` (10800).

@@ -4,11 +4,9 @@ rom/
 # The game's save files.
 data/
 
-# The three appendices that are not redistributed: the release 1.4 source
-# listings (X), the on-screen text (Y) and the machine-code listings (Z).
-docs/Appendix X*
-docs/Appendix Y*
-docs/Appendix Z*
+# The material that is not redistributed: the release 1.4 BASIC source listings,
+# the on-screen text and the machine-code listings. MECC's and Apple's, kept out.
+docs/
 
 .venv/
 __pycache__/

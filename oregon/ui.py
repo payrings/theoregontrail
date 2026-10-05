@@ -68,8 +68,8 @@ CTRL = {"D$": "\x04", "CC$": "\x03", "CL$": "\x0c", "CM$": "\x0d",
 # The same reading fixes every menu. ``"-14"`` -- the main menu and the profession
 # screen -- is 1 to 4, so all four choices are reachable; ``"-16"`` is the six
 # month options; ``"-18"`` is the fort shop's eight. That is why they are written
-# the way they are, and it is why Appendix X's ``CHR$(1) + "-14"`` needs no
-# correction at all.
+# the way they are, and it is why ``CHR$(1) + "-14"`` in the BASIC
+# needs no correction at all.
 ALLOWED = {
     # answers that are words rather than menu choices
     "YN": "YESNOyesno",                 # COMMON.LIB 30120
