@@ -14,6 +14,7 @@ already.
 """
 import copy
 import pathlib
+import re
 import tempfile
 
 import pytest
@@ -27,6 +28,87 @@ from oregon.trace import Tracer
 from oregon.ui import ALLOWED, ScriptedUI
 
 
+class Option:
+    """Answer a numbered menu by its label rather than by its position.
+
+    The option list is printed above the prompt, so the number can be read out of
+    the transcript. That matters because the number of options is not fixed: the
+    action menu at a fort offers "Talk to people", "Buy supplies" *and* "Hunt for
+    food", while at Independence it offers "Buy supplies" and "Hunt for food" but
+    no talk, so "Buy supplies" is 9 at a fort and 8 at Independence. A script that
+    hard-codes the number silently answers the wrong question.
+    """
+
+    def __init__(self, label=None, then=(), limit=None):
+        #: ``label`` of None means "cycle through whichever options the menu
+        #: actually offered", which is also what proves the allowed sets are right
+        #: -- an option the prompt rejects would loop. A label is a string and
+        #: nothing else, so this needs no sentinel: the module can be imported
+        #: twice under different names and the two copies never have to agree.
+        if label is not None and not isinstance(label, str):
+            raise TypeError(f"an option label is a string, not {label!r}")
+        self.label = label
+        self.then = [then] if isinstance(then, str) else list(then)
+        #: how many times this rule may fire before it stops matching. Without a
+        #: limit a rule that picks a module -- the hunt, say -- is taken again on
+        #: every redraw of the menu, because the option is still on the screen.
+        self.limit = limit
+        self.at = 0
+        self.used = 0
+
+    @staticmethod
+    def _options(recent):
+        """Every numbered option printed since the last question, as
+        [(number, label), ...]."""
+        out = []
+        for line in recent.split("\n"):
+            m = re.match(r"^\s*(\d+)\.\s+(\S.*?)\s*$", line)
+            if m:
+                out.append((m.group(1), m.group(2)))
+        return out
+
+    def matches(self, recent, needle=""):
+        """True when this option is one of the menu options just printed.
+
+        The needle has to be on the screen as well. Two things need that. The fort
+        shop's screen also contains the words "Buy supplies", and answering it with
+        the action menu's number leaves the shop at once, which loops. And the
+        rule that cycles through every option is written against "Continue on
+        trail", which is the action menu's own wording: without it the cycler also
+        matched the pace menu, where the fourth option explains the paces and so
+        returns to the same menu.
+        """
+        if self.limit is not None and self.used >= self.limit:
+            return False
+        if needle and needle not in recent:
+            return False
+        options = self._options(recent)
+        if not options:
+            return False
+        if self.label is None:
+            return True
+        wanted = [self.label] + self.then
+        return any(label.lower().startswith(pick.lower())
+                   for _n, label in options for pick in wanted)
+
+    def resolve(self, recent):
+        self.used += 1
+        options = self._options(recent)
+        if self.label is None:
+            if not options:
+                return "1"
+            number = options[self.at % len(options)][0]
+            self.at = (self.at + 1) % len(options)
+            return number
+        wanted = [self.label] + self.then
+        pick = wanted[min(self.at, len(wanted) - 1)]
+        self.at = min(self.at + 1, len(wanted) - 1)
+        for number, label in reversed(options):
+            if label.lower().startswith(pick.lower()):
+                return number
+        raise AssertionError(f"no menu option starts with {pick!r} in {options!r}")
+
+
 class FlowUI(ScriptedUI):
     """Answers by what the game printed, with an explicit log for the tests.
 
@@ -37,6 +119,12 @@ class FlowUI(ScriptedUI):
     def __init__(self, rules, value="0.5", draws=400000, max_prompts=3000, **kw):
         super().__init__(answers=[], max_prompts=max_prompts, **kw)
         self.rules = rules
+        # the rules are module-level constants shared by every run, so the menus
+        # they walk through start again at the first option for each game
+        for _needle, answer in rules:
+            if isinstance(answer, Option):
+                answer.at = 0
+                answer.used = 0
         self.value = value
         self.draws = draws
         self.log = []
@@ -55,6 +143,11 @@ class FlowUI(ScriptedUI):
     def _ask(self):
         recent = "\n".join(self.out[self._since:])
         for needle, answer in self.rules:
+            if isinstance(answer, Option):
+                # a menu option is matched as a numbered option, not as text
+                if answer.matches(recent, needle):
+                    return answer.resolve(recent)
+                continue
             if needle in recent:
                 if isinstance(answer, (list, tuple)):
                     # an exhausted list falls through to the next rule, which is
@@ -251,12 +344,14 @@ BUSY_JOURNEY = [
     # (9), so a fort shop needs 9, not 8. The shop's own menu is 1 to 7 for the
     # goods and 8 to leave; its quantity prompts fall through to the catch-all, so
     # one unit of each is bought.
-    ("Buy supplies", ["9", "1", "2", "3", "4", "5", "6", "7", "8"]),
-    ("Talk to people", ["8"]),                 # only on a landmark menu
-    ("Hunt for food", ["8"]),                  # only on the trail menu
+    # "Buy supplies" is the eighth option at Independence and the ninth at a fort,
+    # so the rules below name the option and let the driver find its number.
+    ("Buy supplies", Option("Buy supplies", limit=2)),
+    ("Talk to people", Option("Talk to people", limit=1)),
+    ("Hunt for food", Option("Hunt for food", limit=2)),
     # The action menu cycles through every option, which is also what proves the
     # allowed sets are right: an option the prompt rejects would loop here.
-    ("Continue on trail", ["1", "2", "3", "4", "5", "6", "7", "8", "9", "1"]),
+    ("Continue on trail", Option()),
     ("Broken wagon", "Y"),
     ("You are unable to continue", "1"),
     ("River depth:", ["1", "1", "3", "3"]),
@@ -268,7 +363,10 @@ BUSY_JOURNEY = [
     # the fort shop's own menu, reached once "Buy supplies" has been chosen: 1 to
     # 7 are the goods and 8 leaves. The quantity prompts fall through to the
     # catch-all, so one of each is bought.
-    ("Which number?", ["1", "2", "3", "4", "5", "6", "7", "8"]),
+    # The shop's own menu: 1 to 7 are the goods and 8 leaves. The list repeats,
+    # because an exhausted list falls through to the catch-all, and answering the
+    # catch-all at "Which number?" buys another ox for ever.
+    ("Which number?", ["1", "2", "3", "4", "5", "6", "7", "8"] * 30),
     ("no one wants to", "1"),
     # a last resort that always matches, so an unrecognised prompt gets option 1
     # (continue / decline) instead of spinning

@@ -45,17 +45,25 @@ def action_menu(c):
             options.append(T.ACTIONS[i])
         z = 0
         on_trail = bool(st.LL)
+        # 4040/4050. Everything after the THEN belongs to the IF (paper 2.5, rule
+        # a), so "Talk to people" and, at a fort, "Buy supplies" are printed only
+        # when NOT LL -- at a landmark. On the trail LL is set, so neither is
+        # printed and line 4050 adds "Hunt for food" instead, with Z = 2.
         if not on_trail:
             options.append(T.ACTIONS[7])                # Talk to people
-        if L.LM_TYPE[st.LM] == 1:
-            options.append(T.ACTIONS[8])                # Buy supplies, at a fort
-        if on_trail:
+            if L.LM_TYPE[st.LM] == 1:
+                options.append(T.ACTIONS[8])            # Buy supplies, at a fort
+        else:
             options.append(T.ACTIONS[9])                # Hunt for food
+            z = 2
         for i, label in enumerate(options, 1):
             c.ui.print(f"{i}. {label}")
         c.ui.print()
         c.ui.print("What is your choice? ")
-        a = c.ui.key("", 2, default="")
+        # 4060: Z$ = "-1" + STR$(Z), and Z is how many options were printed, so the
+        # allowed set is built at run time -- "19" for nine options, "18" for eight.
+        # It is what stops a ninth answer at the trail's eight options.
+        a = c.ui.key("-" + "1" + str(len(options)), 2, default="")
         x = int(a) if a and a.isdigit() else 0
         if not st.B and x == 1:
             st.B = 2 if num.eq(st.I[2], num.ZERO) else 0
@@ -71,11 +79,18 @@ def action_menu(c):
                        + " to be able to continue.")
             common.wait_key(c)
             continue
-        # line 4090: Z = Z * (X > 7) + X, then ON Z - 1
-        z = (2 if on_trail else 0) + x if x > 7 else x
-        handlers = {2: show_map, 3: do_pace, 4: do_rations, 5: do_rest,
-                    6: do_trade, 7: do_talk, 8: do_buy, 9: do_hunt}
-        h = handlers.get(z - 1)
+        # line 4090: Z = Z * (X > 7) + X, then ON Z - 1 GOSUB 4100, 4200, 4300,
+        # 4400, 4500, 4900, 4700, 4800, 4600. Z is the choice, plus the 2 from line
+        # 4050 when the choice is above seven and the party is on the trail. The
+        # nine targets are indexed from one, so the eighth choice is 4700 (talk) at
+        # a landmark and, on the trail, 4600 (the hunt) once the 2 is added.
+        z = z + x if x > 7 else x
+        # the nine targets are indexed from one, so the keys here are Z, not the
+        # choice: choice 2 is Z = 2 and 4100, and the trail's eighth choice is
+        # Z = 10 and 4600
+        handlers = {2: show_supplies, 3: show_map, 4: do_pace, 5: do_rations,
+                    6: do_rest, 7: do_trade, 8: do_talk, 9: do_buy, 10: do_hunt}
+        h = handlers.get(z)
         if h is not None:
             h(c)
         if st.SD > 0:

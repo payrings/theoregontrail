@@ -52,7 +52,8 @@ def the_dalles(c):
         c.ui.clear()
         c.ui.print("You must pay $" + common.money(c, toll)
                    + " to travel the Barlow road.  Are you willing to do this? ")
-        if common.yes_no(c) == "Y" and num.gt(st.MY, toll):
+        answer = common.yes_no(c)
+        if answer == "Y" and num.gt(st.MY, toll):
             st.MY = num.sub(st.MY, toll)
             # the toll road is segment 18: a hundred miles to the Willamette Valley,
             # travelled exactly as any other segment is
@@ -68,9 +69,14 @@ def the_dalles(c):
             # END.LIB 50050, exactly as the river route is
             write_handover(c)
             return "WIN"
-        c.ui.print()
-        c.ui.print("You do not have enough cash.")
-        common.wait_key(c)
+        # 50030 tests Z$ = "Y" AND MY < V, so the message appears only when the
+        # player wanted the road and cannot afford it. A party holding exactly the
+        # toll matches neither 50020 nor 50030 and is returned to the choice in
+        # silence (paper 10.1).
+        if answer == "Y" and num.lt(st.MY, toll):
+            c.ui.print()
+            c.ui.print("You do not have enough cash.")
+            common.wait_key(c)
 
 
 def arrive_willamette(c):
