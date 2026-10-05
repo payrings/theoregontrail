@@ -631,3 +631,51 @@ and therefore the original always did: each Return belongs to exactly one prompt
 `tests/pty_check.py` drives the real game through a pty and checks that each
 answer reaches the screen it should, and `tests/test_terminal_input.py` runs it
 under pytest. A pipe would not have found either bug.
+
+
+---
+
+## 15. `& INP`'s allowed set is characters *and ranges*
+
+The single fact behind several bugs, and the one worth remembering from this
+project.
+
+`& INP`'s third argument is not a list of permitted characters. It is a list of
+characters **and inclusive ranges**, where `-` pairs the two characters either side
+of it. `ui.allowed_chars` reads it that way:
+
+```python
+if spec[i] == "-" and i + 2 < len(spec):
+    out.update(chr(c) for c in range(ord(spec[i+1]), ord(spec[i+2]) + 1))
+    i += 3
+```
+
+Every set in the game then falls out, and the sets are exactly as the listings
+print them -- nothing needs correcting:
+
+| the listing | what it means |
+| --- | --- |
+| `"-AZ-az '.-"` (`MENU` 500) | every letter, a space, an apostrophe, a period -- and no digits, since a name takes none |
+| `"-14"` (`MENU` 1015`, `MENU` 4025`) | 1 to 4: all four choices of the main menu and of the profession screen |
+| `"-15"` (`MANAGEMENT` 1015) | 1 to 5 |
+| `"-16"` (`BUY SUPPLIES` 6020) | 1 to 6 |
+| `"-18"` (`BUY.LIB` 50010) | 1 to 8: the seven goods and leaving |
+| `"-13"` (`OREGON TRAIL` 2120, `RATION.LIB` 50040) | 1 to 3 |
+| `"-09"` (the store's quantities) | 0 to 9 |
+| `"-19"` (`BUY SUPPLIES` 405) | 1 to 9 yoke |
+| `"YESNOyesno"` | ten literal characters |
+
+Two things follow that are worth writing down.
+
+**Appendix X's `CHR$(1) + "-14"` needs no correction.** Read as a range it permits
+1, 2, 3 and 4, so all four menu choices are reachable and the teacher menu is
+Control-A. Read as a literal list it permits only 1 and 4, and the game could not
+be played. That is why it looked like a slip in the listing when it is not one.
+
+**And `RIVER.LIB` builds its set at run time**: line 50015 is
+`Z$ = "-1" + STR$(Z)`, so a five-choice menu asks for `"-15"` -- a range, again, and
+all five choices work.
+
+The symptom this produced was, in the player's words, that the name prompt
+"doesn't recognise most letters but 'a'": with the set read literally only `A`, `Z`,
+`a` and `z` were permitted, `a` being the only lowercase letter anyone tries first.
