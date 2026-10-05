@@ -225,7 +225,8 @@ game unplayable or misleading.
 
 | What | Why it hid |
 | --- | --- |
-| **Every menu's allowed-character set was written as `-` plus the first and last digit** -- `"-14"`, `"-16"`, `"-15"`, `"-18"`, `"-13"`. `& INP` ignores a character outside its set and waits for another, so only choice 1 and the last choice were ever selectable. On the profession screen **2 (carpenter) and 3 (farmer) could not be chosen at all**, and the main menu could not reach "learn about the trail" or the top ten. | the scripted tests always answered "1" or a last choice, which happened to be allowed |
+| **Every allowed-character set was read as a literal list instead of as characters and ranges.** `"-AZ-az '.-"` -- the set `MENU` 500 passes for a name -- is A to Z, a to z, a space, an apostrophe and a period. Read literally it is the four letters `A`, `Z`, `a`, `z`, so **the name prompt accepted almost nothing**: only `a` (and the two other letters) went in, and every other keystroke was ignored. The same mistake hid every menu: `"-14"` is 1 to 4, so the profession screen could not offer a carpenter or a farmer and the main menu could not reach "learn about the trail" or the top ten. | the scripted screen did not filter on the allowed set at all, so the scripted tests could not see it; and the scripted tests answered "1" anyway, which happened to be allowed |
+| **ScriptedUI did not apply the allowed-character filter**, so no scripted test could ever have caught a wrong set. | it is a test double, and a convenient one ignores the very rule that was broken |
 | **`tty.setcbreak` sets the terminal with `TCSAFLUSH`**, which discards pending input. Entering cbreak lazily, on the first read of a session, threw away any key pressed while the game was drawing -- intermittent, because it depended on which side of that call the keystroke fell. | only a real terminal; a pipe has no line discipline to flush |
 | **A prompt that read one character raced its own Return.** It tried to *drain* the Return the player pressed, and usually lost the race, so the **next** prompt got a bare Return, rejected it, and sat there: every answer landed one prompt late. | same |
 | The command line never asked for the departure month or read the hand-over back out of memory, so a journey began from an uninitialised state. | only the library path was tested |
@@ -233,8 +234,14 @@ game unplayable or misleading.
 | The profession screen did not loop back on an invalid answer, though line 4025 ends with `GOTO 4005` for every answer. | only reachable with an invalid answer |
 | The article in *"You must trade for ..."* was the wrong way round: `T$(0)` is `"a "` and `T$(1)` is `"an "`, and `T$(B = 2)` picks between them, so the original says **"an ox"** and **"a wheel"**. | cosmetic |
 
-The allowed-set bug is now guarded by
-`tests/test_ui.py::test_every_menu_prompt_allows_every_choice_it_offers`, which
-compares every prompt's set against the numbers its screen actually prints, and by
-`tests/pty_check.py`, which types at the real game through a pty and chooses
-something other than 1 to prove it.
+The allowed-set reading is now `ui.allowed_chars`, and it applies to **both** user
+interfaces, so a scripted test sees exactly what a player sees. It is guarded by:
+
+* `tests/test_ui.py::test_an_allowed_set_is_characters_and_ranges` -- the reading
+  itself: every letter in a name, and the right digits for every menu;
+* `tests/test_ui.py::test_every_menu_prompt_allows_every_choice_it_offers` -- every
+  prompt's set against the numbers its screen actually prints;
+* `tests/test_ui.py::test_a_name_prompt_accepts_any_letters` -- the reported symptom,
+  including that a name takes no digits;
+* `tests/pty_check.py`, which types at the real game through a pty, types
+  `Ebenezer` as the leader and chooses a **carpenter** rather than a banker.

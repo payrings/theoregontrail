@@ -12,7 +12,9 @@ from oregon import num
 from oregon.context import Context
 from oregon.rng import ScriptedRnd
 from oregon.state import State
-from oregon.ui import ALLOWED, ScriptedUI
+from oregon.ui import ALLOWED, ScriptedUI, allowed_chars
+
+DIGITS = set("0123456789")
 
 
 def offered_choices(out):
@@ -60,22 +62,41 @@ def test_every_menu_prompt_allows_every_choice_it_offers():
     problems = []
     for label, lines, key in screens:
         choices = offered_choices(lines)
-        allowed = set(ALLOWED[key])
+        allowed = allowed_chars(ALLOWED[key])
         for choice in choices:
             if choice not in allowed:
                 problems.append(f"{label}: choice {choice} is not in {key}")
     assert not problems, problems
 
 
-def test_the_yes_no_set_and_the_name_sets():
-    for ch in "yYnN":
-        assert ch in ALLOWED["YN"]
-    for ch in "azAZ'-.":
-        assert ch in ALLOWED["NAMES"]
-    for ch in "azAZ .'-":
-        assert ch in ALLOWED["TOPTEN"]
-    for ch in "09AZaz ,.'-":
-        assert ch in ALLOWED["EPITAPH"]
+def test_an_allowed_set_is_characters_and_ranges():
+    """``-AZ`` means A to Z. Reading it as a literal list is the whole bug.
+
+    ``MENU`` 500 passes ``"-AZ-az '.-"`` for a name. Taken literally that is the
+    four letters A, Z, a and z, so a name prompt accepted almost nothing -- which is
+    exactly what was reported. As ranges it is every letter, plus a space, an
+    apostrophe and a period.
+    """
+    names = allowed_chars(ALLOWED["NAMES"])
+    assert all(ch in names for ch in
+               "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    assert " " in names and "'" in names and "." in names
+    assert "5" not in names, "a name takes no digits, as in the original"
+    # "-14" is a range, so a four-choice menu allows all four
+    assert set(allowed_chars(ALLOWED["PROFESSION"]) & DIGITS) == set("1234")
+    assert set(allowed_chars(ALLOWED["MANAGE"]) & DIGITS) == set("12345")
+    assert set(allowed_chars(ALLOWED["MONTH"]) & DIGITS) == set("123456")
+    assert set(allowed_chars(ALLOWED["FORT"]) & DIGITS) == set("12345678")
+    assert set(allowed_chars(ALLOWED["RIVER"]) & DIGITS) == set("12345")
+    assert set(allowed_chars(ALLOWED["DIGITS09"]) & DIGITS) == set("0123456789")
+    assert set(allowed_chars(ALLOWED["DIGITS19"]) & DIGITS) == set("123456789")
+    assert set(allowed_chars("YESNOyesno")) == set("YESNOyesno")
+
+
+def test_an_inverted_range_is_tolerated():
+    """A range written backwards must not raise or silently allow nothing."""
+    assert allowed_chars("Z-A") == allowed_chars("A-Z")
+    assert "-" in allowed_chars("Z-A")
 
 
 MONEY = {"1": 1600, "2": 800, "3": 400}
@@ -114,21 +135,22 @@ def test_the_terminal_reads_a_whole_line_per_prompt():
     # the scripted side reads positionally, so this checks the interface contract:
     # one call, one answer, no leftovers
     ui.answers = ["2"]
-    assert ui.key("1", 1) == "2"
+    assert ui.key(ALLOWED["PROFESSION"], 1) == "2", \
+        "an answer must survive the prompt's own allowed set"
     assert ui.i == 1, "the prompt consumed more than its own answer"
 
 
 def test_the_river_menu_allows_five_choices():
     """RIVER.LIB offers 1 to 5: ford, float, ferry or guide, wait, more."""
     from oregon import river
-    choices = [1, 2, 3, 4, 5]
-    assert all(str(c) in ALLOWED["RIVER"] for c in choices)
+    digits = allowed_chars(ALLOWED["RIVER"]) & DIGITS
+    assert digits == set("12345"), sorted(digits)
     assert len(river.TXT) == 6, "TXT(0) to TXT(5) is the river's option text"
 
 
 def test_the_fort_shop_allows_every_good_plus_leaving():
-    for c in range(1, 9):
-        assert str(c) in ALLOWED["FORT"], c
+    digits = allowed_chars(ALLOWED["FORT"]) & DIGITS
+    assert digits == set("12345678"), sorted(digits)
 
 
 def test_an_unmatched_prompt_reports_rather_than_looping():
@@ -136,3 +158,28 @@ def test_an_unmatched_prompt_reports_rather_than_looping():
     for _ in range(10):
         with pytest.raises(AssertionError):
             ui.key("1", 1)
+
+
+def test_a_name_prompt_accepts_any_letters():
+    """The bug this was written for: only ``a`` was recognised.
+
+    ``"-AZ-az '.-"`` is a range list, so it must take every letter in either case,
+    plus a space, an apostrophe and a period -- and nothing else, since a name takes
+    no digits.
+    """
+    ui = ScriptedUI(["Ebenezer"], allow_repeat=True)
+    assert ui.key(ALLOWED["NAMES"], 9) == "Ebenezer"
+    ui = ScriptedUI(["o'brien"], allow_repeat=True)
+    assert ui.key(ALLOWED["NAMES"], 9) == "o'brien"
+    ui = ScriptedUI(["Mary-Jane"], allow_repeat=True)
+    assert ui.key(ALLOWED["NAMES"], 9) == "Mary-Jane"
+    # and a digit is not a name character, so it is ignored and the prompt waits
+    ui = ScriptedUI(["4Zeke\n"], allow_repeat=True)
+    assert ui.key(ALLOWED["NAMES"], 9) == "Zeke"
+
+
+def test_the_top_ten_and_epitaph_sets():
+    ui = ScriptedUI(["Ebenezer"], allow_repeat=True)
+    assert ui.key(ALLOWED["TOPTEN"], 15) == "Ebenezer"
+    ui = ScriptedUI(["Over the mountains, 1849"], allow_repeat=True)
+    assert ui.key(ALLOWED["EPITAPH"], 29) == "Over the mountains, 1849"

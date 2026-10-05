@@ -99,7 +99,7 @@ class Session:
 STEPS = [
     ("What is your choice?", "1", "Many kinds of people made the trip"),
     ("What is your choice?", "2", "first name of the wagon leader"),
-    ("What is the first name of the wagon leader", "Zeke", "four other members"),
+    ("What is the first name of the wagon leader", "Ebenezer", "four other members"),
     ("(Enter names or press Return)", "", "Are these names correct"),
     ("Are these names correct", "Y", "Going back to 18"),
 ]

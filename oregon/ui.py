@@ -38,7 +38,8 @@ import copy
 import os
 import sys
 
-__all__ = ["UI", "TerminalUI", "ScriptedUI", "RETURN"]
+__all__ = ["UI", "TerminalUI", "ScriptedUI", "AutoUI", "RETURN",
+           "ALLOWED", "allowed_chars"]
 
 RETURN = "\r"
 END = "\n"
@@ -55,42 +56,78 @@ CTRL = {"D$": "\x04", "CC$": "\x03", "CL$": "\x0c", "CM$": "\x0d",
 # tries it, so tests/test_ui.py checks every set against the choices its screen
 # prints. PACE is the one genuinely non-consecutive set: 1 to 3 change the pace
 # and 4 explains them, so "-14" is right.
+# The allowed-character sets the BASIC passes to ``& INP``, exactly as the
+# listings print them.
+#
+# A set is **characters and inclusive ranges**: ``-`` pairs the characters either
+# side of it. So ``"-AZ-az '.-"``, which MENU 500 passes for a name, is A to Z, a to
+# z, a space, an apostrophe and a period -- every letter, not the four letters it
+# looks like if you read it as a literal list. Reading it literally is what made
+# the name prompt accept ``a`` and nothing else worth typing.
+#
+# The same reading fixes every menu. ``"-14"`` -- the main menu and the profession
+# screen -- is 1 to 4, so all four choices are reachable; ``"-16"`` is the six
+# month options; ``"-18"`` is the fort shop's eight. That is why they are written
+# the way they are, and it is why Appendix X's ``CHR$(1) + "-14"`` needs no
+# correction at all.
 ALLOWED = {
-    # --- answers that are words, not menu choices -------------------------------
+    # answers that are words rather than menu choices
     "YN": "YESNOyesno",                 # COMMON.LIB 30120
     "NAMES": "-AZ-az '.-",               # MENU 500: a name, at most nine of them
     "TOPTEN": "-AZ-az .'-",              # WIN 530: the name that goes on the list
     "EPITAPH": "-09-AZ-az ,.'-",        # TOMB.LIB 50020: up to twenty-nine
-    # --- numbers ---------------------------------------------------------------
+    # numbers
     "DIGITS09": "-09",
     "DIGITS19": "-19",
-    # --- menus: every choice the screen prints must be in the set --------------
-    # A set of "-" plus the first and last digit -- "-14" and the like -- is only
-    # right when the choices are 1 and n. Written that way it silently makes every
-    # choice in between unreachable: `& INP` ignores a character outside the set
-    # and waits for another, so the screen simply sits there. So each menu spells
-    # out all of its choices, and tests/test_ui.py checks every one of these sets
-    # against the numbers the corresponding screen prints.
-    "CHOICE": "\x011234",               # main menu: Control-A, then 1 to 4
-    "PROFESSION": "-1234",               # MENU 4025: the three trades and the
-                                         # explanation
-    "MANAGE": "-12345",                 # MANAGEMENT 1015: five options
-    "MONTH": "-123456",                 # BUY SUPPLIES 6020: March to July plus
-                                         # ask for advice
-    "PACE": "-1234",                     # PACE.LIB: 1 to 3 set a pace, 4 explains
-    "RATION": "-123",                    # RATION.LIB: three settings
-    "SEGMENT": "-123",                   # OREGON TRAIL 2120: two ways on plus the map
-    "DALLES": "-12",                     # END.LIB 50010: the river or the toll road
-    "RIVER": "-12345",                   # RIVER.LIB: five choices
-    "FORT": "-12345678",                 # BUY.LIB: the seven goods and leave
+    # menus
+    "CHOICE": "\x011234",               # main menu 1015: Control-A, then 1 to 4
+    "PROFESSION": "-1234",               # MENU 4025
+    "MANAGE": "-15",                     # MANAGEMENT 1015, five options
+    "MONTH": "-16",                      # BUY SUPPLIES 6020, six options
+    "PACE": "-14",                       # PACE.LIB: 1 to 3 set a pace, 4 explains
+    "RATION": "-13",                     # RATION.LIB: three settings
+    "SEGMENT": "-13",                    # OREGON TRAIL 2120: two ways on, plus map
+    "DALLES": "-12",                     # END.LIB 50010
+    # line 50015 builds this one at run time: Z$ = "-1" + STR$(Z), so a
+    # five-choice menu asks for "-15"
+    "RIVER": "-15",                      # RIVER.LIB: five choices
+    "FORT": "-18",                       # BUY.LIB: the seven goods, then leave
     "REST": "-09",                       # one digit: how many days to rest
-    # --- the store, which asks for quantities -----------------------------------
+    # the store asks quantities
     "STORE_YOKE": "-19",                 # 1 to 9 yoke
     "STORE_FOOD": "-09",                 # up to four digits
     "STORE_CLOTHES": "-09",              # two digits
     "STORE_AMMO": "-09",                 # two digits
     "STORE_PART": "-09",                 # one digit, 0 to 3
 }
+
+
+def allowed_chars(spec: str) -> set:
+    """The characters an ``& INP`` set permits.
+
+    Read the way the original's routine reads it: two characters either side of a
+    ``-`` are an inclusive range, and anything else stands for itself. So
+    ``"-AZ-az '.-"`` gives every letter plus space, apostrophe and period, and
+    ``"-14"`` gives 1 to 4.
+
+    This is the single rule behind several bugs: read as a literal set, a name
+    prompt allows only ``A``, ``Z``, ``a`` and ``z``, and a four-choice menu allows
+    only 1 and 4.
+    """
+    out = set()
+    i = 0
+    n = len(spec)
+    while i < n:
+        if spec[i] == "-" and i + 2 < n:
+            lo, hi = ord(spec[i + 1]), ord(spec[i + 2])
+            if lo > hi:
+                lo, hi = hi, lo
+            out.update(chr(c) for c in range(lo, hi + 1))
+            i += 3
+        else:
+            out.add(spec[i])
+            i += 1
+    return out
 
 
 class UI:
@@ -346,7 +383,7 @@ class TerminalUI(UI):
         """
         self._ensure_raw()
         got = []
-        allowed_set = set(allowed) | {"\r", "\n"}
+        allowed_set = allowed_chars(allowed) | {"\r", "\n"}
         # Read to the end of the line even once *maxlen* characters have been
         # accepted. Otherwise the Return that ended this prompt stays in the
         # terminal and is handed to the next one, which then rejects it -- so a
@@ -480,9 +517,19 @@ class ScriptedUI(UI):
 
     # -------------------------------------------------------------- input
     def key(self, allowed: str = "", maxlen: int = 1, default: str = "") -> str:
+        """A scripted answer, filtered exactly as :meth:`TerminalUI.key` filters.
+
+        Applying the same allowed set matters: the filter is what made a name
+        prompt accept only four letters and a four-choice menu only two of its
+        choices, and a scripted screen that skipped it could never notice.
+        """
         a = self._next(default)
         self.record.append(("key", a))
-        return str(a)[:maxlen] if maxlen else str(a)
+        text = str(a)
+        if allowed:
+            keep = allowed_chars(allowed)
+            text = "".join(ch for ch in text if ch in keep)
+        return text[:maxlen] if maxlen else text
 
     def wait_key(self, allowed: str = "", prompt: str = "Press SPACE BAR to continue"):
         """A keypress the script does not have to supply.
