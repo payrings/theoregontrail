@@ -183,3 +183,20 @@ def test_the_top_ten_and_epitaph_sets():
     assert ui.key(ALLOWED["TOPTEN"], 15) == "Ebenezer"
     ui = ScriptedUI(["Over the mountains, 1849"], allow_repeat=True)
     assert ui.key(ALLOWED["EPITAPH"], 29) == "Over the mountains, 1849"
+
+
+def test_the_store_item_prompt_takes_one_to_five():
+    """Line 250's reader: anything outside 1 to 5, or a space, is ignored.
+
+    Spelled the way the game spells a range -- dash first, so ``"-15"``. Written
+    ``"1-5"`` it would mean the literal characters 1, dash and 5, and only two of
+    the five items could be chosen.
+    """
+    from oregon.ui import ALLOWED as A
+    assert sorted(allowed_chars(A["STORE_ITEM"]) & DIGITS) == list("12345")
+    ui = ScriptedUI(["3"], allow_repeat=True)
+    assert ui.key(A["STORE_ITEM"], 1, default="") == "3"
+    ui = ScriptedUI(["6"], allow_repeat=True)
+    assert ui.key(A["STORE_ITEM"], 1, default="") == "", "6 is not a choice"
+    ui = ScriptedUI([""], allow_repeat=True)
+    assert ui.key(A["STORE_ITEM"], 1, default="") == "", "a bare Return leaves"

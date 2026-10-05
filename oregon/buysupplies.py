@@ -106,13 +106,18 @@ def store(c) -> dict:
     intro(c)
     while True:
         show_bill(c)
+        # Line 3030 prints this on a box at the foot of the panel and then does
+        # "Z = USR (1)", which *clears the keyboard*. It is not a request for a
+        # keypress, so nothing waits here; the flush is just to stop a keypress
+        # left over from the previous screen answering this one.
         c.ui.print("Press SPACE BAR to leave store")
-        c.ui.wait_key()
+        c.ui.flush()
         c.ui.print()
         c.ui.print("Which item would you like to buy? ")
-        # line 250 reads one character, and a bare Return gives Z$ = "" and so
-        # VAL(Z$) = 0, which line 1015 turns into the sixth choice
-        a = c.ui.key("", 1, default="")
+        # Line 250's reader accepts 1 to 5 and nothing else -- "ON (Z < 49 OR Z > 53)
+        # AND Z <> 32 GOTO 252" -- and a bare Return gives Z$ = "", so VAL(Z$) = 0,
+        # which line 1015 turns into the sixth choice: leaving the store.
+        a = c.ui.key(ALLOWED["STORE_ITEM"], 1, default="")
         z = int(a) if a and a.isdigit() else 0
         if z == 0:
             z = 6
@@ -165,6 +170,9 @@ def show_bill(c):
     food = c.mem.peek(906) + c.mem.peek(907) * 256
     c.ui.print("  Matt's General Store")
     c.ui.print("  Independence, Missouri")
+    # Line 3015 is "PRINT L". "I$(L)", so the five lines carry their number -- and
+    # that number is what the player types, since the reader at line 250 accepts 1
+    # to 5.
     rows = [
         (T.I_NAMES[2], p[0] * c.mem.peek(905)),
         (T.I_NAMES[8], p[1] * food),
@@ -173,8 +181,9 @@ def show_bill(c):
         ("spare wagon parts",
          p[4] * (c.mem.peek(910) + c.mem.peek(911) + c.mem.peek(912))),
     ]
-    for name, line_total in rows:
-        c.ui.print(f"{name}".ljust(24) + common.dollar_text(c, num.parse(str(line_total))))
+    for n, (name, line_total) in enumerate(rows, 1):
+        c.ui.print(f"{n}. {name}".ljust(24)
+                   + common.dollar_text(c, num.parse(str(line_total))))
     c.ui.print("Total bill: " + common.dollar_text(c, num.parse(str(bill(c)))))
     c.ui.print("Amount you have: " + common.dollar_text(c, st.MY))
 
