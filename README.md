@@ -171,7 +171,12 @@ is **not** bit-exact, and `--no-interrupt` stops travel being interruptible.
 ```fish
 python -m pytest -q          # 134 tests
 python tests/pty_check.py     # types at the game through a terminal
+python tools/parity_check.py # the ROM against pure Python, operand by operand
 ```
+
+`tools/parity_check.py` is section 12.4 of the paper made runnable: it compares
+the emulated ROM with a host-language implementation over thousands of operand
+pairs, so a reader can see the divergence rather than take it on trust.
 
 No test compares against a recorded run of the original, because none exists
 (Appendix H). Every expectation is worked out by hand from the BASIC line beside it,
