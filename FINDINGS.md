@@ -442,8 +442,8 @@ never missed.
 **Source, and its limits.** The hunting module lives on the Oregon Trail disk's
 system tracks, not in the Apple IIe ROM — checked: at `$E04A` and `$E068` the IIe
 ROM holds `14 30 02 70 F7 A9` and `9B D0 08 A5 82 C8 D1 9B`, which is Applesoft
-code, where Appendix Z has the terrain and animal tables. So everything in this
-section is read from **Appendix Z's disassembly of the disk**, not from anything
+code, where the machine-code listings have the terrain and animal tables. So everything
+in this section is read from **that disassembly of the disk**, not from anything
 executed here, and none of it has been run. It is still worth recording, because
 three of the paper's claims can be checked against the bytes independently.
 
@@ -685,7 +685,7 @@ print them -- nothing needs correcting:
 
 Two things follow that are worth writing down.
 
-**Appendix X's `CHR$(1) + "-14"` needs no correction.** Read as a range it permits
+**`CHR$(1) + "-14"` in the BASIC needs no correction.** Read as a range it permits
 1, 2, 3 and 4, so all four menu choices are reachable and the teacher menu is
 Control-A. Read as a literal list it permits only 1 and 4, and the game could not
 be played. That is why it looked like a slip in the listing when it is not one.

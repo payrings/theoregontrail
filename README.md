@@ -2,20 +2,15 @@
 
 By G. Paganelli - rift-demote-fence@duck.com
 
-**This repository is primarily a research paper.** Its subject is *The Oregon Trail*
-for the Apple II, the 1985 MECC release by R. Philip Bouchard (design), John Krenz
+**This repository is primarily a research paper on  *The Oregon Trail*
+for the Apple II**, specifically version 1.4, the 1985 MECC release by R. Philip Bouchard (design), John Krenz
 (lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin,
 Roger Shimada and Steve Splinter.
 
-The question the paper asks is simple: **can anybody else write this game again
-from the evidence, and get the same behaviour?**
+The question the paper asks is simple: **can anyone else write this game again
+based on this paper and its artefacts, and get the same behaviour?**
 
-The paper answers it by reading the actual program. From the release 1.4
-Applesoft BASIC source and the saved variable table it recovers the game state,
-the formulas, the constants, the probability tables, the message text and the
-machine-language routines, and gives each with the line number that defines it.
-It also finds the places where the documented behaviour and the shipped
-behaviour disagree.
+The paper answers it by documenting the actual BASIC code, the machine code, variables, algorithms, tables, and various data. It also finds the places where the documented behaviour and the program behaviour disagree.
 
 ---
 
@@ -24,6 +19,7 @@ behaviour disagree.
 | | |
 | --- | --- |
 | [`paper/01-paper.md`](paper/01-paper.md) | The paper. Fourteen sections covering set-up, the daily cycle, health, weather, the fifteen random events, rivers, forts, trading, endings, the two arcade games, and what the Applesoft ROM does to every number. |
+| [`paper/01-paper.docx`](paper/01-paper.docx) | The same paper as a Word document. |
 | [`paper/02-appendix-d-dialogue.md`](paper/02-appendix-d-dialogue.md) | Appendix D — the 51 dialogue records, as a research extract. |
 | [`paper/03-appendices-e-to-h.md`](paper/03-appendices-e-to-h.md) | Appendices E–H — the data tables decoded from `VAR.BIN`, the `&` command reference, the exact order of the random-number draws, and what is still missing. |
 | [`paper/04-review.md`](paper/04-review.md) | An independent review of the paper, checking its claims line by line against the source and, for section 12, by **executing** the ROM. |
@@ -231,7 +227,7 @@ table.
 
 ## What is not in this repository
 
-- **Appendices X, Y and Z** — the release 1.4 source listings, the on-screen text
+- **Appendices with the BASIC code and machine code** — the release 1.4 source listings, the on-screen text
   and the machine-code listings. They are MECC's and Apple II emulator material and
   are not redistributed here. Everything the paper and the code say about them is
   cited by line number so a reader with the disk can check it.
