@@ -91,7 +91,11 @@ def test_the_climate_lookup_matches_the_paper():
 
 
 def test_health_is_ninety_percent_of_yesterday_plus_the_penalties(game, st):
-    """Line 3230. With no penalties the value decays by a tenth a day."""
+    """Line 3230: ``H = .9 * H + ZT + ZC + ZF + ZP + FS + H0 + HR``.
+
+    With a warm, dry day at steady pace on filling rations, every term but ZP is
+    zero and ZP is twice the pace, so 20 becomes 20 * .9 + 2.
+    """
     trail = __import__("oregon.trail", fromlist=["x"])
     game.st = st
     st.P = num.ONE
@@ -103,12 +107,43 @@ def test_health_is_ninety_percent_of_yesterday_plus_the_penalties(game, st):
     st.PF = num.parse("1000")
     st.BS = num.parse("20")
     trail.speed(game)
+    st.FC = num.ZERO                   # do not eat, so only the arithmetic shows
     st.H = num.parse("20")
     trail.health_today(game)
-    # not exactly 18, and that is the point: the ROM's ``.9`` is 0.9000000074, not
-    # the nearest float to nine tenths, so the answer is a hair over 18
-    assert st.H.to_float() == pytest.approx(18.0, rel=1e-7)
-    assert st.H.to_float() > 18.0
+    # 20 * .9 = 18, and ZP is twice the pace, so 2 more
+    assert st.ZP.to_float() == 2.0, "ZP is P added to itself"
+    assert st.H.to_float() == pytest.approx(20.0, rel=1e-9)
+
+
+def test_zp_is_twice_the_pace_plus_the_weather(game, st):
+    """Line 3220: ``(W > 5) + (W > 7) + P + P``."""
+    trail = __import__("oregon.trail", fromlist=["x"])
+    game.st = st
+    st.PF = num.parse("1000")
+    st.I[3] = num.parse("10")
+    for pace, weather, want in ((1, 3, 2), (2, 3, 4), (3, 3, 6),
+                                (1, 6, 3), (1, 8, 4), (1, 9, 4),
+                                (3, 9, 8)):
+        st.P = num.parse(str(pace))
+        st.W = num.parse(str(weather))
+        trail.health_today(game)
+        assert st.ZP.to_float() == want, (pace, weather, st.ZP.to_float())
+
+
+def test_the_roms_point_nine_is_below_nine_tenths():
+    """``.9`` is ``80 66 66 66 66`` — about 0.8999999999069, not 0.9.
+
+    It is below nine tenths, and it is not the nearest float to nine tenths. Note
+    that ``20 * .9`` nevertheless rounds to exactly 18, because the shortfall is
+    smaller than the last bit at that magnitude; an earlier claim here that the
+    product came out above 18 was wrong in both the direction and the magnitude.
+    """
+    from oregon import num
+    v = num.parse(".9")
+    assert v.raw() == bytes((0x80, 0x66, 0x66, 0x66, 0x66))
+    assert 0.8999 < v.to_float() < 0.9
+    assert v.to_float() != 0.9
+    assert num.mul(num.parse("20"), v).to_float() == 18.0
 
 
 def test_the_health_bands(game, st):

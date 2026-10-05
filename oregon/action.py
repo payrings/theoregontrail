@@ -3,14 +3,15 @@
 The menu is offered at a landmark, and again at any moment on the trail if the
 player presses Return (line 810). Which options appear depends on ``LL``:
 
-* at a landmark (``LL = 0``): "Talk to people", and "Buy supplies" at a fort;
-* on the trail (``LL = 1``): "Hunt for food".
+* at a landmark (``LL = 0``): "Talk to people", and "Buy supplies" at a fort --
+  both nested inside ``IF NOT LL`` at line 4040;
+* on the trail (``LL = 1``): "Hunt for food", with ``Z = 2`` (line 4050).
 
 Line 4090 dispatches with ``ON Z - 1 GOSUB 4100, 4200, 4300, 4400, 4500, 4900, 4700,
-4800, 4600``, and ``Z`` is the choice *plus two* when the choice is above seven and
-the party is on the trail -- which makes choice 8 run the **hunt** rather than
-"Buy supplies". That happens on the trail leaving a fort, where the menu offers both.
-It is a bug in the shipped code; ``GAPS.md`` records it and it is reproduced.
+4800, 4600``, and ``Z`` is the choice plus two when the choice is above seven and
+the party is on the trail. That lands correctly, and there is no bug here: the two
+extra entries are printed only at a landmark, so on the trail there are eight
+choices and the eighth is the hunt.
 
 Choice 1 is "Continue on trail" and is handled before the dispatch: with no oxen it
 sets ``B = 2`` and stays, and with a part still broken ``B`` is already set so the

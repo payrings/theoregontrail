@@ -38,7 +38,7 @@ The source code is not reproduced in this paper because it remains under copyrig
 
 ### 1.4 Limits of this analysis
 
-The machine-language routines reached through the `&` command were disassembled and read at their entry points, which establishes their argument lists and general function (Appendix F). The hunting routine was analysed in more depth (section 11.1), though its graphics and movement code were not. The routines used only by the river-floating program, and the picture, image and tune data formats, were not decoded. None of the machine code was executed. The claims in section 12 about the interpreter's arithmetic rest on the published ROM disassembly (Sander-Cederlof, n.d.); they were not confirmed by executing the ROM.
+The machine-language routines reached through the `&` command were disassembled and read at their entry points, which establishes their argument lists and general function (Appendix F). The hunting routine was analysed in more depth (section 11.1), though its graphics and movement code were not. The routines used only by the river-floating program, and the picture, image and tune data formats, were not decoded. None of the machine code was executed. The claims in section 12 about the interpreter's arithmetic rest on the published ROM disassembly (Sander-Cederlof, n.d.); the arithmetic routines and the random number generator have since been run under a 6502 emulator (section 12.6), but the game itself has not been run under emulation.
 
 ### 1.5 Design intentions behind the mechanics
 
@@ -130,6 +130,19 @@ Other fixed locations: 919 is a flag the error handler reads to decide how to tr
 
 Every program sets `ONERR GOTO 32000`. The handler reads the error code from address 222 and the line number from 218 and 219, resumes after disk errors 1 to 15, and otherwise prints "Error \[code\] at line #\[line\] in \[program\]. Please report this error to MECC." The codes are Applesoft's own. Code 53 is ILLEGAL QUANTITY, which is what a POKE of a value above 255 produces (see section 13).
 
+### 2.5 Applesoft rules a translation must follow
+
+Several rules of the Applesoft language differ from those of modern languages. A translation that overlooks any of them will read the listings wrongly, and the errors are easy to miss because the result still looks plausible.
+
+- **Everything after `THEN` belongs to the `IF`.** When the condition is false, the rest of the line is skipped, including a second `IF` and every statement after it. Line 3180 ends `IF B > 0 THEN GOSUB 4000: GOSUB 300:L8 = 20`, so `L8 = 20` runs only when an event has fired and `B` is above zero (section 8.1). Line 1015 ends `IF Z = 3 THEN GOSUB 4200: GOSUB 190: GOTO 1015`, so the `GOTO` is taken only after the map has been shown. In line 4040 the "Buy supplies" entry is nested inside `IF NOT LL`, so it is offered only at a landmark, never on the trail.
+- **A simple variable and an array of the same name are different variables.** `Q` and `Q(0 to 16)`, `B` and `B(0 to 5)`, `RE` and `RE(0 to 14)`, and `Z` and `Z(...)` are each two separate things. When `BUY.LIB` sets `Q` to the fort's price tier, the landmark history in `Q()` is not touched.
+- **A `FOR` loop always runs its body at least once.** The limit is tested at `NEXT`, not at the start, so `FOR A = 0 TO NR` with `NR` equal to -1 still runs once with `A` equal to 0. With a fractional limit, `FOR L = 1 TO 5.5` runs five times and `FOR L = 1 TO 0.5` runs once.
+- **`AND` and `OR` evaluate both sides.** There is no short-circuit, so a `RND` call on the right-hand side always happens (Appendix G).
+- **A comparison is a number**, 1 for true and 0 for false, and the listings use it in arithmetic throughout.
+- **`ON n GOSUB` does nothing when `n` is 0 or exceeds the number of targets.** The listings use this as a conditional call, as in `ON B > 0 GOSUB 4000`.
+- **A subroutine runs on through the following lines until it meets `RETURN`.** `TOMB.LIB` 50000 has none, so a call to it continues into line 50005.
+- **`INT` rounds down**, so `INT` of -2.7 is -3, and **string positions in `MID$` count from 1.**
+
 ## 3. Game setup
 
 ### 3.1 Main menu and the random seed (`MENU` 1000 to 1020)
@@ -194,6 +207,8 @@ On loading, the main program reads the hand-over values and sets its starting st
 
 The two `RND` calls on lines 29000 and 29004 are the first of the journey, in that order.
 
+Line 29000 also computes the first weather class with `FN W(0)`. At that point the zone variable `ZO` has not yet been set by line 1000, and it is not among the values restored from `VAR.BIN` (Appendix E), so it is 0. The first weather class is therefore taken from climate row 0 for the departure month.
+
 ## 4. Landmarks, segments and the daily travel cycle
 
 ### 4.1 Two tables: landmarks and segments
@@ -256,7 +271,7 @@ The shortest route, by Green River and straight to The Dalles, is 1,771 miles to
 1. On arrival, line 1000 draws `A = INT (RND (1) * 3)`, the first dialogue to offer, and sets the climate zone (section 6).
 2. The player may look around, which opens the action menu (line 4000).
 3. At a river landmark, line 1015 forces the crossing routine before departure (section 9.3).
-4. At a landmark with a second segment, the player chooses a branch (line 2110). At The Dalles the choice is made in `END.LIB` (section 10).
+4. At a landmark with a second segment, the player chooses a branch (line 2110). A third choice shows the map and then asks again (line 1015). At The Dalles the choice is made in `END.LIB` (section 10).
 5. Line 2200 loads the chosen segment: `D = LM(Z,0)`, `MD = LM(Z,1)`, `NM = LM(Z,2)`.
 6. Line 3000 runs the daily cycle until `D` is zero, then sets `LM = NM`. At landmark 17 the game ends.
 
@@ -466,7 +481,7 @@ With no oxen, or with a broken part and no spare, the variable `B` is set and th
 
 Each travelling day the program tests fifteen events in order, 0 to 14, drawing one random number for each. An event fires when the draw is below its chance `RE(n)`. The loop is skipped entirely on a stopped day (resting, delayed, waiting).
 
-The loop does not stop after the first event. It ends early only when `B` is above zero, which happens when the player presses Return during an event message or when the party cannot continue. Otherwise the remaining events are still tested, so two events can occur on one day.
+The loop does not stop after the first event. It ends early only when `B` is above zero, which happens when the player presses Return during an event message or when the party cannot continue. Otherwise the remaining events are still tested, so two events can occur on one day. The statement that ends the loop early, L8 = 20, comes after the THEN of the test on B at the end of line 3180, so it is skipped whenever B is zero (section 2.5).
 
 ### 8.2 The fifteen events
 
@@ -540,7 +555,7 @@ Depth is the base plus twice the rain, to one decimal; width the base plus 15 ti
 
 | Choice | Rule | Lines |
 | --- | --- | --- |
-| Ford, depth under 2.5 ft | Safe on a smooth bottom. Muddy: 40% chance of sticking, lose 1 day. Rough: 16% chance of tipping, then each good has a 10% to 40% chance of a random loss. | 50035, 50060, 50070 |
+| Ford, depth under 2.5 ft | Safe on a smooth bottom. Muddy: 40% chance of sticking, lose 1 day. Rough: 16% chance of tipping, then one loss chance between 10% and 40% is drawn once and applied to each good in turn. | 50035, 50060, 50070 |
 | Ford, 2.5 to under 3 ft | Supplies get wet; lose 1 day. | 50037 |
 | Ford, 3 ft or more | Each good is lost in part with chance depth/10; each ox dies with chance (depth - 1)/10; each person except the leader drowns with chance (depth - 2.5)/10. | 50040 |
 | Caulk and float | Refused under 1.5 ft. Costs 1 day. If depth exceeds 2.5 ft the wagon tips with chance swiftness/20; then goods are lost with chance 0.4 + swiftness/25 and people drown with chance (swiftness - 3)/15. | 50080 to 50085 |
@@ -785,17 +800,41 @@ Tolerance comparisons such as `math.isclose` must not be used anywhere. The orig
 
 **Full emulation.** Run the unmodified disk images in an Apple II emulator driven from Python, such as ApplePy. The Python program supplies keystrokes, including the timing that sets the seed, and reads the game state from emulated memory. The pointer at address 69 gives the start of the variable table (39170 decimal in the main program); each simple variable is seven bytes, two for the name and five for the value. This approach reimplements nothing. It covers the BASIC, the ROM, the `&` routines and the hunting game, and it has parity by construction.
 
-**ROM routines called from Python.** Load the Applesoft ROM into a 6502 emulator such as py65 and call its routines for every numeric operation: the operator entries FADDT (E7C1), FSUBT (E7AA), FMULTT (E982) and FDIVT (EA69), `ROUND.FAC` (EB72), `INT` (EC23), `RND` (EFAE), and the conversion and formatting routines. The Python program holds only the game's control flow and passes five-byte values, never host floats. This gives the original arithmetic but still requires a faithful transcription of the BASIC, including the order of operations inside each expression, and it cannot cover the machine-language parts.
+**ROM routines called from Python.** Load the Applesoft ROM into a 6502 emulator such as py65 and call its routines for every numeric operation: the arithmetic entries FADD (E7BE), FSUB (E7A7), FMULT (E97F) and FDIV (EA66), `ROUND.FAC` (EB72), `INT` (EC23), `RND` (EFAE), and the conversion and formatting routines. The Python program holds only the game's control flow and passes five-byte values, never host floats. This gives the original arithmetic but still requires a faithful transcription of the BASIC, including the order of operations inside each expression, and it cannot cover the machine-language parts. The four entries named above take the second operand from memory and set up the comparison of signs themselves; FSUB computes the memory operand minus the accumulator and FDIV the memory operand divided by the accumulator. The inner entries three bytes later (FADDT at E7C1, FSUBT at E7AA, FMULTT at E982, FDIVT at EA69) are the ones the expression evaluator jumps to. They give wrong signs, or skip the operation altogether, unless the caller has first set the processor's zero flag from the accumulator's exponent and the sign-comparison byte at AB, as the evaluator does. The working accumulator also differs from a stored variable: it holds the leading 1 of the significand explicitly and keeps the sign in a separate byte at A2.
 
 Full emulation is the only approach with no reimplementation risk. The second approach is acceptable for the BASIC-only parts of the game when a native Python structure is needed, for example for large-scale simulation. Both need an Apple II ROM image, which is Apple's copyrighted firmware and must be obtained separately.
 
 ### 12.6 Status of verification
 
-The statements in 12.2 and 12.3 come from the published commented disassembly of the ROM (Sander-Cederlof, n.d.). Neither approach in 12.5 has yet been run for this paper. The next step is to execute the ROM and confirm three things: the stored bytes of the game's constants, the first values of `RND` for a known seed, and a day-by-day comparison of state against the running game.
+The statements in 12.2 and 12.3 come from the published commented disassembly of the ROM (Sander-Cederlof, n.d.). The second approach in 12.5 has been implemented in a Python rebuild of the game written from this paper, which executes an Apple IIe ROM image under py65 for its arithmetic and for `RND`. The results in this subsection were recorded by that implementation. They agree with 12.2 and 12.3. Full emulation of the original game has not been run, so no day-by-day comparison with the running game exists yet (Appendix H).
+
+**The `RND` constants.** The four stored bytes of the multiplier at EFA6 are `98 35 44 7A` and those of the addend at EFAA are `68 28 B1 46`. Read as five-byte values they become `98 35 44 7A 68` and `68 28 B1 46 20`: the multiplier borrows the first byte of the addend, and the addend borrows `20`, the opcode of the `JSR` instruction with which the routine itself begins at EFAE. As read, the multiplier is about 1.19 × 10^7 and the addend about 3.9 × 10^-8, which is why the addition has almost no effect.
+
+**A reference sequence.** With the seed bytes at C9 to CD set to `81 00 00 00 00`, fifteen consecutive calls of `RND (1)` return the values below, to ten decimal places, and leave the seed at `7F 11 0D 1F 95`. The first value can be checked by hand: the seed is 1, the product has the significand bytes `B5 44 7A 68`, and exchanging the first and last gives `68 44 7A B5`, which is 0.4072949117.
+
+```
+0.4072949117  0.6080416190  0.2595170654  0.0826876603  0.3586615882
+0.9610444016  0.5672113707  0.6001326921  0.3342543155  0.6068662971
+0.6758213558  0.3164409971  0.0368823348  0.0349148413  0.2833032483
+```
+
+**Decimal constants.** Converted by the ROM, the constants the game uses most are stored as follows. None of them except .5 is the value a host language holds for the same decimal.
+
+```
+.5   80 00 00 00 00
+.8   80 4C CC CC CD
+.9   80 66 66 66 66
+.2   7E 4C CC CC CD
+.1   7D 4C CC CC CD
+```
+
+**`INT`.** The routine at EC23 rounds down for negative values: -2.7 gives -3 and -0.5 gives -1.
+
+Three things remain open in that implementation, and each is a possible source of divergence from the original: the conversion of numbers to and from text still uses host code, not the ROM's routines; the extension byte is not carried from one operator to the next inside an expression; and the random draws made by the river-crossing animation (Appendix G) are not made. The decisive test is still a day-by-day comparison of state, including the seed bytes, against the original game running in an emulator.
 
 ## 13. Bugs and quirks a replica must keep
 
-Nine behaviours of the shipped code are probably unintended. A faithful replica reproduces them; full emulation reproduces them automatically.
+Eleven behaviours of the shipped code are probably unintended. A faithful replica reproduces them; full emulation reproduces them automatically.
 
 **Table 29.** Probably unintended behaviours of the shipped code, with cause and location.
 
@@ -810,6 +849,8 @@ Nine behaviours of the shipped code are probably unintended. A faithful replica 
 | The Portland climate row is never used | The zone number stops at 4 | Line 1000 |
 | A party with exactly the Barlow toll cannot pay | The test is `MY > V` | `END.LIB` 50020 |
 | February always has 28 days | Fixed month lengths; 1848 was a leap year | Line 3255 |
+| An accepted trade rounds the holding of the item given away to a whole number | The holding is rounded to the nearest whole number for the test of whether the player has enough, and the rounded figure, less the amount traded, is then stored back. A party with 5.5 oxen that trades 1 away is left with 5, not 4.5 | TRADE.LIB 50011 and 50035 |
+| A thief can steal nothing and the message names no item | If the party has none of the item chosen, nothing is taken, but the message is still printed. It ends with whatever text was last left in the first element of the shared text array, which is normally empty, giving "steals ." | LF.LIB 52010 and 52030 |
 
 The long-wait behaviour was documented by moralrecordings (2025), in whose test a wait of 14,272 game years left `FS` at 4,166,608.55078125 (bytes `96 7E 4F 42 34`). The party then died within days of crossing, and a modified game that survived crashed with Error 53 at The Dalles. The study notes that 207 years is the longest journey that avoids the crash and 51 years the longest that shows the right century.
 

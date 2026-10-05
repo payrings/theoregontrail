@@ -255,3 +255,29 @@ interfaces, so a scripted test sees exactly what a player sees. It is guarded by
 A note for anyone writing another allowed set: a range is written **dash first**, so
 1 to 5 is ``"-15"`` and not ``"1-5"``. Written the other way it means the literal
 characters 1, dash and 5. Every set in the game is written the game's way.
+
+## Open: where the Barlow Road branches, and what milestone 16 is
+
+The distances reproduce the paper's figures exactly: segments 0-7, 10-14 and 16 sum
+to **1,771**, and the 100-mile Barlow Road makes **1,871**. Going by Fort Walla Walla
+instead of segment 16 adds 50, giving **1,821**.
+
+Two things I could not settle from the listing, recorded here rather than guessed:
+
+* Line 2100 reads `IF LM = 16 THEN & APP,"END.LIB": GOSUB 50000: GOSUB 190`, so the
+  game ends the moment milestone 16 is reached -- everything after the `THEN` belongs
+  to the `IF` (paper 2.5, rule a). That means milestone 16 is the last one and no
+  segment leaves it.
+* But then the 100-mile Barlow Road has to *arrive* at milestone 16, and it is only
+  100 miles against the direct segment's 125. Taking it as an alternative to segment
+  16 gives 1,746, not the paper's 1,871. The only way 1,771 and 1,871 both appear is as
+  "to The Dalles" and "to The Dalles and then the Barlow Road", i.e. the Barlow is the
+  final leg *after* milestone 16 -- which line 2100 forbids.
+
+My data therefore has the Barlow Road leaving milestone 16 (`SEG_ENDS_AT[18] = 17`,
+arriving at the Willamette Valley), which yields all three totals but lets a party
+arrive at The Dalles via Fort Walla Walla and then take the Barlow Road for 1,921 --
+a combination the listing seems to exclude. `oregon/data/landmarks.py` is where this
+sits, and it needs one more fact from the listing: the landmark table that populates
+`LM$`, which is read from the hi-res name strings at line 29010 and whose field
+structure I have only partly reconstructed. No test asserts a total above 1,821.

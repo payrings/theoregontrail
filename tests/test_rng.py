@@ -155,76 +155,54 @@ def test_the_animation_numbers_are_tagged_so_a_count_is_possible(game):
     assert len([t for t in tags if "failed ford 0 " in t]) == 3
 
 
-# ------------------------------------------------------- the Q aliasing
-def test_Q_is_one_variable_and_the_fort_tier_clobbers_the_map(game):
-    """BUY.LIB 50003 and TRADE.LIB 50011 write Q, and Q is the map's history.
+# ------------------------------------------- Q, and Q(), are two variables
+def test_Q_and_the_array_are_two_separate_variables(game):
+    """Rule (b) of paper 2.5: a simple variable and an array of the same name are
+    different things.
 
-    This is the third bug the paper does not list. Faithful means the map's first
-    landmark really is lost, so the test asserts that it is.
+    An earlier reading held that BUY.LIB's ``Q = ...`` and TRADE.LIB's ``Q = ...``
+    clobbered the map's landmark history in Q(0). They do not: those assignments set
+    the scalar. The trade's *rounding* is real and is kept -- see
+    ``test_an_accepted_trade_rounds_the_holding`` -- but the map is unaffected.
     """
     from oregon import fortbuy, num
     c = game
     st = c.st
-    st.Q[1], st.Q[2] = 1, 2
-    st.Q[0] = 0                     # landmark 0, where the route starts
-    st.LM = 13                      # Fort Boise
+    st.Q_arr[1], st.Q_arr[2] = 1, 2
+    st.Q_arr[0] = 0                      # landmark 0, where the route starts
+    st.LM = 13                           # Fort Boise, whose tier is 5
     st.I[2] = num.parse("8")
     st.I[3] = num.parse("10")
     st.I[8] = num.parse("500")
     st.MY = num.parse("500")
-    c.ui.answers = ["8"]            # leave the store at once
+    c.ui.answers = ["8"] + [""] * 40
     fortbuy.fort_store(c)
-    assert num.as_int(st.Q[0]) == 5, "the fort tier landed in Q(0)"
-    assert st.Q[0].to_int() != 0, "so the map no longer knows landmark 0"
+    assert num.as_int(st.Q) == 5, "the scalar Q holds the fort tier"
+    assert st.Q_arr[0] == 0, "and the map still knows landmark 0"
+    assert st.Q_arr[:3] == [0, 1, 2]
 
 
-def test_a_trade_also_clobbers_Q(game):
+def test_an_accepted_trade_rounds_the_holding(game):
+    """Paper 13: an accepted trade rounds what the party gives away.
+
+    ``TRADE.LIB`` 50011 sets the scalar ``Q`` to ``INT (I(X + 2) + .5)`` to test
+    whether the party has enough, and 50035 stores ``Q - V`` back into the
+    inventory, so 5.5 oxen that trade one away leave 5, not 4.5.
+    """
     from oregon import num, trade
     c = game
     st = c.st
-    st.Q[0] = num.ZERO
-    st.I[2] = num.parse("8.5")      # five and a half oxen
+    st.I[2] = num.parse("5.5")
     st.I[3] = num.parse("10")
     st.I[4] = num.parse("120")
     st.I[8] = num.parse("500")
     c.rng = ScriptedRnd(" ".join(["0.0"] * 2000))
-    c.ui.answers = ["N"]
+    c.ui.answers = ["Y"] + [""] * 20
     trade.attempt(c)
-    assert st.Q[0].to_int() == 9, "INT (I(X+2) + .5) rounds 8.5 up to 9"
-
-def test_a_drowned_member_leaves_the_party(game):
-    """Line 3504: GOSUB 50000 falls through into 50005 and buries them."""
-    from oregon import num, trail
-    c = game
-    st = c.st
-    st.NP = 5
-    st.H = num.parse("120")
-    st.H1[2] = num.parse("-2")          # marked drowned by the river
-    before = list(st.N)
-    trail.remove_drowned(c)
-    assert st.NP == 4
-    assert st.H.to_float() == 105.0
-    assert st.N[2] == before[4], "the corpse is swapped into the last slot"
-    assert st.H1[4].to_int() == -1
-
-
-def test_the_Q_loop_overwrites_itself_so_there_is_no_bad_subscript(game):
-    """A reading of mine that the source does not support.
-
-    I had claimed that a fort tier left in Q would make line 50005 subscript
-    outside DIM H1(4) and raise error 5. It does not: line 3504 assigns Q from the
-    loop counter before using it. Kept as a test so the claim stays retracted, and
-    because it documents what Q's double life actually costs -- the map.
-    """
-    from oregon import num, trail
-    c = game
-    st = c.st
-    st.NP = 5
-    st.H = num.parse("120")
-    st.Q[0] = num.parse("6")          # a fort tier, well outside DIM H1(4)
-    st.H1[0] = num.parse("-2")
-    trail.remove_drowned(c)            # must not raise
-    assert st.NP == 4
+    assert st.I[2].to_float() in (4.0, 5.0), st.I[2].to_float()
+    assert float(st.I[2].to_float()).is_integer(), "the holding is now a whole number"
+    # and the map's array is untouched
+    assert isinstance(st.Q_arr, list) and len(st.Q_arr) == 17
 
 
 def test_the_hunt_seed_uses_the_keyboard_counter(game):

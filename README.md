@@ -28,6 +28,11 @@ behaviour disagree.
 | [`paper/03-appendices-e-to-h.md`](paper/03-appendices-e-to-h.md) | Appendices E–H — the data tables decoded from `VAR.BIN`, the `&` command reference, the exact order of the random-number draws, and what is still missing. |
 | [`paper/04-review.md`](paper/04-review.md) | An independent review of the paper, checking its claims line by line against the source and, for section 12, by **executing** the ROM. |
 
+`paper/` is the reference and is not modified by this work. Where this translation
+disagrees with it, the BASIC listing decides and the disagreement is recorded in
+`FINDINGS.md` with the line number; none of the paper's text, dialogue or game data is
+reproduced here beyond what the analysis needs to cite.
+
 ### The short version of what the paper found
 
 - **The game is a daily simulation with one number for everything.** A single
@@ -38,22 +43,28 @@ behaviour disagree.
   number is drawn — which is why Appendix G lists the order of every draw.
 - **At most one event fires on a travelling day.** `L8 = 20` ends the body of the
   loop at line 3180, and Applesoft has no block structure, so an `IF ... THEN` clause
-  runs to the end of the line and `L8 = 20` executes on every firing. `NEXT L8` then
-  gives 21 against a limit of `RE = 14`, and the loop ends. A day therefore costs
-  `k + 1` draws, where `k` is the index of the event that fired; fifteen only when
-  none fires.
+  runs to the end of the line. Line 3180 is
+  `IF B > 0 THEN GOSUB 4000: GOSUB 300:L8 = 20`, so `L8 = 20` is inside the `THEN` and
+  runs only when an event has fired *and* `B` is above zero. On an ordinary day `B` is
+  zero, the clause is skipped and the loop goes on to the next event, so **several
+  events can fire on one day**, each spending its own draw.
 - **Applesoft has no short-circuit evaluation.** `IF X AND RND(1) < V` spends a
   number even when `X` is false. Several rules depend on it.
 - **The arithmetic cannot be reimplemented in a host language.** Section 12 shows
   that the rounding points, the single guard byte, the decimal-literal conversion
   and the generator all live in the Applesoft ROM, and that Python, float32 and
-  `decimal` all diverge from it. A constant is converted from its digits **once**,
-  when the line is tokenised, not on every pass — the programs hold 0 to 4 and 0.5
-  in variables for speed, not for correctness — but the conversion is still the
-  ROM's, so `.8` is `80 4C CC CC CD` and not the nearest float.
-- **Several probable bugs are load-bearing.** Nine are listed in section 13. A
-  broken arm has no effect, because injury number 0 *is* the value that means
-  healthy. A thief never takes money. February always has 28 days, in a leap year.
+  `decimal` all diverge from it. A constant is converted from its digits **every time
+  the statement runs** — the programs cache 0 to 4 and 0.5 in variables for speed, not
+  for correctness — and the conversion is still the ROM's, so `.8` is
+  `80 4C CC CC CD` and not the nearest float. Likewise the sign comparison of the
+  floating-point routines is the ROM's, in the outer entries `FADD $E7BE`, `FSUB $E7A7`,
+  `FMULT $E97F` and `FDIV $EA66`, not something the transcription performs.
+- **Several probable bugs are load-bearing.** The eleven listed in section 13 are the
+  only ones this transcription reproduces, and it reproduces nothing else it has not
+  traced back to a line. A broken arm has no effect, because injury number 0 *is* the
+  value that means healthy. A thief never takes money. February always has 28 days, in
+  a leap year. An accepted trade rounds the holding, and prints nothing when there is
+  nothing to trade.
 
 ---
 
@@ -114,7 +125,11 @@ own argument made real:
 | `.8` is `80 4C CC CC CD`, `.2` is `7E 4C CC CC CD` (§12.2) | produced by the ROM's own decimal conversion, not by a Python literal |
 | `ROUND.FAC` rounds when the guard byte is 80 or more (§12.2) | `7F 4C CC CC CD` becomes `… CE` at guard `$80`, unchanged at `$7F` |
 | `1/3 + 1/3 + 1/3` under one (§12.4, rounding points) | `0.9999999997671694` |
-| one event per day (§8.1) | the event loop breaks after one, and a day spends `k + 1` draws |
+| more than one event can fire on a day (§8.1) | line 3180's `L8 = 20` is inside `IF B > 0`, so the loop only stops early once `B` is above zero |
+| `Q` and `Q()` are different variables (§2.5) | separate fields; a fort purchase no longer disturbs the map |
+| a `FOR` always runs its body once (§2.5) | `FOR L = 1 TO X` with `X = 0.5` gives one draw, so half an ox is one draw |
+| the route is 1,771 miles, 1,871 by the Barlow Road (§4.1) | segments 0–7, 10–14 and 16 sum to 1,771; segment 18 adds 100 |
+| the `RND` constants are of magnitude 1.19 × 10⁷ and 3.9 × 10⁻⁸ (§12.3) | decoded from `$EFA6` and `$EFAA`, the implied top bit included |
 | the routing bug that makes "an ox" and "a wheel" (§13) | reproduced |
 
 ### What the translation found that the paper did not say
@@ -128,9 +143,13 @@ own argument made real:
   stated anywhere.
 - Event 2 dispatches to `10200`, a line the program does not have. `RE(2) = 0`, so it
   cannot be reached, but the original would raise UNDEF'D STATEMENT.
-- `Q` is one variable used as the map's landmark history *and* as a scalar by the
-  fort and the trader, so a purchase loses the map's first landmark and an accepted
-  trade rounds the player's holding: five and a half oxen become six.
+- An accepted trade rounds the holding, because `TRADE.LIB` sets the scalar `Q` to
+  `INT (I(X + 2) + .5)` and then stores `Q - V`. Five and a half oxen that trade one
+  away leave five. The original does this; `Q` and `Q()` being separate variables is
+  why it does not also corrupt the map.
+- The three rules in §2.5 are the ones most easily got wrong, and all three had been
+  violated before this translation was re-audited line by line. `FINDINGS.md` §16
+  records the sweep and what it changed.
 
 Full record, including the places the code is an approximation and what is still
 unfinished, in **[`GAPS.md`](GAPS.md)**. The module map and every ambiguity in the

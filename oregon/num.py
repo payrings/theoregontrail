@@ -33,6 +33,7 @@ from .applesoft.fac import Fac
 
 __all__ = [
     "Fac", "ZERO", "ONE", "HALF", "TWO", "THREE", "FOUR",
+    "fort_count", "fort_range",
     "parse", "int_of", "as_int", "as_float", "trunc",
     "add", "sub", "mul", "div", "neg", "abs_", "int_", "store",
     "addc", "mulc", "divc", "cmp", "eq", "lt", "le", "gt", "ge",
@@ -51,6 +52,35 @@ FOUR = _fac.FOUR
 # The programmers held them in variables because Applesoft re-converts a literal
 # every time its line runs; these are those variables.
 C0, C1, C2, C3, C4, P5 = ZERO, ONE, TWO, THREE, FOUR, HALF
+
+def fort_count(start: int, limit) -> int:
+    """How many times an Applesoft ``FOR`` loop runs its body.
+
+    **Rule (c) of paper section 2.5: the body always runs at least once.** The limit
+    is tested at ``NEXT``, not before the body, so a limit below the start still
+    executes the body a single time, and a fractional limit stops at the last whole
+    value that does not pass it:
+
+    ===================  ======
+    ``FOR L = 1 TO 5.5``     5 times
+    ``FOR L = 1 TO 0.5``     1 time
+    ``FOR A = 0 TO -1``      1 time
+    ===================  ======
+
+    That last case is not academic: ``RIVER.LIB`` 50190 loops over the oxen with
+    ``FOR L = 1 TO X``, so a party with half an ox still makes **one** draw, where
+    ``range(int(X))`` would make none. And ``FLOAT`` 500, ``FOR A = 0 TO NR`` with
+    ``NR`` equal to -1, runs once with ``A`` equal to 0.
+    """
+    lo = int(start)
+    hi = int(limit)
+    return hi - lo + 1 if hi >= lo else 1
+
+
+def fort_range(start: int, limit):
+    """The loop variable's values, one per iteration, under the same rule."""
+    return range(start, start + fort_count(start, limit))
+
 
 def parse(text) -> Fac:
     """A decimal literal, converted the way the ROM converts one.

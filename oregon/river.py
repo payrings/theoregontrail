@@ -361,9 +361,12 @@ def _lose_oxen(c, chance) -> list:
     st = c.st
     x = num.as_float(st.I[2])
     if x <= 0:
+        # 50185 is "Y = 0:X = I(2): IF NOT X THEN RETURN"
         return []
     lost = 0
-    for _ in range(int(x)):
+    # 50190 is "FOR L = 1 TO X", and the body always runs at least once (paper 2.5,
+    # rule c), so a party with half an ox still makes one draw.
+    for _ in num.fort_range(1, x):
         if c.rng.below("50185 ox", chance):
             lost += 1
     if not lost:

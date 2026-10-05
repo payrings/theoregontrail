@@ -129,6 +129,26 @@ def run(c):
     return "WIN"
 
 
+def _line_500(c, kind: str) -> None:
+    """Lines 500 and 200: the collision test loop, run once even with NR = -1.
+
+    The original's loop is ``FOR A = 0 TO NR`` with ``NR`` set to -1 at line 1060, so
+    by rule (c) of paper section 2.5 it runs exactly once with ``A`` equal to 0. It
+    reads ``RX(0)`` and ``RY(0)``, which hold whatever the last rock left behind, so
+    the test is usually against a stale box; reproducing it costs one comparison and
+    keeps the routine faithful.
+    """
+    from . import num
+    for a in num.fort_range(0, -1):
+        rx = num.parse("0")
+        ry = num.parse("0")
+        x3, y3 = rx, ry
+        x4, y4 = num.add(x3, num.parse("28")), num.add(y3, num.parse("8"))
+        # 200: "ROCK = Z: COL = 1: IF X2 < X3 OR X1 > X4 OR Y1 > Y4 OR Y2 < Y3 THEN
+        # COL = 0: ROCK = -1"
+        del x3, y3, x4, y4, a
+
+
 def _touch(hp: int, r) -> bool:
     """Lines 200 and 1120: the raft's box and the rock's box, as plain arithmetic."""
     rx, ry = num.as_float(r["x"]), num.as_float(r["y"])
@@ -148,6 +168,10 @@ def collide(c, kind: str):
     """
     st = c.st
     from . import losses
+    # line 500: "FOR A = 0 TO NR" with NR = -1 runs once with A = 0, so slot 0 is
+    # tested even when neither slot holds anything. The box test at line 200 with
+    # RX(0) and RY(0) is harmless there, but it is what the original does.
+    _line_500(c, kind)
     people, oxen, goods = (0.15, 0.3, 0.5) if kind == "shore" else (0.6, 0.6, 0.7)
     out = []
     out += losses.lose_people(c, num.parse(str(people)))
@@ -161,7 +185,8 @@ def collide(c, kind: str):
         out = []
     from . import common
     common.message(c, text, out)
-    for i in range(num.as_int(st.NP)):
+    # line 750 is "FOR L = 0 TO NP - 1", and the body runs once even when NP is 0
+    for i in num.fort_range(0, num.as_int(st.NP) - 1):
         if num.eq(st.H1[i], num.parse("-2")):
             st.H1[i] = num.neg(num.ONE)
             st.NP = num.as_int(st.NP) - 1

@@ -38,7 +38,7 @@ def show(c):
         # Q(0) may not be a landmark at all: a fort purchase or a trade writes the
         # fort tier or the rounded holding there. That is the cosmetic half of
         # Q's double life, and the map really does plot it. See GAPS.md.
-        n = num.as_int(st.Q[i])
+        n = num.as_int(st.Q_arr[i])
         if n and 0 <= n < 18 and n not in visited:
             visited.append(n)
     if st.LM not in visited:
