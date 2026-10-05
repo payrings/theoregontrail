@@ -203,3 +203,43 @@ def test_round_fac_is_the_byte_sequence_the_rom_does():
         v = PureBackend().from_str(text) if "/" not in text \
             else PureBackend().div(Fac.from_int(1), Fac.from_int(3))
         assert rom.round_fac(v) is not None
+
+
+#: Fifteen consecutive RND(1) from the seed 81 00 00 00 00, and the seed they
+#: leave behind. These are an *independent* record: they were produced by
+#: executing this same ROM image in a separate verification pass, so a match here
+#: is not the code agreeing with itself. They close the one item the paper's
+#: section 12.6 lists as outstanding -- "the first RND values for a known seed".
+RND_SEED = bytes((0x81, 0x00, 0x00, 0x00, 0x00))
+RND_SERIES = [
+    0.4072949116816744, 0.608041618950665, 0.25951706536579877,
+    0.08268766026594676, 0.35866158816497773, 0.9610444016288966,
+    0.5672113706823438, 0.6001326921395957, 0.33425431547220796,
+    0.6068662970792502, 0.6758213557768613, 0.3164409970631823,
+    0.036882334752590396, 0.03491484130790923, 0.2833032483467832,
+]
+RND_FINAL_SEED = bytes((0x7F, 0x11, 0x0D, 0x1F, 0x95))
+
+
+def test_rnd_from_a_known_seed_matches_the_independent_record():
+    rom = applesoft.current()
+    rom.set_seed(RND_SEED)
+    got = [rom.rnd(Fac.from_int(1)).to_float() for _ in RND_SERIES]
+    assert got == RND_SERIES, [f"{g!r} != {w!r}" for g, w in zip(got, RND_SERIES)
+                               if g != w][:3]
+    assert rom.get_seed() == RND_FINAL_SEED, rom.get_seed().hex(" ")
+
+
+def test_the_decimal_literals_match_the_independent_record():
+    """The ROM's own conversion of the literals the game leans on.
+
+    ``0.8`` and ``0.2`` are the classic Applesoft values and neither is the
+    nearest double, which is why the game never uses a host float.
+    """
+    pure = PureBackend()
+    assert pure.from_str(".8").raw() == bytes((0x80, 0x4C, 0xCC, 0xCC, 0xCD))
+    assert pure.from_str(".2").raw() == bytes((0x7E, 0x4C, 0xCC, 0xCC, 0xCD))
+    assert pure.from_str(".1").raw() == bytes((0x7D, 0x4C, 0xCC, 0xCC, 0xCD))
+    assert pure.from_str(".8").to_float() == 0.8000000000465661
+    assert pure.from_str(".2").to_float() == 0.20000000001164153
+    assert pure.from_str(".1").to_float() == 0.10000000000582077

@@ -11,12 +11,14 @@ from __future__ import annotations
 from . import num
 from .data import illnesses as ILL
 
-__all__ = ["fire"]
+__all__ = ["fire", "UndefStatementError", "EVENT_COUNT",
+           "unreachable_event"]
 
+#: line 3180 tests RE(0) to RE(14) -- fifteen events
+EVENT_COUNT = 15
 
-def fire(c, which: int):
-    """Dispatch one event."""
-    return _EVENTS[which](c)
+#: RE(2) is set to 0 at line 29001, so event 2 can never fire
+unreachable_event = 2
 
 
 # --------------------------------------------------------------------- 0
@@ -242,5 +244,26 @@ def event_14(c):
     common.message(c, "Inadequate grass")
 
 
-_EVENTS = [event_0, event_1, event_0, event_3, event_4, event_5, event_6, event_7,
+def fire(c, which: int):
+    """Dispatch one event, as line 3180's ON L8 + 1 GOSUB list does.
+
+    The list names ``10200``, and the program has no such line: the listing jumps
+    from 10105 to 10300. Line 29001 sets ``RE(2) = 0``, so the chance of reaching
+    it is nil, but if it were ever reached the original would raise UNDEF'D
+    STATEMENT rather than quietly do something else. That is what happens here.
+    """
+    if which == 2:
+        raise UndefStatementError(
+            "event 2 dispatches to 10200, which is not in the program: the "
+            "original would raise UNDEF'D STATEMENT. RE(2) is 0 so it cannot "
+            "be reached.")
+    return _EVENTS[which](c)
+
+
+class UndefStatementError(Exception):
+    """Reached a GOSUB target that is not in the program."""
+
+
+#: the ON list of line 3180, with 2 as the entry the program lacks
+_EVENTS = [event_0, event_1, None, event_3, event_4, event_5, event_6, event_7,
            event_8, event_9, event_10, event_11, event_12, event_13, event_14]

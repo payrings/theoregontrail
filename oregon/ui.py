@@ -33,7 +33,9 @@ replaced; the map and the travel screen are drawn as text instead.
 
 from __future__ import annotations
 
+import atexit
 import copy
+import os
 import sys
 
 __all__ = ["UI", "TerminalUI", "ScriptedUI", "RETURN"]
@@ -149,12 +151,26 @@ class UI:
 class TerminalUI(UI):
     """The plain terminal implementation.
 
-    The interesting part is :meth:`poll_key`, which has to be genuinely
-    non-blocking for the travel interrupt to work as it does in the original: the
-    cycle runs on and a keypress stops it. On a POSIX terminal the line is put into
-    cbreak mode so a single keypress is available without Return. When the input
-    is not a terminal -- a pipe, a test run -- ``poll_key`` always returns None,
-    which means travel is never interrupted, and that is the sensible reading.
+    Reading is done with :func:`os.read` on file descriptor 0 rather than
+    ``sys.stdin.read``, for two reasons that showed up as an unresponsive
+    keyboard:
+
+    * ``sys.stdin`` is a buffered text stream. A character read through it can be
+      held in Python's buffer rather than consumed from the terminal, so the next
+      prompt sees nothing and the keypress appears to be lost.
+    * Most prompts take a **single** character -- line 1015's menu, the action
+      menu, the river menu. After reading that one character the Return the player
+      pressed is still sitting in the line discipline buffer, and the *next* prompt
+      consumes it instead of waiting. Every answer then lands one prompt late,
+      which feels exactly like the keyboard being ignored.
+
+    So the terminal is put into cbreak mode once, characters are taken straight
+    from the descriptor, and after a single-character answer anything else already
+    typed is drained. ``poll_key`` stays non-blocking, which is what the travel
+    interrupt needs: the day runs on until a key arrives.
+
+    When the input is not a terminal -- a pipe, a test -- cbreak is skipped and
+    ``poll_key`` always returns None, so travel is never interrupted.
     """
 
     def __init__(self, echo: bool = True, interrupt: bool = True):
@@ -162,22 +178,55 @@ class TerminalUI(UI):
         self.echo = echo
         self.interrupt = interrupt
         self._saved = None
+        self._raw_on = False
+        self._eof = False
         self._pending = []
+        atexit.register(self.close)
 
-    # ---------------------------------------------------------- raw input
-    def _enter_raw(self):
-        if self._saved is not None or not sys.stdin.isatty():
+    # ------------------------------------------------------------ raw input
+    @property
+    def _is_tty(self) -> bool:
+        try:
+            return sys.stdin.isatty()
+        except Exception:                          # noqa: BLE001
+            return False
+
+    def _ensure_raw(self):
+        """Put the terminal into cbreak mode, once, and remember the old settings.
+
+        Deliberately **not** ``tty.setcbreak``: that uses ``TCSAFLUSH``, which
+        throws away anything already typed. Entering the mode then discards a
+        keystroke that arrived while the game was drawing -- which is the whole
+        "the keyboard is unresponsive" complaint, and it is intermittent because
+        it depends on whether the key was pressed before or after this ran.
+
+        So the mode is built here and set with ``TCSANOW``, which leaves pending
+        input alone. A keystroke typed early is simply read by the next prompt,
+        exactly as a canonical terminal would.
+        """
+        if self._raw_on or not self._is_tty:
             return
         try:
             import termios
-            import tty
-        except ImportError:                       # pragma: no cover - not POSIX
+            fd = sys.stdin.fileno()
+            attrs = termios.tcgetattr(fd)
+            self._saved = attrs[:]
+            new = attrs[:]
+            # no echo (we echo ourselves), no line buffering: a keypress arrives at
+            # once, without waiting for Return
+            new[3] &= ~(termios.ECHO | termios.ICANON)
+            new[6][termios.VMIN] = 1
+            new[6][termios.VTIME] = 0
+            termios.tcsetattr(fd, termios.TCSANOW, new)
+        except Exception:                          # noqa: BLE001
+            self._saved = None
             return
-        self._saved = termios.tcgetattr(sys.stdin.fileno())
-        tty.setcbreak(sys.stdin.fileno())
+        self._raw_on = True
 
-    def _leave_raw(self):
-        if self._saved is None:
+    def close(self):
+        """Put the terminal back the way it was found."""
+        if not self._raw_on or self._saved is None:
+            self._raw_on = False
             return
         try:
             import termios
@@ -185,87 +234,154 @@ class TerminalUI(UI):
         except Exception:                          # noqa: BLE001
             pass
         self._saved = None
-
-    def _at_eof(self) -> bool:
-        """Whether stdin has run out, so a prompt cannot loop for ever."""
-        import sys as _sys
-        try:
-            return not _sys.stdin.isatty() and _sys.stdin.read() == ""
-        except Exception:                          # noqa: BLE001
-            return False
+        self._raw_on = False
 
     def _read_char(self):
-        """One character, without waiting for a newline, or None."""
-        self._enter_raw()
+        """One character straight from the descriptor, or None at end of input."""
+        if self._pending:
+            return self._pending.pop(0)
+        self._ensure_raw()
         try:
-            ch = sys.stdin.read(1)
-        finally:
-            self._leave_raw()
-        return ch or None
+            import os
+            data = os.read(0, 1)
+        except Exception:                          # noqa: BLE001
+            self._eof = True
+            return None
+        if not data:
+            self._eof = True
+            return None
+        return data.decode("latin-1")
+
+    def _drain(self):
+        """Throw away anything else already typed, without waiting.
+
+        Called after a single-character answer so the Return that ended it cannot
+        be taken as the answer to the next prompt.
+        """
+        try:
+            import os
+            import select
+            while select.select([0], [], [], 0)[0]:
+                if not os.read(0, 256):
+                    self._eof = True
+                    return
+        except Exception:                          # noqa: BLE001
+            pass
 
     def poll_key(self):
-        if not self.interrupt:
+        """``USR (3)``: a key if one is waiting, else None. Never blocks."""
+        if not self.interrupt or self._eof:
             return None
         if self._pending:
             return self._pending.pop(0)
         try:
             import select
-            if not select.select([sys.stdin], [], [], 0)[0]:
+            if not select.select([0], [], [], 0)[0]:
                 return None
         except Exception:                          # noqa: BLE001
             return None
-        ch = self._read_char()
-        return ch
+        return self._read_char()
 
     def wait_key(self, allowed: str = "", prompt: str = "Press SPACE BAR to continue"):
+        """Line 950: prompt, then wait for any key."""
         self.print(prompt)
         while True:
             ch = self._read_char()
             if ch is None:
-                if self._at_eof():
+                if self._eof:
                     return ""
                 continue
-            if ch in ("\x1b",):
-                self._read_char()                  # swallow the rest of an escape
+            if ch == "\x1b":                      # swallow an escape sequence
+                self._drain()
                 continue
+            self._echo(ch)
             return ch
 
+    def _debug(self, text):
+        """Append to ``$OREGON_DEBUG_INPUT`` when it is set. For chasing input."""
+        path = os.environ.get("OREGON_DEBUG_INPUT")
+        if not path:
+            return
+        try:
+            with open(path, "a") as fh:
+                fh.write(text + "\n")
+        except Exception:                          # noqa: BLE001
+            pass
+
     def key(self, allowed: str = "", maxlen: int = 1, default: str = "") -> str:
+        """``& INP``: a line of at most *maxlen* characters, Return always ends it.
+
+        Read the way the original reads it: **a line, terminated by Return**. That is
+        what makes prompts reliable. The earlier version took a single character and
+        then tried to throw away the Return the player had pressed -- and lost the
+        race, because the Return often arrives a moment *after* the drain ran. The
+        next prompt then got a bare Return, rejected it as not one of the allowed
+        characters, and sat there: every answer one prompt late, which reads as a
+        dead keyboard.
+
+        A canonical terminal never had that problem for the same reason: the line
+        discipline hands over ``1\n`` as one unit, so a Return always belongs to
+        exactly one prompt. Reading a line here reproduces that, and
+        Nothing is drained before the read: a canonical terminal does not discard
+        what was typed early either, it holds it until something reads it, and
+        draining here would throw away a whole script that arrived before the first
+        prompt was drawn.
+        """
+        self._ensure_raw()
         got = []
         allowed_set = set(allowed) | {"\r", "\n"}
-        while len(got) < maxlen:
+        # Read to the end of the line even once *maxlen* characters have been
+        # accepted. Otherwise the Return that ended this prompt stays in the
+        # terminal and is handed to the next one, which then rejects it -- so a
+        # one-character answer like the main menu would leave every later answer
+        # one prompt out of step, which is what made the keyboard look dead.
+        while True:
             ch = self._read_char()
+            self._debug(f"  read {ch!r}")
             if ch is None:
-                if self._at_eof():
-                    # stdin is exhausted: a prompt with no answer would spin for
-                    # ever, so stop the game cleanly instead
-                    raise SystemExit("input ended while waiting for an answer")
+                if self._eof:
+                    break
                 continue
-            if ch in ("\x1b",):
-                self._read_char()
+            if ch == "\x1b":                          # an escape sequence
+                self._drain()
                 continue
+            if ch in ("\r", "\n"):
+                break
             if ch in ("\x7f", "\b"):
                 if got:
                     got.pop()
                     self._echo_line(got)
                 continue
-            if ch in ("\r", "\n"):
-                break
-            if ch in allowed_set or not allowed:
-                got.append(ch)
-                self._echo_line(got)
+            if len(got) >= maxlen:
+                continue            # & INP beeps at the limit; just skip the key
+            if allowed and ch not in allowed_set:
+                self._debug(f"  rejected {ch!r} (allowed={allowed!r})")
+                continue
+            got.append(ch)
+            self._echo_line(got)
+        self.close()
+        self._debug(f"key(allowed={allowed!r}, maxlen={maxlen}) -> {got!r}")
         return "".join(got)
 
+    # ----------------------------------------------------------------- echo
+    def _echo(self, ch: str):
+        if self.echo and self._is_tty:
+            sys.stdout.write(ch if ch not in ("\r", "\n") else "\n")
+            sys.stdout.flush()
+
     def _echo_line(self, got):
-        if self.echo:
+        if self.echo and self._is_tty:
             sys.stdout.write("\r" + " " * 40 + "\r")
             sys.stdout.write("".join(got))
             sys.stdout.flush()
 
-    # ------------------------------------------------------------- output
+    def _at_eof(self) -> bool:
+        return self._eof
+
+    # ------------------------------------------------------------- the screen
     def print(self, text: str = ""):
         self.out.append(text)
-        sys.stdout.write(text + END)
+        sys.stdout.write(text + "\n")
         sys.stdout.flush()
 
     def clear(self):
