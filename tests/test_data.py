@@ -151,3 +151,46 @@ def test_the_dialogue_records_load_and_are_the_papers_fifty_one():
     assert d.speaker(1, 2) == "A ferry operator"
     # the game keeps the original spelling of the dialogue
     assert "Keep'em moving but set them a fair pace" in d.text(2, 2)
+
+
+def test_the_climate_zone_covers_the_segments_the_code_actually_runs():
+    """Table 12 of the paper lists landmark numbers where it means segments.
+
+    The zone is set from the *landmark* on arrival (line 1000) and applies to the
+    segment that leaves it, so the segment ranges come out as 0-2, 3-5, 6-11, 12-14
+    and 15-18. The paper's column says 0-2, 3-5, 6-10, 11-13, 14-16, which puts
+    climate row 2 on the run to Fort Hall and row 3 on the run to the Blue
+    Mountains; both are wrong, because Fort Hall is zone 3 and the Blue Mountains
+    zone 4. This test pins the mapping the code uses.
+    """
+    from oregon.trail import climate_zone
+    ranges = {}
+    # Every landmark but the last has an outgoing segment. Note that
+    # LM$(n, 2) holds a segment *number*, so landmark 0 names segment 0 and a
+    # zero there is not a "none" marker -- see FINDINGS 6.3.
+    for landmark in range(17):
+        zone = climate_zone(landmark)
+        # the first segment always exists -- and may legitimately be 0 -- while a
+        # zero in the second column really does mean "there is none"
+        ranges.setdefault(zone, []).append(landmarks.LM_SEGMENT[landmark])
+        if landmarks.LM_SEGMENT2[landmark]:
+            ranges[zone].append(landmarks.LM_SEGMENT2[landmark])
+    covered = {z: sorted(segs) for z, segs in sorted(ranges.items())}
+    assert covered == {0: [0, 1, 2], 1: [3, 4, 5], 2: [6, 7, 8, 9, 10, 11],
+                       3: [12, 13, 14], 4: [15, 16, 17, 18]}, covered
+    assert sum(len(v) for v in covered.values()) == 19, "all nineteen segments"
+
+
+def test_event_two_has_no_routine_and_cannot_be_reached():
+    """Line 3180 names 10200, which the program does not have.
+
+    ``RE(2) = 0`` at line 29001, so the chance is nil; if it were ever reached the
+    original raises UNDEF'D STATEMENT, and so does this.
+    """
+    from oregon import events
+    from oregon.state import State
+    assert events.EVENT_COUNT == 15
+    assert events.unreachable_event == 2
+    assert State().RE[2].is_zero(), "RE(2) is 0, so event 2 can never fire"
+    with pytest.raises(events.UndefStatementError):
+        events.fire(None, 2)

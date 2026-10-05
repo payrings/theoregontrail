@@ -70,6 +70,7 @@ matters.** The ROM is the default.
 | A4 | §10.1: the Barlow toll is paid "only if `MY > V`" | line 50020 is exactly that, so a party holding precisely the toll is refused | reproduced; `endl.the_dalles` |
 | A5 | §2.3 Table 4 | the two layouts are as stated | reproduced exactly, including that `FLOAT` reads the oxen from 909 and the bullets from 904/905 while the store wrote the yokes to 905 and the boxes to 909 |
 | A6 | §4.1: "The shortest route … is 1,771 miles to The Dalles and 1,871 by the Barlow Road" | summing Table 8's own miles along the shortest route gives **1,821** and **1,921** | the table is used as printed, since it is what `LM(Z,0)` holds; the paper's two totals are 50 miles short. Worth checking against a real run. |
+| A7 | §8.2 event 2: "no routine exists / none" | line 3180's `ON … GOSUB` list names `10200`, which the program does not have | `RE(2) = 0` at 29001, so it cannot be reached; reaching it would be UNDEF'D STATEMENT. `events.fire` raises rather than silently running something else. |
 
 ---
 
