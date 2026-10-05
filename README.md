@@ -55,6 +55,37 @@ behaviour disagree.
 
 ---
 
+## History
+
+How the work went, month by month.
+
+- **March 2025** — Extracted the Applesoft BASIC files from version 1.4 and converted
+  them into `.txt`; analysis of the Applesoft BASIC files.
+- **April 2025** — Modified the Applesoft BASIC files to extract various data; hacked
+  the BASIC files to accelerate the game and observe it under different conditions.
+- **April 2025** — Used Google Gemini 2.5 Pro to attempt to determine the purpose of
+  the variables, and of `PEEK` and `POKE`.
+- **April 2025** — First attempt to code a simple Python version of the game without
+  AI.
+- **April 2025** — Second attempt to code a simple Python version of the game with
+  AI.
+- **June 2025** — First draft version of the paper, written by hand with the help of
+  Google Gemini 2.5 Pro.
+- **September 2025** — Used Google Gemini 2.5 Pro to analyse the BASIC code and the
+  variables in depth, with the aid of the game's engineer's book.
+- **February 2026** — Second draft version of the paper, mostly corrected by Google
+  Gemini 3.1 Pro, with all the findings gained so far.
+- **October 2026** — First official version of the paper, reviewed and corrected by
+  Claude Opus 5.5 (Medium), which includes an analysis of the assembly code by Claude.
+
+The model names were checked against their release dates. Gemini 2.5 Pro appeared as an
+experimental model on 25 March 2025 and went generally available on 6 June 2025, so it
+is the model for the 2025 work. Gemini 3 Pro followed on 18 November 2025, which is
+after the September work, so it cannot be the model for any of the entries above.
+Gemini 3.1 Pro was released on 19 February 2026, which fits the second draft.
+
+---
+
 ## The Python translation
 
 > **This is secondary.** It exists to **prove the paper's findings are correct**,
