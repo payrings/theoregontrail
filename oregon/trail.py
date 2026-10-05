@@ -219,9 +219,11 @@ def travel_screen(c):
     """Lines 300-401: the travel screen, as a block of text.
 
     The original draws it on the hi-res screen with six labels at the columns in
-    ``B(0 to 5)`` -- 95, 70, 81, 95, 23 and 20 -- and six values above them. There is
-    no hi-res screen here, so the same six labels and values are printed one per
-    line, in the listing's order. The label list is read from the DATA line at 22000.
+    ``B(0 to 5)`` -- 95, 70, 81, 95, 23 and 20, held in ``st.B_arr`` -- and six
+    values above them. There is no hi-res screen here, so the same six labels and
+    values are printed one per line, in the listing's order, with the DATA line at
+    22000 supplying the label text. ``B_arr`` is the array; the scalar ``B`` is the
+    cannot-continue flag and is a different variable (paper 2.5, rule b).
 
     Line 310 chooses the border colour from the weather: white when there is snow, the
     dry colour when the rain is 0.2 or less, green otherwise. That has no text
@@ -257,9 +259,9 @@ def remove_drowned(c):
     from . import illness
     st = c.st
     for slot in range(num.as_int(st.NP)):
-        st.Q[0] = slot
-        if num.eq(st.H1[num.as_int(st.Q[0])], num.parse("-2")):
-            illness.die(c, num.as_int(st.Q[0]))
+        st.Q = num.parse(str(slot))          # the scalar Q, as line 3504 sets it
+        if num.eq(st.H1[num.as_int(st.Q)], num.parse("-2")):
+            illness.die(c, num.as_int(st.Q))
 
 
 def find_grave(c):
@@ -404,12 +406,14 @@ def health_today(c):
     st.ZC = zc
     # 3215  ZF = F0, or 8 when there is no food at all
     st.ZF = st.F0 if not num.eq(st.PF, num.ZERO) else num.parse("8")
-    # 3220  ZP: twice the pace, plus one in rain or snow, plus two in heavy
-    zp = num.parse("2" if st.P > num.ONE else ("4" if st.P > num.TWO else "0"))
+    # 3220  ZP = (W > 5) + (W > 7) + P + P -- twice the pace, plus one in rain or
+    # snow, plus two more in heavy rain or snow. It is P added to itself, so steady
+    # already costs 2; only a stopped party has P = 0.
+    zp = num.add(st.P, st.P)
     if num.gt(st.W, num.parse("5")):
         zp = num.add(zp, num.ONE)
     if num.gt(st.W, num.parse("7")):
-        zp = num.add(zp, num.parse("2"))
+        zp = num.add(zp, num.ONE)
     st.ZP = zp
     # 3225  the freeze and starve factor: +.8 on a bad day, halved on a good one
     x = num.gt(st.ZC, num.HALF)
@@ -531,10 +535,11 @@ def event_loop(c):
     One draw per event tested, fifteen if the loop runs to the end, and the loop is
     skipped entirely on a stopped day -- resting, delayed or waiting at a river.
 
-    **One event fires per day, not several.** The paper says the loop "does not stop
-    after the first event ... so two events can occur on one day", but line 3180 ends
-    with ``L8 = 20`` after every firing event, and ``NEXT L8`` then leaves the loop.
-    The source has authority, so one event it is; see ``GAPS.md``.
+    **More than one event can fire on one day.** Line 3180 ends
+    ``... INVERSE : IF B > 0 THEN GOSUB 4000: GOSUB 300:L8 = 20``, and everything
+    after a ``THEN`` belongs to the ``IF`` (paper 2.5, rule a). So ``L8 = 20`` runs
+    only when an event has fired *and* ``B`` is above zero; otherwise the loop carries
+    on with the next event.
     """
     st = c.st
     st.HR = num.ZERO
@@ -555,10 +560,15 @@ def event_loop(c):
             continue
         from . import events
         events.fire(c, which)
+        # Line 3180 ends "... INVERSE : IF B > 0 THEN GOSUB 4000: GOSUB 300:L8 = 20".
+        # Everything after that THEN belongs to the IF (paper 2.5, rule a), so on a
+        # travelling day with B still zero the menu is not opened, GOSUB 300 does not
+        # run, and L8 = 20 does not either: the loop carries on with the next event.
+        # More than one event can therefore fire on one day.
         if st.B > 0:
             from . import action
             action.action_menu(c)
-        break                     # L8 = 20: at most one event a day
+            break                      # L8 = 20 ends the loop
 
 
 # ------------------------------------------------------------------- segments
@@ -566,31 +576,35 @@ def choose_segment(c):
     """Lines 2100-2120: South Pass and the Blue Mountains each lead two ways.
 
     ``IF NOT VAL (LM$(LM,3)) THEN RETURN`` -- no second segment, no question.
+
+    Line 1015 then ends ``GOSUB 2100: IF Z = 3 THEN GOSUB 4200: GOSUB 190: GOTO 1015``.
+    Everything after that ``THEN`` belongs to the ``IF`` (paper 2.5, rule a), so
+    choice 3 shows the map and then returns to line 1015 to **ask again**: it does
+    not fall through to line 2200. Any other choice returns, and line 2200 loads the
+    segment.
     """
     st = c.st
     from . import common
-    travel_screen(c)
-    second = L.LM_SEGMENT2[st.LM]
-    if not second:
-        # line 2105: no second segment, so no question -- line 2200 loads the only
-        # one there is
-        return L.LM_SEGMENT[st.LM]
-    c.ui.print("The trail divides here.  You may:")
-    c.ui.print()
-    for i, seg in enumerate((L.LM_SEGMENT[st.LM], second), 1):
-        dest = L.SEG_ENDS_AT[seg]
-        c.ui.print(f"{i}. head for {L.LM_NAMES[dest]}")
-    c.ui.print("3. see the map")
-    c.ui.print()
-    c.ui.print("What is your choice? ")
-    from .ui import ALLOWED
-    a = c.ui.key(ALLOWED["SEGMENT"], 1)
-    choice = int(a) if a and a.isdigit() else 3
-    if choice == 3:
-        from . import maplib
-        maplib.show(c)
-        return L.LM_SEGMENT[st.LM]
-    return second if choice == 2 else L.LM_SEGMENT[st.LM]
+    while True:
+        travel_screen(c)
+        second = L.LM_SEGMENT2[st.LM]
+        if not second:
+            return L.LM_SEGMENT[st.LM]
+        c.ui.print("The trail divides here.  You may:")
+        c.ui.print()
+        for i, seg in enumerate((L.LM_SEGMENT[st.LM], second), 1):
+            c.ui.print(f"{i}. head for {L.LM_NAMES[L.SEG_ENDS_AT[seg]]}")
+        c.ui.print("3. see the map")
+        c.ui.print()
+        c.ui.print("What is your choice? ")
+        from .ui import ALLOWED
+        a = c.ui.key(ALLOWED["SEGMENT"], 1)
+        choice = int(a) if a and a.isdigit() else 1
+        if choice == 3:
+            from . import maplib
+            maplib.show(c)          # GOSUB 4200, then GOTO 1015: ask again
+            continue
+        return second if choice == 2 else L.LM_SEGMENT[st.LM]
 
 
 def load_segment(c, seg: int):
@@ -649,7 +663,7 @@ def run(c):
             c.ui.print(f"You are now at {L.LM_NAMES[st.LM]}.  Would you like to "
                        f"look around? ")
             look_around = common.yes_no(c) == "Y"
-            st.Q[st.Q1] = st.LM
+            st.Q_arr[st.Q1] = st.LM
             st.Q1 += 1
         if look_around:
             st.LL = 0

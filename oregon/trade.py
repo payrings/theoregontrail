@@ -58,10 +58,12 @@ def attempt(c):
         c.ui.print("trade with you today.")
         common.wait_key(c)
         return False
-    # line 50011 writes the rounded holding into Q, clobbering the map's first
-    # landmark the same way the fort tier does. See GAPS.md.
-    st.Q[0] = num.int_(num.add(st.I[x + 2], num.HALF))
-    q = st.Q[0]
+    # line 50011 sets the *scalar* Q to the rounded holding and line 50035 stores
+    # Q - V back into the inventory, so an accepted trade rounds what the party
+    # gives away to a whole number (paper 13). Q and Q() are different variables
+    # (paper 2.5, rule b), so the map's history is untouched.
+    st.Q = num.int_(num.add(st.I[x + 2], num.HALF))
+    q = st.Q
     want = v
     give = f
     word = _wording(x, num.as_int(want))

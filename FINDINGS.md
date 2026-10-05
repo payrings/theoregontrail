@@ -50,12 +50,16 @@ The addend's fifth byte is `20`, the opcode of the `JSR` at `$EFAE` that begins 
 routine. That is the paper's point made visible: the constant is only four bytes and
 the ROM reads whatever the instruction stream put next.
 
-Decoded, the addend is a 5-byte value with exponent byte `$68` (104) and significand
-byte `$28` — about **1.9 × 10⁻⁸**. The multiplier is `$98` (152), magnitude about
-**6.99 × 10⁶**. So the seed, which lies in [0.5, 1), produces products of order 10⁷
-and the addend is eleven orders of magnitude below them. "Almost no effect" is an
-understatement, and any implementation that adds a plausible-looking constant will
-get a subtly different generator.
+Decoded, the multiplier is a 5-byte value with exponent byte `$98` (152) and
+significand byte `$35`, about **1.19 × 10⁷**; the addend has exponent byte `$68`
+(104) and significand byte `$28`, about **3.9 × 10⁻⁸**. The first significand byte
+has an implied top bit, which is where my earlier figures went wrong by a factor of
+two: I had 6.99 × 10⁶ and 1.9 × 10⁻⁸, each half the true value.
+
+So the seed, which lies in [0.5, 1), produces products of order 10⁷ and the addend
+is fifteen orders of magnitude below them. "Almost no effect" is a considerable
+understatement, and any implementation that adds a plausible-looking constant gets a
+subtly different generator.
 
 ### 1.2 `RND` itself, decoded
 
@@ -236,26 +240,30 @@ every call.
 The order of authority for this project is the BASIC first, then the paper. Six
 places where they disagree.
 
-### 5.1 One event a day, not two (§8.1)
+### 5.1 RETRACTED — more than one event can fire on a day
 
-The paper: *"The loop does not stop after the first event. It ends early only when
-`B` is above zero … Otherwise the remaining events are still tested, so two events
-can occur on one day."*
+**What I claimed.** That at most one event fires on a travelling day, because
+line 3180 ends the loop body with `L8 = 20`, and `NEXT L8` then gives 21 against a
+limit of `RE = 14`.
 
-The code, line 3180, ends the body of the event loop with:
+**Why it was wrong.** I read the line as Python reads it, with each `THEN` ending at
+the next statement. Applesoft has no blocks: **everything after a `THEN` belongs to
+the `IF`** (paper 2.5, rule a). Line 3180 is
 
 ```
-L8 = 20
+3180 ... INVERSE : IF B > 0 THEN GOSUB 4000: GOSUB 300:L8 = 20
 ```
 
-unconditionally — it is a separate statement after the `IF B > 0 THEN GOSUB 4000`,
-not inside it. `NEXT L8` then makes `L8 = 21`, and the loop is `FOR L8 = C0 TO RE`
-with `RE = 14`, so 21 > 14 and the loop ends. **At most one event fires per day.**
-`trail.event_loop` breaks after one.
+so `L8 = 20` is inside the `THEN` on `B`. It runs only when an event has fired
+*and* `B` is above zero. On an ordinary day `B` is zero, the whole clause is skipped,
+and the loop carries on to the next event. The paper's §8.1 is right and my reading
+was wrong.
 
-This is the most consequential divergence in the rebuild, because it changes the
-whole draw sequence: fifteen draws either way, but which events get tested. If the
-paper is right about the shipped game, this needs revisiting.
+**Fixed** in `trail.event_loop`: the loop now breaks only when `B > 0` after an
+event. A day therefore draws once per event *tested*, and several events can fire.
+
+Test: `tests/test_applesoft_rules.py::test_more_than_one_event_can_fire_in_one_day`
+and `::test_the_loop_stops_early_when_B_is_above_zero`.
 
 ### 5.2 The rough ford draws one chance, not one per good (§9.3)
 
@@ -265,21 +273,24 @@ a random loss."*
 Line 50070 draws `V = .1 + RND (1) * .3` **once**, then calls the goods loop, so all
 six goods share that one value. The draw order is: tip?, V, then six goods draws.
 
-### 5.3 The route is 1,821 miles, not 1,771 (§4.1)
+### 5.3 RETRACTED — the route is 1,771 miles, and the paper says so
 
-The paper's Table 8 gives the segment lengths; summing them along the shortest route
-(0,1,2,3,4,5,6,7,10,11,12,13,14,15,17) gives:
+**What I claimed.** That the shortest route sums to 1,821 miles to The Dalles and
+1,921 by the Barlow Road, and that the paper's 1,771 and 1,871 were 50 miles short.
 
-| | miles |
-| --- | --- |
-| via the Green River to The Dalles | **1,821** |
-| then segment 18, the Barlow Road | **1,921** |
-| via Fort Bridger instead (0..7,8,9,11..15,17) | 1,964 |
-| **the paper states** | **1,771 and 1,871** |
+**Why it was wrong.** I summed segments 15 and 17, which go through Fort Walla
+Walla: 55 + 120. The shortest route leaves the Blue Mountains on **segment 16**,
+straight to The Dalles, 125 miles. Segments 0-7, 10-14 and 16 give
 
-Exactly 50 miles out on both totals, so it looks like a single arithmetic slip rather
-than a different table. The game uses `LM(Z,0)`, so the table is what plays. Worth
-checking against a real run.
+```
+102 + 83 + 119 + 250 + 86 + 190 + 102 + 57 + 144 + 57 + 182 + 114 + 160 + 125
+  = 1771
+```
+
+and with segment 18, the Barlow Road, 1,871. My error was reading the two routes as
+the same one. The paper's figures stand.
+
+Test: `tests/test_applesoft_rules.py::test_the_shortest_route_is_1771_miles`.
 
 ### 5.4 The climate table is indexed from one, not zero
 
@@ -297,12 +308,23 @@ would not have surfaced in any test that only checked self-consistency. It was c
 by testing `FN W(0)` for January against the paper's worked example (row 0, codes 59
 and 43, so 9 degrees and 0.039 of rain).
 
-### 5.5 The map's third choice takes the first segment
+### 5.5 RETRACTED — the map's third choice asks again
 
-Line 2110 offers ". see the map" as choice 3 and sets `Z$ = "3"`. Line 1015 then runs
-`IF Z = 3 THEN GOSUB 4200`, which shows the map, and falls through to line 2200 with
-`Z` still 1 — so **choice 3 shows the map and then takes the first segment**, not the
-second. Reproduced.
+**What I claimed.** That choosing 3 at a branch shows the map and then falls
+through to line 2200, taking the first segment.
+
+**Why it was wrong.** Same rule (a). Line 1015 ends
+
+```
+1015 ... GOSUB 2100: IF Z = 3 THEN GOSUB 4200: GOSUB 190: GOTO 1015
+```
+
+so `GOSUB 190` and `GOTO 1015` are inside the `THEN`. Choice 3 shows the map and
+returns to line 1015 to **ask again**; it never reaches line 2200.
+
+**Fixed** in `trail.choose_segment`: choice 3 shows the map and loops.
+
+Test: `tests/test_applesoft_rules.py::test_choosing_the_map_asks_again_rather_than_loading_a_segment`.
 
 ### 5.6 `& INP`'s first argument is the length, not a count
 
@@ -320,66 +342,50 @@ names mislead.
 The paper's §13 lists nine probable bugs. Three more were found in the source while
 transcribing it. All six of the interesting ones are reproduced.
 
-### 6.1 The action menu swaps "Buy supplies" for the hunt when leaving a fort
+### 6.1 RETRACTED — there is no swap in the action menu
 
-Line 4040 builds the menu, and line 4090 dispatches:
+**What I claimed.** That on the trail leaving a fort, menu choice 8 "Buy supplies"
+runs the hunt and choice 9 "Hunt for food" does nothing, and that this was a bug in
+the shipped code which the build reproduced.
 
-```
-Z = Z * ( VAL(Z$) > 7) + VAL(Z$)
-ON Z - 1 GOSUB 4100,4200,4300,4400,4500,4900,4700,4800,4600
-```
-
-`Z` is 0 at a landmark and **2 on the trail**. Leaving a fort on the trail, the menu
-shows both "Buy supplies" (choice 8) and "Hunt for food" (choice 9), and:
+**Why it was wrong.** Rule (a) again. Line 4040 ends
 
 ```
-choice 8:  Z = 2 * 1 + 8 = 10  ->  ON 9  ->  4600, the hunt
-choice 9:  Z = 2 * 1 + 9 = 11  ->  ON 10 ->  past the end of the list, nothing happens
+4040 ... Z = 0: IF NOT LL THEN PRINT L". "AQ$(7):L = L + 1: IF VAL (LM$(LM,1)) = 1 THEN PRINT L". "AQ$(8):L = L + 1
 ```
 
-So on the trail leaving a fort, **"Buy supplies" runs the hunting game and "Hunt for
-food" does nothing at all.** At a landmark the same two choices dispatch correctly
-(`Z = 8` → `ON 7` → buy; `Z = 9` → `ON 8` → hunt), which is why it went unnoticed.
-`action.action_menu` reproduces it and says so in the function.
+so **both** extra entries are inside `IF NOT LL`: "Talk to people" and "Buy supplies"
+are printed only at a landmark, never on the trail. Line 4050 then prints "Hunt for
+food" on the trail with `Z = 2`, and choice 8 gives `Z = 2 * 1 + 8 = 10`, so `ON Z - 1`
+is `ON 9` and reaches 4600, the hunt. Correctly.
 
-### 6.2 `Q` is one variable used as an array *and* as three scalars
+**Fixed**: the reproduced "bug" is gone from `action.action_menu` and its docstring.
 
-`OREGON TRAIL` 29000 does `DIM Q(16)` and uses `Q(0 to Q1-1)` as the landmark history
-that `MAP.LIB` plots. But:
+Test: `tests/test_applesoft_rules.py::test_the_trail_menu_is_the_eight_choices_ending_in_the_hunt`.
 
-* `BUY.LIB` 50003 does `Q = (LM > 2) + (LM > 4) + ...` — the fort's price tier,
-  which writes `Q(0)`;
-* `TRADE.LIB` 50011 does `Q = INT(I(X+2) + .5)` — the player's rounded holding,
-  also `Q(0)`;
-* the caller at `OREGON TRAIL` 3504 does `Q = L1` in a loop to index the drowned
-  member, and `TOMB.LIB` 50005 uses `Q` as that index.
+### 6.2 RETRACTED — `Q` and `Q()` are two different variables
 
-Two consequences, one real and one cosmetic. **The real one is a trade**: line
-50035 does `I(X+2) = Q - V`, so an accepted trade writes the *rounded* figure back
-into the holding -- five and a half oxen become six minus whatever was taken. The
-cosmetic one is that **a fort purchase loses the map's first landmark**, since
-`MAP.LIB` plots from `Q(0)`.
+**What I claimed.** That `Q` is one variable used both as the map's landmark history
+`Q(0 to 16)` and as a scalar by `BUY.LIB` 50003 and `TRADE.LIB` 50011, so a fort
+purchase loses the map's first landmark and a drowning indexes `H1(6)` outside the
+array.
 
-I also thought a third followed: that a fort tier of 6 sitting in `Q` when a party
-drowns would make `TOMB.LIB` 50005 subscript outside `DIM H1(4)` and raise error 5.
-It does not. Line 3504 is `FOR L1 = 0 TO 4: Q = L1: ON (H1(L1) = -2) GOSUB 50000` —
-the subscript is `L1`, and `Q` is assigned from the loop counter before it is used,
-so it can never be stale there. `GOSUB 50000` has no `RETURN`, so it falls through
-into 50005 and buries the member as intended.
-`tests/test_rng.py::test_the_Q_loop_overwrites_itself_so_there_is_no_bad_subscript`
-keeps the claim retracted.
+**Why it was wrong.** Rule (b): **a simple variable and an array of the same name are
+different things.** `BUY.LIB`'s `Q = ...` and `TRADE.LIB`'s `Q = ...` set the scalar
+and never touch `Q()`. The map's history is unaffected.
 
-`state.Q` is one array and both scalar uses write `Q(0)`, so all of this is
-reproduced rather than tidied away.
+**Fixed**: `state.Q` is now the scalar and `state.Q_arr` the array; `B_arr` holds
+`B(0 to 5)`. The scalar is written by the fort and the trade as before.
 
-`B` has the same shape — the travel screen's five label columns (`B(0 to 5)`,
-Appendix E.5) and the cannot-continue flag (2, 5, 6, 7, or 1 for "Return pressed") —
-but the damage there is cosmetic, so the label columns are kept separate.
+The *rounding* an accepted trade does is real and is kept, because it follows from
+the scalar: `Q = INT (I(X + 2) + .5)` tests what the party has, and `I(X + 2) = Q - V`
+stores the rounded figure less the amount, so 5.5 oxen that trade one away leave 5.
+That is now paper §13, bug ten. Likewise `T$` really is one array reused by several
+routines, so the observation about residue in `T$(0)` stands.
 
-`T$` is a third: it is the travel screen's six values, `RIVER.LIB`'s six menu labels
-and `LF.LIB`'s ten loss lines, all at once, with residue between uses. `LF.LIB` 52030
-always prints `T$(0)`, so an empty theft reads *"A thief comes during the night and
-steals ."* with nothing after it. That is in the shipped game.
+Tests: `tests/test_rng.py::test_Q_and_the_array_are_two_separate_variables`,
+`::test_an_accepted_trade_rounds_the_holding`,
+`tests/test_applesoft_rules.py::test_the_state_separates_the_scalars_from_the_arrays`.
 
 ### 6.3 `LM$(n,2)` is a segment number, and 0 is not a sentinel
 
@@ -416,8 +422,9 @@ driven through real `FADDT`/`FMULTT`, gives:
 | `2.5` | `82 20 00 00 00` | exactly 2.5 |
 
 `.8` and `.2` are the classic Applesoft values and neither is the nearest float. And
-`.9`, which line 3230 uses every day, is `80 66 66 66 66` = 0.9000000074, so
-`.9 * 20` is **not** 18 — it is 18.0000000075. A test asserts this deliberately.
+`.9`, which line 3230 uses every day, is `80 66 66 66 66` = about **0.8999999999069**,
+slightly *below* 0.9, so `.9 * 20` is **not** 18 — it is just under 18. A test asserts
+that it is below, which is the direction the bytes give.
 
 **No short-circuit.** Every `IF X AND RND (1) < V` spends a number whether or not `X`
 holds — `LF.LIB` 50000 and 50205 and `FLOAT` 1070 all depend on it, and Appendix G
@@ -476,9 +483,19 @@ shot connects, and its docstring says so.
 
 * The rock fill test at line 1070 is `IF NOT FL(n) AND INT(100 * RND(1) + 1) <= RF`,
   and with no short-circuit the draw happens even when the slot is already full.
-* `FL(0)` and `FL(1)` are the two rock slots; `NR = -1` at line 1060, so the collision
-  loop at line 500 (`FOR A = 0 TO NR`) **never executes**. Rock collisions come only
-  from lines 1120 and 1130. Dead code in the original.
+* `FL(0)` and `FL(1)` are the two rock slots, and `NR = -1` at line 1060. **RETRACTED
+  claim:** I wrote that the collision loop at line 500, `FOR A = 0 TO NR`, never
+  executes. It runs **once**, with `A = 0`, because the body always runs at least
+  once (paper 2.5, rule c). It then reads `RX(0)` and `RY(0)`, which hold whatever
+  the last rock left behind, so it compares the raft against a stale box. The
+  substantive collisions still come from lines 1120 and 1130; the loop at 500 is
+  redundant rather than dead. `floatraft._line_500` now performs it.
+* `FOR L = 0 TO NP - 1` at line 750 likewise runs once when `NP` is 0, so with
+  nobody alive the body still executes and indexes `H1(0)`.
+* `FOR L = 1 TO X` at `RIVER.LIB` 50190, where `X` is the oxen count, runs **once**
+  for any `X` below 1, so **half an ox gives one draw**. `range(int(X))` gives none,
+  which was wrong. `num.fort_count` and `num.fort_range` now express the rule and
+  `river._lose_oxen` uses them.
 * The shore collision tests `HP < 1 OR HP > 16`, so a raft pushed past 16 lands at 17,
   which is also the landing position — being bounced off the right bank is how you
   land.
@@ -680,3 +697,71 @@ all five choices work.
 The symptom this produced was, in the player's words, that the name prompt
 "doesn't recognise most letters but 'a'": with the set read literally only `A`, `Z`,
 `a` and `z` were permitted, `a` being the only lowercase letter anyone tries first.
+
+## 16. Audit of the three Applesoft rules across the whole transcription
+
+The paper's 2.5 lists three rules that govern how a line executes. All three had been
+violated somewhere, because the code was first written the way Python reads. This is
+the sweep of every line in the listing whose `IF` has a conditional or control-flow
+tail, every name used as both a scalar and an array, and every `FOR`.
+
+### 16.1 Rule (a): everything after `THEN` belongs to the `IF`
+
+Fifty lines in the listing have an `IF` whose tail is itself conditional or control
+flow. Every one of them is now read that way. The ones that changed behaviour:
+
+| line | what the tail really does | code |
+| --- | --- | --- |
+| 3180 | `GOSUB 300` and `L8 = 20` are inside `IF B > 0` | `trail.event_loop` |
+| 1015 | `GOSUB 190` and `GOTO 1015` are inside `IF Z = 3` | `trail.choose_segment` |
+| 4040 | both extra entries are inside `IF NOT LL` | `action.action_menu` |
+| 4060 | `B = 2 * (I(2) = 0)` then `IF NOT B` | `action.action_menu` |
+| 811 | `L = L - 1` is inside `IF Z > 3` | `buysupplies` |
+| 3504 | `GOSUB 190` is inside `IF Z` | `common.end_library` |
+| 3200, 3206, 3240, 50195, 50014 | nested `IF`s whose own tails chain | `trail`, `lf`, `common` |
+
+**One further misreading found by the sweep**, not in the six retractions: `BUY
+SUPPLIES` line 811 is
+
+```
+811 IF Z > 3 THEN & CO: PRINT CF$: PRINT "Your wagon may only carry 3 "SP$(L,0)"s.": ...: & BOX:L = L - 1
+```
+
+`L = L - 1` is inside the `IF`, and `NEXT` then adds one, so an over-limit answer
+returns to **the same part**. My code used a Python `for` loop with `continue`, which
+moved on to the next part. It is now an index-based `while` that steps back.
+
+### 16.2 Rule (b): a scalar and an array are different variables
+
+Four names are used both ways in the listing: `Q`/`Q()`, `B`/`B()`, `RE`/`RE()` and
+`Z`/`Z()`. All four are now separate fields.
+
+* `Q` -- scalar (fort tier, trade rounding) and `Q()` the map's landmark history.
+* `B` -- the cannot-continue flag; `B(0 to 5)` the travel screen's six label columns,
+  which line 320 fills with `& CO, B(L)`.
+* `RE` -- `RE(0 to 14)`, the per-event probabilities set up at lines 29001 and 3060.
+* `Z` -- the ubiquitous mode selector; `Z()` is a scratch array used by `TOMB.LIB`
+  and `MAP.LIB`.
+
+`RE` needed no change: my `state.py` has `RE` as a list and there is no scalar `RE`.
+The other three were conflated and are now split.
+
+### 16.3 Rule (c): a `FOR` always runs its body once
+
+Every `FOR` in the game logic was checked. Three were dead in my code because I used
+Python `range`:
+
+| line | loop | wrong | now |
+| --- | --- | --- | --- |
+| FLOAT 500 | `FOR A = 0 TO NR`, `NR = -1` | never ran | runs once, `A = 0` |
+| FLOAT 750 | `FOR L = 0 TO NP - 1`, `NP = 0` | never ran | runs once, `L = 0` |
+| RIVER 50190 | `FOR L = 1 TO X`, `X = 0.5` | no draw for half an ox | one draw |
+
+`num.fort_count(lo, hi)` and `num.fort_range(lo, hi)` now express the rule once;
+`river._lose_oxen` and `floatraft` use them.
+
+**A second, unrelated bug the sweep turned up**: `trail.health_today` computed `ZP` as
+"twice the pace *above* steady", so a party at steady pace took no pace penalty at all.
+Line 3220 is `ZP = (W > 5) + (W > 7) + P + P` -- the pace added to itself, so steady
+already costs 2 and only a stopped party has `P = 0`. Fixed, with a table test at
+`tests/test_game.py::test_zp_is_twice_the_pace_plus_the_weather`.

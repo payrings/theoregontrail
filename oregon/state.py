@@ -116,11 +116,16 @@ class State:
         # --- scratch the game depends on --------------------------------------
         self.T = [""] * 11                # T$(0 to 10): the loss lines, and the
                                           # river option text between uses
-        self.Q = [0] * 17                 # Q(0 to 16): the landmark history the map
-                                          # draws, which BUY.LIB and TRADE.LIB also
-                                          # use as a scalar -- see PLAN.md B3
-        self.Q1 = 1                       # the next slot in Q
-        self.Z = num.ZERO                 # scratch
+        # Q and Q() are two different variables (paper 2.5, rule b), and so are B
+        # and B(). BUY.LIB 50003 and TRADE.LIB 50011 set the *scalar* Q to a fort
+        # tier and to a rounded holding; neither touches the array the map draws.
+        self.Q = num.ZERO                 # Q, the scalar
+        self.Q_arr = [0] * 17             # Q(0 to 16), the landmark history
+        self.B_arr = [95, 70, 81, 95, 23, 20]   # B(0 to 5), the travel-screen
+                                          # column positions from Appendix E.5
+        self.Q1 = 1                       # the next slot in Q()
+        self.Z = num.ZERO                 # the scalar Z, scratch
+        self.Z_arr = []                    # Z(), a separate variable
 
         # --- graphics-only state, kept so the call sites are visible ----------
         self.IXpix = 0

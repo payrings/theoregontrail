@@ -37,10 +37,10 @@ def fort_store(c):
     """Lines 50000-50035."""
     st = c.st
     from . import common
-    # line 50003 writes the tier into Q, and Q is the same variable the map uses
-    # for its landmark history, so this really does clobber Q(0). See GAPS.md.
-    st.Q[0] = num.parse(str(tier(st.LM)))
-    q = num.as_int(st.Q[0])
+    # line 50003 sets the scalar Q to the fort's tier. Q and Q() are different
+    # variables (paper 2.5, rule b), so the map's landmark history is untouched.
+    st.Q = num.parse(str(tier(st.LM)))
+    q = num.as_int(st.Q)
     c.ui.clear()
     c.ui.print("You may buy:")
     c.ui.print()
