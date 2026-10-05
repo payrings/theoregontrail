@@ -1,5 +1,7 @@
 # The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages
 
+By G. Paganelli - rift-demote-fence@duck.com
+
 **This repository is primarily a research paper.** Its subject is *The Oregon Trail*
 for the Apple II, the 1985 MECC release by R. Philip Bouchard (design), John Krenz
 (lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin,
