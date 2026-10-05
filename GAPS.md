@@ -1,6 +1,6 @@
 # GAPS.md — everything approximated, replaced or missing
 
-**The paper is the work; this file is the code's.** `paper/01-analysis.md` is the
+**The paper is the work; this file is the code's.** `paper/01-paper.md` is the
 research; this is the honest register of what the Python translation does not
 reproduce, with the reason and the source reference, so that a reader never has to
 guess which claims are tested and which are merely transcribed.

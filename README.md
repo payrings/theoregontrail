@@ -1,20 +1,20 @@
-# The Oregon Trail on the Apple II (1985) — analysis of source, data and algorithms
+# The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages
 
 **This repository is primarily a research paper.** Its subject is *The Oregon Trail*
 for the Apple II, the 1985 MECC release by R. Philip Bouchard (design), John Krenz
 (lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin,
 Roger Shimada and Steve Splinter.
 
-The question the paper asks is simple and, so far, unpopular: **can anybody else
-write this game again from the evidence, and get the same behaviour?**
+The question the paper asks is simple: **can anybody else write this game again
+from the evidence, and get the same behaviour?**
 
-*An Algorithmic Analysis of The Oregon Trail on the Apple II (1985)* answers it by
-reading the actual program. From the release 1.4 Applesoft BASIC source and the
-saved variable table it recovers the game state, the formulas, the constants, the
-probability tables, the message text and the machine-language routines, and gives
-each with the line number that defines it. It also finds the places where the
-documented behaviour and the shipped behaviour disagree — including two mistakes
-in the analysis itself, corrected by running the code.
+The paper answers it by reading the actual program. From the release 1.4
+Applesoft BASIC source and the saved variable table it recovers the game state,
+the formulas, the constants, the probability tables, the message text and the
+machine-language routines, and gives each with the line number that defines it.
+It also finds the places where the documented behaviour and the shipped
+behaviour disagree — including two mistakes in the analysis itself, corrected
+by running the code.
 
 ---
 
@@ -22,7 +22,7 @@ in the analysis itself, corrected by running the code.
 
 | | |
 | --- | --- |
-| [`paper/01-analysis.md`](paper/01-analysis.md) | The paper. Fourteen sections covering set-up, the daily cycle, health, weather, the fifteen random events, rivers, forts, trading, endings, the two arcade games, and what the Applesoft ROM does to every number. |
+| [`paper/01-paper.md`](paper/01-paper.md) | The paper. Fourteen sections covering set-up, the daily cycle, health, weather, the fifteen random events, rivers, forts, trading, endings, the two arcade games, and what the Applesoft ROM does to every number. |
 | [`paper/02-appendix-d-dialogue.md`](paper/02-appendix-d-dialogue.md) | Appendix D — the 51 dialogue records, as a research extract. |
 | [`paper/03-appendices-e-to-h.md`](paper/03-appendices-e-to-h.md) | Appendices E–H — the data tables decoded from `VAR.BIN`, the `&` command reference, the exact order of the random-number draws, and what is still missing. |
 | [`paper/04-review.md`](paper/04-review.md) | An independent peer review of the paper, checked line by line against the source and, for section 12, by **executing** the ROM. It recommends acceptance subject to revision, and its findings are folded into what follows. |
