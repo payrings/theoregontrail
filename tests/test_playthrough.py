@@ -21,6 +21,7 @@ import pytest
 from oregon import buysupplies, menu, trail, win
 from oregon.context import Context
 from oregon.files import Files
+from oregon import num
 from oregon.rng import ScriptedRnd, SequenceRnd
 from oregon.trace import Tracer
 from oregon.ui import ALLOWED, ScriptedUI
@@ -253,7 +254,9 @@ BUSY_JOURNEY = [
     ("Buy supplies", ["9", "1", "2", "3", "4", "5", "6", "7", "8"]),
     ("Talk to people", ["8"]),                 # only on a landmark menu
     ("Hunt for food", ["8"]),                  # only on the trail menu
-    ("Continue on trail", ["1", "3", "4", "5", "6", "7", "1"]),
+    # The action menu cycles through every option, which is also what proves the
+    # allowed sets are right: an option the prompt rejects would loop here.
+    ("Continue on trail", ["1", "2", "3", "4", "5", "6", "7", "8", "9", "1"]),
     ("Broken wagon", "Y"),
     ("You are unable to continue", "1"),
     ("River depth:", ["1", "1", "3", "3"]),
@@ -310,13 +313,14 @@ MARKS = {
     "TRADE.LIB": ["another emigrant", "No one wants to"],
     "BUY.LIB": ["You may buy"],
     "MAP.LIB": ["You have been through"],
-    "gravesite": ["You pass a gravesite", "Here lies"],
 }
 
-#: four seeds whose union reaches every module above. One seed cannot: the fire
-#: needs event 12 to choose the fire, and the gravesite needs a party to have died
-#: on the same segment before, both of which are a matter of chance.
-COVERAGE_SEEDS = (7, 99, 11, 3)
+#: Three seeds whose union reaches every module above. One seed cannot: the fire
+#: needs event 12 to pick the fire rather than a lost member or a stray ox, which
+#: is a matter of chance. The gravesite is not in this list because it cannot
+#: happen to a party that has not already died on the same segment; it has a test
+#: of its own, ``test_a_party_meets_the_grave_of_a_party_that_died``.
+COVERAGE_SEEDS = (7, 5, 99)
 
 
 @pytest.fixture(scope="module")
@@ -424,3 +428,56 @@ def test_the_command_line_starts_a_journey(tmp_path):
     assert int(last[4]) == 1921, f"the route is 1921 miles: {lines[-1]}"
     assert (tmp_path / "data" / "HISCORE.SEQ").is_file(), \
         "the top ten should have been written"
+
+
+def test_a_party_meets_the_grave_of_a_party_that_died(tmp_path):
+    """Event 4 needs a tombstone on the same segment, so it takes two parties.
+
+    The first dies on the run to Fort Hall and writes its stone; a second party
+    travelling the same segment passes it and is offered a look. This is the only
+    way event 4 can fire, which is why it is tested directly rather than hoped for
+    in a varied run.
+    """
+    import copy
+    from oregon import trail, tomb
+    from oregon.data import landmarks as L
+    from oregon.files import Files
+
+    d = tmp_path
+    first, _ = make_game(BUSY, data=d / "data")
+    first.st.N = ["Zeke", "Jed", "Anna", "Mary", "Emily"]
+    first.st.LM, first.st.NM = 10, 11          # the run to Fort Hall
+    first.st.D = num.parse("40")
+    tomb.write_record(first, 0, "died on the plains")
+    rec = first.files.read_tombs(first.st.S)
+    assert rec["segment"] == 11 * 100 + 10
+    assert rec["name"] == "Zeke"
+    assert rec["epitaph"] == "died on the plains"
+
+    rules = copy.deepcopy(BUSY) + [("You pass a gravesite", "Y")]
+    second, ui = make_game(rules, data=d / "data")
+    second.st.LM, second.st.NM = 10, 11
+    second.st.SN = [rec["segment"], 0]
+    second.st.ML = [rec["miles"], 0]
+    second.st.DD = L.SEG_MILES[L.LM_SEGMENT[10]]
+    second.st.D = second.st.DD        # still short of the grave
+    trail.find_grave(second)
+    assert second.st.DL == rec["miles"], "the grave is the next one on this segment"
+    # Line 450 picks the grave whose recorded distance is short of the miles
+    # still to run, and line 3160 then sets RE(4) = (D < DL) -- so line 450 is
+    # evaluated at the *start* of the segment, and the party meets the stone once
+    # it has travelled past it.
+    trail.load_segment(second, L.LM_SEGMENT[10])
+    trail.find_grave(second)
+    assert second.st.DL == rec["miles"]
+    second.st.D = num.parse("20")
+    second.rng.log.clear()
+    trail.event_loop(second)
+    assert any("You pass a gravesite" in line for line in ui.out), \
+        "the party was not offered the grave"
+    # and reading the stone shows the name and the epitaph that were recorded
+    from oregon import tomb as tomb_mod
+    tomb_mod.read_grave(second)
+    said = " ".join(ui.out)
+    assert "Here lies" in said, "the stone was not shown"
+    assert "died on the plains" in said, "the epitaph was not shown"

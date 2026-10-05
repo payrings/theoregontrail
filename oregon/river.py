@@ -25,6 +25,7 @@ from . import cross, num
 from .data import landmarks as L
 from .data import rivers as R
 from .data import text as T
+from .ui import ALLOWED
 
 __all__ = ["crossing", "conditions", "losses"]
 
@@ -92,7 +93,7 @@ def crossing(c):
             c.ui.print(f"{i}. {label}")
         c.ui.print()
         c.ui.print("What is your choice? ")
-        a = c.ui.key("-18", 2, default="")
+        a = c.ui.key(ALLOWED["RIVER"], 1, default="")
         v = int(a) if a and a.isdigit() else 0
         if v == 4 + f:
             information(c, v - 3 - f)

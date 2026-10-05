@@ -47,32 +47,49 @@ END = "\n"
 CTRL = {"D$": "\x04", "CC$": "\x03", "CL$": "\x0c", "CM$": "\x0d",
         "CE$": "\x05", "CF$": "\x06"}
 
-# The allowed-character sets the BASIC passes to ``& INP``.
+# The allowed-character sets the BASIC passes to ``& INP``. A prompt filters on
+# them: a character outside the set is ignored and the prompt waits for another,
+# as the original's routine does. For a menu the set is ``-`` plus the digits of
+# the choices on offer, so a prompt offering four choices must allow 1 to 4.
+# Getting that wrong makes a choice unreachable and is invisible until someone
+# tries it, so tests/test_ui.py checks every set against the choices its screen
+# prints. PACE is the one genuinely non-consecutive set: 1 to 3 change the pace
+# and 4 explains them, so "-14" is right.
 ALLOWED = {
-    "YN": "YESNOyesno",
-    "NAMES": "-AZ-az '.-",
-    "TOPTEN": "-AZ-az .'-",
-    "EPITAPH": "-09-AZ-az ,.'-",
+    # --- answers that are words, not menu choices -------------------------------
+    "YN": "YESNOyesno",                 # COMMON.LIB 30120
+    "NAMES": "-AZ-az '.-",               # MENU 500: a name, at most nine of them
+    "TOPTEN": "-AZ-az .'-",              # WIN 530: the name that goes on the list
+    "EPITAPH": "-09-AZ-az ,.'-",        # TOMB.LIB 50020: up to twenty-nine
+    # --- numbers ---------------------------------------------------------------
     "DIGITS09": "-09",
     "DIGITS19": "-19",
-    "CHOICE": "-14",
-    "PROFESSION": "-14",
-    "MONTH": "-16",
-    "MANAGE": "-15",
-    "FORT": "-18",
-    "SEGMENT": "-13",
-    "RATION": "-13",
-    "PACE": "-14",
-    "REST": "-09",
-    "STORE_FOOD": "-09",
-    "STORE_CLOTHES": "-09",
-    "STORE_AMMO": "-09",
-    "STORE_PART": "-09",
-    "STORE_YOKE": "-19",
-    "DALLES": "-12",
-    "RIVER_KC": "-14",       # the river menus are five long
-    "RIVER_SNAKE": "-15",
-    "RIVER_BB": "-14",
+    # --- menus: every choice the screen prints must be in the set --------------
+    # A set of "-" plus the first and last digit -- "-14" and the like -- is only
+    # right when the choices are 1 and n. Written that way it silently makes every
+    # choice in between unreachable: `& INP` ignores a character outside the set
+    # and waits for another, so the screen simply sits there. So each menu spells
+    # out all of its choices, and tests/test_ui.py checks every one of these sets
+    # against the numbers the corresponding screen prints.
+    "CHOICE": "\x011234",               # main menu: Control-A, then 1 to 4
+    "PROFESSION": "-1234",               # MENU 4025: the three trades and the
+                                         # explanation
+    "MANAGE": "-12345",                 # MANAGEMENT 1015: five options
+    "MONTH": "-123456",                 # BUY SUPPLIES 6020: March to July plus
+                                         # ask for advice
+    "PACE": "-1234",                     # PACE.LIB: 1 to 3 set a pace, 4 explains
+    "RATION": "-123",                    # RATION.LIB: three settings
+    "SEGMENT": "-123",                   # OREGON TRAIL 2120: two ways on plus the map
+    "DALLES": "-12",                     # END.LIB 50010: the river or the toll road
+    "RIVER": "-12345",                   # RIVER.LIB: five choices
+    "FORT": "-12345678",                 # BUY.LIB: the seven goods and leave
+    "REST": "-09",                       # one digit: how many days to rest
+    # --- the store, which asks for quantities -----------------------------------
+    "STORE_YOKE": "-19",                 # 1 to 9 yoke
+    "STORE_FOOD": "-09",                 # up to four digits
+    "STORE_CLOTHES": "-09",              # two digits
+    "STORE_AMMO": "-09",                 # two digits
+    "STORE_PART": "-09",                 # one digit, 0 to 3
 }
 
 

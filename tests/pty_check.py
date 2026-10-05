@@ -93,10 +93,12 @@ class Session:
 
 #: (what to wait for, what to type, what should appear next)
 #: Each answer is checked against the *following* screen, so an answer that landed
-#: on the wrong prompt cannot pass.
+#: on the wrong prompt cannot pass. Choices other than 1 are included deliberately:
+#: a prompt whose allowed set omitted a digit used to ignore it and sit there, which
+#: is the other half of "the keyboard is unresponsive".
 STEPS = [
     ("What is your choice?", "1", "Many kinds of people made the trip"),
-    ("What is your choice?", "1", "first name of the wagon leader"),
+    ("What is your choice?", "2", "first name of the wagon leader"),
     ("What is the first name of the wagon leader", "Zeke", "four other members"),
     ("(Enter names or press Return)", "", "Are these names correct"),
     ("Are these names correct", "Y", "Going back to 18"),
