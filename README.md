@@ -1,204 +1,193 @@
-# The Oregon Trail (MECC, 1985) — a rebuild in Python
+# The Oregon Trail on the Apple II (1985) — analysis of source, data and algorithms
 
-A private research rebuild of the 1985 Apple II release, transcribed from the
-release 1.4 Applesoft BASIC. Every arithmetic operation is performed by a genuine
-Apple IIe ROM running under a py65 6502 emulator, so the numbers are the original's
-rather than an imitation of them.
+**This repository is primarily a research paper.** Its subject is *The Oregon Trail*
+for the Apple II, the 1985 MECC release by R. Philip Bouchard (design), John Krenz
+(lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin,
+Roger Shimada and Steve Splinter.
 
-**This is not finished, and `GAPS.md` says exactly what is not.** Read it before
-drawing any conclusion from a run. Nothing here is distributed, and the reference
-material in `docs/` is copyrighted and is never committed.
+The question the paper asks is simple and, so far, unpopular: **can anybody else
+write this game again from the evidence, and get the same behaviour?**
+
+*An Algorithmic Analysis of The Oregon Trail on the Apple II (1985)* answers it by
+reading the actual program. From the release 1.4 Applesoft BASIC source and the
+saved variable table it recovers the game state, the formulas, the constants, the
+probability tables, the message text and the machine-language routines, and gives
+each with the line number that defines it. It also finds the places where the
+documented behaviour and the shipped behaviour disagree — including two mistakes
+in the analysis itself, corrected by running the code.
 
 ---
 
-## What is here
+## The paper
 
-| Path | What it is |
+| | |
 | --- | --- |
-| `oregon/applesoft/` | the arithmetic: a 5-byte `Fac` value, the emulated-ROM backend, and a pure-Python one |
-| `oregon/num.py` | the only interface game code uses for arithmetic |
-| `oregon/rng.py` | `RND` behind an interface, with a draw log for the Appendix G tests |
-| `oregon/ui.py` | the screen and keyboard, in two implementations: terminal and scripted |
-| `oregon/state.py` | one object whose fields are the BASIC variable names |
-| `oregon/mem.py`, `errors.py`, `files.py`, `trace.py` | `PEEK`/`POKE`, the error handler, the two disk files, the day-by-day trace |
-| `oregon/data/` | every table, in one place, checked against the paper by the tests |
-| `oregon/trail.py` and the `*.py` beside it | the programs and libraries, one module each |
-| `tests/` | 76 tests, all of them worked out by hand from the listing |
-| `PLAN.md` | the module map and every ambiguity found |
-| `GAPS.md` | what is approximated, replaced, missing or wrong — **read this** |
+| [`paper/01-analysis.md`](paper/01-analysis.md) | The paper. Fourteen sections covering set-up, the daily cycle, health, weather, the fifteen random events, rivers, forts, trading, endings, the two arcade games, and what the Applesoft ROM does to every number. |
+| [`paper/02-appendix-d-dialogue.md`](paper/02-appendix-d-dialogue.md) | Appendix D — the 51 dialogue records, as a research extract. |
+| [`paper/03-appendices-e-to-h.md`](paper/03-appendices-e-to-h.md) | Appendices E–H — the data tables decoded from `VAR.BIN`, the `&` command reference, the exact order of the random-number draws, and what is still missing. |
+| [`paper/04-review.md`](paper/04-review.md) | An independent peer review of the paper, checked line by line against the source and, for section 12, by **executing** the ROM. It recommends acceptance subject to revision, and its findings are folded into what follows. |
+
+### The short version of what the paper found
+
+- **The game is a daily simulation with one number for everything.** A single
+  health value, seven penalties a day, and the party is best described as a wagon
+  losing a fight with a continent.
+- **The random-number sequence is the game.** Every chance decision is a comparison
+  against an `RND` value, so reproducing the game means reproducing *when* each
+  number is drawn — which is why Appendix G lists the order of every draw.
+- **Applesoft has no short-circuit evaluation.** `IF X AND RND(1) < V` spends a
+  number even when `X` is false. Several rules depend on it.
+- **The arithmetic cannot be reimplemented in a host language.** Section 12 shows
+  that the rounding points, the single guard byte, the decimal-literal conversion
+  and the generator all live in the Applesoft ROM, and that Python, float32 and
+  `decimal` all diverge from it.
+- **Several probable bugs are load-bearing.** Nine are listed in section 13. A
+  broken arm has no effect, because injury number 0 *is* the value that means
+  healthy. A thief never takes money. February always has 28 days, in a leap year.
+
+### Corrections the review forced
+
+The review found two errors in the paper's own reasoning, and both were confirmed
+against the source and fixed:
+
+- **§8.1 claimed two events can fire on one day.** Line 3180 ends the loop body with
+  `L8 = 20`, so `NEXT L8` gives 21 and the loop ends. It is **one event a day**.
+  A day costs `k + 1` draws, where `k` is the index of the event that fired.
+- **§12.2 said literals are re-converted every time a line runs.** Applesoft
+  converts a literal once, when the line is tokenised.
+
+The review also gave the paper its missing §12.6 evidence: fifteen `RND` values
+from a known seed, and the seed they leave behind. Those are reproduced exactly by
+the code below, which is a direct test of the paper's central claim.
 
 ---
 
-## Setting up
+## The Python translation
 
-The shell here is **fish**, so every command below is fish syntax.
+> **This is secondary.** It exists to **prove the paper's findings are correct**,
+> not to be a better game.
+
+A from-scratch Python transcription of the release 1.4 BASIC, one module per
+program and library, with every function commented with the line numbers it
+implements. Two things about it are worth knowing, because they are the paper's
+own argument made real:
+
+1. **All arithmetic is performed by a genuine Apple IIe ROM** running under a
+   py65 6502 emulator. The game never holds a host float: it passes five bytes into
+   emulated memory and calls the ROM's own `FADDT`, `FMULTT`, `FDIVT`,
+   `ROUND.FAC`, `INT` and `RND`. That is the only way to reproduce the original,
+   which is what §12 argues.
+2. **The ROM answered questions the paper could only describe.** The two `RND`
+   constants, read out of the image; the operator entry points' calling
+   conventions; the guard byte each routine leaves; and the `& INP` allowed-set
+   syntax. Where the code and the paper disagreed, the code won and the paper was
+   corrected — see `FINDINGS.md`, which records all of it, including where the
+   review corrected both.
+
+### What the translation confirmed, item by item
+
+| The paper says | The code checked |
+| --- | --- |
+| `RND` multiplies the seed by one constant and adds another (§12.3) | `$EFA6` = `98 35 44 7A 68`, `$EFAA` = `68 28 B1 46 20`. The addend's fifth byte is the opcode of the `JSR` at `$EFAE`. |
+| fifteen `RND` values from seed `81 00 00 00 00` (§12.6, outstanding) | all fifteen reproduced, and the final seed `7F 11 0D 1F 95` |
+| `.8` is `80 4C CC CC CD`, `.2` is `7E 4C CC CC CD` (§12.2) | produced by the ROM's own decimal conversion, not by a Python literal |
+| `ROUND.FAC` rounds when the guard byte is 80 or more (§12.2) | `7F 4C CC CC CD` becomes `… CE` at guard `$80`, unchanged at `$7F` |
+| `1/3 + 1/3 + 1/3` under one (§12.4, rounding points) | `0.9999999997671694` |
+| one event per day (§8.1, after correction) | the event loop breaks after one |
+| the routing bug that makes "an ox" and "a wheel" (§13) | reproduced |
+
+### What the translation found that the paper did not say
+
+- The climate zone is set from the **landmark**, so the segments per zone are
+  0–2, 3–5, **6–11**, **12–14**, 15–18 — the paper's table gives landmark numbers
+  where it means segment numbers.
+- `ON B > 0 GOTO 4000` at line 1015 is load-bearing: fording the Green River at
+  twenty feet always takes the last oxen, and the party is then held at the action
+  menu until a trade supplies more. The table is right; the consequence is not
+  stated anywhere.
+- Event 2 dispatches to `10200`, a line the program does not have. `RE(2) = 0`, so it
+  cannot be reached, but the original would raise UNDEF'D STATEMENT.
+- `Q` is one variable used as the map's landmark history *and* as a scalar by the
+  fort and the trader, so a purchase loses the map's first landmark and an accepted
+  trade rounds the player's holding: five and a half oxen become six.
+
+Full record, including the places the code is an approximation and what is still
+unfinished, in **[`GAPS.md`](GAPS.md)**. The module map and every ambiguity in the
+source are in **[`PLAN.md`](PLAN.md)**.
+
+---
+
+## Installing the Python code
+
+The code needs Python 3.12 or later and one small dependency, `py65`. It also
+needs **an Apple IIe ROM image**, which is Apple firmware and is *not* distributed
+here.
 
 ```fish
-mkdir -p ~/.venvs          # only if you keep environments outside the project
-cd /home/xfx/oregon
-```
+git clone https://github.com/payrings/theoregontrail.git
+cd theoregontrail
 
-Create the environment (Python 3.14.7 is installed; anything 3.12 or later works):
-
-```fish
-uv venv --python 3.14 .venv
-source .venv/bin/activate.fish
-uv pip install pytest py65
-```
-
-or, without `uv`:
-
-```fish
 python -m venv .venv
-source .venv/bin/activate.fish
-pip install pytest py65
+source .venv/bin/activate.fish          # fish; on bash use .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### The ROM image
-
-The arithmetic backend needs an Apple IIe ROM. It is not in the repository; put it
-at `rom/apple2e.rom`, or point `OREGON_ROM` somewhere else:
-
-```fish
-set -x OREGON_ROM /path/to/apple2e.rom
-```
-
-To fetch one:
+Then get a ROM image — for example:
 
 ```fish
 mkdir -p rom
 curl -o rom/apple2e.rom https://a2go.applearchives.com/roms/apple2e.rom
 ```
 
-The loader checks the image is 32 KB and that `ROUND.FAC` at `$EB72` begins `A5 9D`,
-so a wrong file is refused rather than quietly misbehaving. Without a ROM the game
-still runs, on the pure-Python backend, which is **not** bit-exact — see `GAPS.md`
-section 1.
-
----
-
-## Running it
-
-Everything is already set up in this directory: the virtual environment exists and
-`rom/apple2e.rom` is in place. Just:
-
-```fish
-cd /home/xfx/oregon
-source .venv/bin/activate.fish
-python -m oregon
-```
-
-Then answer with the number of the choice you want, and Return. A crossing takes a
-few seconds to a few minutes depending on how much you fiddle.
-
-### Check it first
+Check that the arithmetic engine came up:
 
 ```fish
 python -m oregon --list
 ```
 
-prints which arithmetic backend is in use and which ROM image it found:
-
 ```
 arithmetic backend : apple2e-rom
-Apple IIe ROM      : /home/xfx/oregon/rom/apple2e.rom (32768 bytes)
+Apple IIe ROM      : .../rom/apple2e.rom (32768 bytes)
 ```
-
-### Watch a whole game without playing it
-
-The quickest way to see it work. The demo plays itself, quietly, from the store to
-the Willamette Valley — about 170 days and 1,921 miles, a few seconds:
-
-```fish
-python -m oregon --demo
-python -m oregon --demo --verbose-demo      # and show the screens
-```
-
-Add `--trace` to get one line per game day, which is the format a reference trace
-would be compared against:
-
-```fish
-python -m oregon --demo --seed 4242 --trace /tmp/trail.log
-tail -3 /tmp/trail.log
-```
-
-```
-# AD AM AY  D  M    H      FS      H0 HR W TM PP AR        AS PF   I2 I3 I4  I5 I6 I7 I8   MY      H1               H2              EVENT SEED
-02 05 1848 82 20 0   0      0       0  0  2  2  0  2.12082  0  985 8  6  120 1 1 1 1000 1138   [0,0,0,0,0]     [0,0,0,0,0]     -     7e456c06b2
-18 10 1848 0  1921 139  47.4672 0  20 3  3  0  0.008488 0  0   5  7  120 0 0 0 0   1125.5 [0,0,0,-1,-1]   [0,30,0,0,0]    -     804e9054f4
-```
-
-### Options
-
-| Option | What it does |
-| --- | --- |
-| `--seed N` | fix the 16-bit seed, which the original takes from the keyboard counter at `$78`/`$79`. Any game can be replayed from a seed. |
-| `--demo` / `--verbose-demo` | play itself, quietly or with the screens shown |
-| `--trace FILE` | write one line per game day |
-| `--inputs FILE` | play from a list of answers, one per line — nothing is displayed |
-| `--data DIR` | where `HISCORE.SEQ` and `TOMB.SEQ` are kept (default `data/`) |
-| `--num rom\|pure` | the arithmetic backend; `rom` is the emulated Apple IIe and the default |
-| `--no-interrupt` | never break out of the daily cycle, so the party travels on regardless |
-| `--list` | show the backend and the ROM, then stop |
 
 ### Playing it
 
-Press **Return** at any time during the journey to stop and open the action menu —
-that is the original's "press Return to size up the situation", and it works here
-because the terminal is put into cbreak mode so a single keypress is read without
-waiting for a newline. `--no-interrupt` turns it off, which is what you want when
-piping input.
-
-The prompts that take a *line* of text rather than a single keypress are the party
-names and the epitaph.
-
-### Played from a script
-
-`--inputs` takes one answer per line. The order of the questions changes with the
-route — taking the first branch at South Pass skips Fort Bridger and so asks one
-question fewer — which is why matching answers by position is fragile. The demo
-mode exists instead of a hand-built script: it answers each prompt by what the
-game printed, and is the honest way to replay a game.
-
 ```fish
-python -m oregon --inputs my-answers.txt
+python -m oregon            # play it
+python -m oregon --demo     # watch it play itself to Oregon, quietly
 ```
 
-## Tests
+Type the number of a choice and press Return. Press **Return** during the journey to
+stop and open the action menu, which is what the original's "press RETURN to size
+up the situation" does.
+
+Useful options: `--seed N` replays a specific game, `--trace FILE` writes one line
+per game day, `--inputs FILE` plays from a list of answers, `--data DIR` chooses
+where the two save files live, `--num pure` selects a faster arithmetic backend that
+is **not** bit-exact, and `--no-interrupt` stops travel being interruptible.
+
+### Tests
 
 ```fish
-python -m pytest -q
+python -m pytest -q          # 134 tests
+python tests/pty_check.py     # types at the game through a terminal
 ```
 
-Nothing here is compared with an "expected output" from the original, because no
-reference trace exists (Appendix H). Every expectation is worked out by hand from
-the BASIC line named beside it, and the tables are checked against numbers the paper
-prints independently of the table.
-
-The parity tests need the ROM and skip without it.
+No test compares against a recorded run of the original, because none exists
+(Appendix H). Every expectation is worked out by hand from the BASIC line beside it,
+and the tables are checked against numbers the paper prints independently of the
+table.
 
 ---
 
-## How to read the code
+## What is not in this repository
 
-The BASIC is the reference and the module names follow it, so a listing and this
-source can be read side by side. Every function carries a comment naming the program
-and the line range it implements, and the arithmetic goes through `num` so that no
-game module touches a float or a `math` call.
+- **Appendices X, Y and Z** — the release 1.4 source listings, the on-screen text
+  and the machine-code listings. They are MECC's and Apple II emulator material and
+  are not redistributed here. Everything the paper and the code say about them is
+  cited by line number so a reader with the disk can check it.
+- **The Apple IIe ROM image** — Apple firmware, obtained as above.
+- **The dialogue** — read at run time from `paper/02-appendix-d-dialogue.md`.
 
-Two conventions worth knowing:
-
-* **No short-circuit.** Applesoft evaluates both sides of `AND` and `OR`, so a `RND`
-  on the right always happens. `LF.LIB` 50000 and 50205 and `FLOAT` 1070 all rely on
-  it. The tests pin this down.
-* **One event a day.** Line 3180 ends with `L8 = 20`, so at most one event fires. The
-  paper says otherwise; the source has authority. `GAPS.md` A1.
-
----
-
-## Licensing
-
-The game, its text, its dialogue and its data are the property of MECC and its
-rights holder. This rebuild is for private study and is not to be redistributed.
-Nothing of theirs is committed to this repository: `docs/` is git-ignored, and the
-dialogue is read from it at run time rather than copied into the source.
+`GAPS.md` is the honest list of what is approximated, replaced or unfinished in the
+translation. The paper is the document that matters; the code is the evidence.

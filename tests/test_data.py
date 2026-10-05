@@ -144,7 +144,7 @@ def test_the_dialogue_records_load_and_are_the_papers_fifty_one():
     pytest.importorskip("pathlib")
     from oregon.data import dialogue
     if not dialogue.available():
-        pytest.skip("the reference document is not in docs/")
+        pytest.skip("Appendix D is not present, so the dialogue cannot be checked")
     d = dialogue.load()
     assert len(d) == 51
     assert d.landmarks() == list(range(17))

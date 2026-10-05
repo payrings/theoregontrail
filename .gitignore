@@ -1,8 +1,17 @@
-docs/
+# Apple firmware: obtained separately, never redistributed.
 rom/
+
+# The game's save files.
+data/
+
+# The three appendices that are not redistributed: the release 1.4 source
+# listings (X), the on-screen text (Y) and the machine-code listings (Z).
+docs/Appendix X*
+docs/Appendix Y*
+docs/Appendix Z*
+
 .venv/
 __pycache__/
 *.pyc
 .pytest_cache/
-data/
 *.egg-info/
