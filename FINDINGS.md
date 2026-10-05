@@ -765,3 +765,46 @@ Python `range`:
 Line 3220 is `ZP = (W > 5) + (W > 7) + P + P` -- the pace added to itself, so steady
 already costs 2 and only a stopped party has `P = 0`. Fixed, with a table test at
 `tests/test_game.py::test_zp_is_twice_the_pace_plus_the_weather`.
+
+## 17. The action menu, read again from the listing
+
+Correcting my own earlier work, prompted by the paper's Table 9 and section 4.3.
+
+**Line 2100 does not end the game at milestone 16.** I had claimed that in `GAPS.md`
+and was wrong. `IF LM = 16 THEN & APP,"END.LIB": GOSUB 50000: GOSUB 190` runs
+`END.LIB`; the ending is 50050. See `GAPS.md`, "Resolved".
+
+**`LL` is 0 at a landmark and 1 on the trail**, so `IF NOT LL` at line 4040 is the
+landmark case: "Talk to people", and "Buy supplies" at a landmark of type 1, are
+printed at landmarks only. Line 4050's `IF LL` adds "Hunt for food" on the trail and
+sets `Z = 2`. Line 4090 then computes `Z = Z * (VAL (Z$) > 7) + VAL (Z$)` and
+dispatches `ON Z - 1 GOSUB 4100, 4200, 4300, 4400, 4500, 4900, 4700, 4800, 4600`,
+so, keyed by `Z`:
+
+| Z | target | option |
+| --- | --- | --- |
+| 1 | nothing -- `ON 0` does nothing (2.5) | 1 continue |
+| 2 to 7 | 4100, 4200, 4300, 4400, 4500, 4900 | 2 to 7 |
+| 8 | 4700 | 8, "Talk to people", at a landmark |
+| 9 | 4800 | 9, "Buy supplies", at a fort |
+| 10 | 4600 | 8 on the trail, "Hunt for food", because of the `Z = 2` |
+
+**Two bugs this exposed**, both from my earlier retraction of the "menu swap" finding:
+where I had only removed the claim, the code underneath still had it.
+
+* `do_buy` was reachable from the **trail** menu. `if L.LM_TYPE[st.LM] == 1` was not
+  nested under `if not on_trail`, so the very nesting I had retracted was still in the
+  code. It now sits inside the landmark branch.
+* The handler table was keyed by `z - 1` with nine entries, so **choice 2, "Check
+  supplies", matched nothing** and silently did nothing. The table is now keyed by
+  `Z`, from 2 to 10.
+
+Test: `tests/test_applesoft_rules.py::test_the_trail_menu_is_the_eight_choices_ending_in_the_hunt`,
+and the two menu shapes in `tests/test_landmark_tables.py` and
+`tests/test_action_menu.py`.
+
+**The test script answered menus by position**, so it broke as soon as the number of
+options changed, and it broke silently: "Buy supplies" is the ninth option at a fort
+and the eighth at Independence, so a hard-coded 9 opened the hunt instead. The driver
+now resolves a menu option from its printed label (`Option` in `test_playthrough.py`),
+which is why the position-based script had been hiding this.

@@ -256,28 +256,30 @@ A note for anyone writing another allowed set: a range is written **dash first**
 1 to 5 is ``"-15"`` and not ``"1-5"``. Written the other way it means the literal
 characters 1, dash and 5. Every set in the game is written the game's way.
 
-## Open: where the Barlow Road branches, and what milestone 16 is
+## Resolved: where the Barlow Road branches, and what milestone 16 is
 
-The distances reproduce the paper's figures exactly: segments 0-7, 10-14 and 16 sum
-to **1,771**, and the 100-mile Barlow Road makes **1,871**. Going by Fort Walla Walla
-instead of segment 16 adds 50, giving **1,821**.
+I had this open and wrong. Line 2100 is
+`IF LM = 16 THEN & APP,"END.LIB": GOSUB 50000: GOSUB 190`; it does **not** end the
+game at milestone 16, it runs `END.LIB`. The ending is `END.LIB` 50050, reached three
+ways, and the choice is made at The Dalles:
 
-Two things I could not settle from the listing, recorded here rather than guessed:
+* arriving at landmark 17 (`ON LM = 17 GOTO 50050` at 50000);
+* choosing "1. float down the Columbia River" at 50010 (`ON Z$ = "1" GOTO 50050`);
+* choosing "2. take the Barlow Toll Road", paying at 50020, which **returns** to the
+  caller, and line 2100 then runs `GOSUB 190` and the journey continues on segment
+  18 to landmark 17.
 
-* Line 2100 reads `IF LM = 16 THEN & APP,"END.LIB": GOSUB 50000: GOSUB 190`, so the
-  game ends the moment milestone 16 is reached -- everything after the `THEN` belongs
-  to the `IF` (paper 2.5, rule a). That means milestone 16 is the last one and no
-  segment leaves it.
-* But then the 100-mile Barlow Road has to *arrive* at milestone 16, and it is only
-  100 miles against the direct segment's 125. Taking it as an alternative to segment
-  16 gives 1,746, not the paper's 1,871. The only way 1,771 and 1,871 both appear is as
-  "to The Dalles" and "to The Dalles and then the Barlow Road", i.e. the Barlow is the
-  final leg *after* milestone 16 -- which line 2100 forbids.
+So the toll is the price of one more segment, not the price of the ending. Both ways
+into The Dalles -- segment 16 direct, or segments 15 and 17 via Fort Walla Walla --
+are followed by segment 18, because `LM$(16, 2)` is 18 either way. The four totals
+are 1,771 and 1,821 to The Dalles, and 1,871 and 1,921 to the Willamette Valley;
+`tests/test_landmark_tables.py::test_the_four_distances_to_the_end` asserts all four.
 
-My data therefore has the Barlow Road leaving milestone 16 (`SEG_ENDS_AT[18] = 17`,
-arriving at the Willamette Valley), which yields all three totals but lets a party
-arrive at The Dalles via Fort Walla Walla and then take the Barlow Road for 1,921 --
-a combination the listing seems to exclude. `oregon/data/landmarks.py` is where this
-sits, and it needs one more fact from the listing: the landmark table that populates
-`LM$`, which is read from the hi-res name strings at line 29010 and whose field
-structure I have only partly reconstructed. No test asserts a total above 1,821.
+Line 29010 is also not a landmark table. `Z = 1920` is the address where `MENU` 6045
+stored the five party names as zero-terminated text and where `END.LIB` 50060 stores
+them at the end of the journey; 29010 reads them back into `N$()`. `LM$` and `LM()`
+come from `VAR.BIN` and are transcribed in the paper's Tables 7 and 8 and Appendix E,
+and `tests/test_landmark_tables.py` now checks every field of both tables against the
+data rather than against my own reconstruction of it. Two fields were wrong and are
+now right: `LM$(0, 1)` is 1, so Independence is a fort and the action menu offers to
+buy supplies there, and `LM$(9, 0)` is "Green River crossing" without "the".

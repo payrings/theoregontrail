@@ -128,7 +128,8 @@ own argument made real:
 | more than one event can fire on a day (§8.1) | line 3180's `L8 = 20` is inside `IF B > 0`, so the loop only stops early once `B` is above zero |
 | `Q` and `Q()` are different variables (§2.5) | separate fields; a fort purchase no longer disturbs the map |
 | a `FOR` always runs its body once (§2.5) | `FOR L = 1 TO X` with `X = 0.5` gives one draw, so half an ox is one draw |
-| the route is 1,771 miles, 1,871 by the Barlow Road (§4.1) | segments 0–7, 10–14 and 16 sum to 1,771; segment 18 adds 100 |
+| the route is 1,771 miles to The Dalles, 1,871 with the Barlow Road (§4.1) | segments 0–7, 10–14 and 16 sum to 1,771; Fort Walla Walla gives 1,821, and segment 18 adds 100 to either, for 1,871 and 1,921 |
+| `LM$` and `LM()` come from `VAR.BIN`, Tables 7 and 8 (§4.1) | every field transcribed and checked by `tests/test_landmark_tables.py`, which is how the type of landmark 0 and the name of landmark 9 were found to be wrong |
 | the `RND` constants are of magnitude 1.19 × 10⁷ and 3.9 × 10⁻⁸ (§12.3) | decoded from `$EFA6` and `$EFAA`, the implied top bit included |
 | the routing bug that makes "an ox" and "a wheel" (§13) | reproduced |
 
@@ -149,7 +150,10 @@ own argument made real:
   why it does not also corrupt the map.
 - The three rules in §2.5 are the ones most easily got wrong, and all three had been
   violated before this translation was re-audited line by line. `FINDINGS.md` §16
-  records the sweep and what it changed.
+  records the sweep and what it changed; §17 records a second pass over the action
+  menu, which found that retracting a claim is not the same as fixing the code: the
+  buy option was still reachable from the trail menu, and "Check supplies" matched
+  no handler at all.
 
 Full record, including the places the code is an approximation and what is still
 unfinished, in **[`GAPS.md`](GAPS.md)**. The module map and every ambiguity in the
