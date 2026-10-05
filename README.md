@@ -77,6 +77,8 @@ How the work went, month by month.
   Gemini 3.1 Pro, with all the findings gained so far.
 - **October 2026** — First official version of the paper, reviewed and corrected by
   Claude Opus 5.5 (Medium), which includes an analysis of the assembly code by Claude.
+- **October 2026** — First attempt to create a Python-based version of the game, based
+  on the paper and the related artefacts, using Space Bunny Alpha.
 
 The model names were checked against their release dates. Gemini 2.5 Pro appeared as an
 experimental model on 25 March 2025 and went generally available on 6 June 2025, so it
