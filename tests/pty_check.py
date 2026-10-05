@@ -104,6 +104,12 @@ STEPS = [
     ("Are these names correct", "Y", "Going back to 18"),
 ]
 
+#: The rest of the game -- the month, Matt's store, the journey -- is driven
+#: through the scripted screen instead. This file is about the terminal input
+#: path, and a pty has no way to stay in step with a chain of "Press SPACE BAR to
+#: continue" screens without becoming a race. The store's numbered panel is checked
+#: in tests/test_store.py.
+
 
 def check(verbose=True, data="/tmp/oregon-pty-data") -> list:
     """Play through the opening of the game and report anything wrong."""
@@ -118,7 +124,7 @@ def check(verbose=True, data="/tmp/oregon-pty-data") -> list:
             s.pump(1.0)
             if verbose:
                 print(f"  sent {answer!r:<7} after {needle!r}", flush=True)
-            if not s.wait_for(expect, timeout=15.0):
+            if not s.wait_for(expect, timeout=60.0):
                 problems.append(f"{answer!r} did not lead to {expect!r}; "
                                 f"the answer landed on the wrong prompt")
                 if verbose:

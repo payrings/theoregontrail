@@ -232,6 +232,8 @@ game unplayable or misleading.
 | The command line never asked for the departure month or read the hand-over back out of memory, so a journey began from an uninitialised state. | only the library path was tested |
 | The main menu sent choice 1 to Management: line 1015 tests `A = 1`, the character code of **Control-A**, not the digit. | the scripted test answered "1" and went to Management, which is also a legitimate destination, so nothing looked wrong |
 | The profession screen did not loop back on an invalid answer, though line 4025 ends with `GOTO 4005` for every answer. | only reachable with an invalid answer |
+| **Matt's store printed its five bill lines without their numbers.** Line 3015 is ``PRINT L". "I$(L)``, so the number is printed with the line -- and it is the number the player types, because the reader at line 250 accepts 1 to 5 and nothing else. Without them there was nothing to select. | the scripted tests answered by position, not by what was on screen |
+| **`USR (1)` at line 3030 is a flush, not a request for a key.** It followed "Press SPACE BAR to leave store", which is a label on a box; treating it as a wait put a "Press SPACE BAR to continue" in the middle of the store that the player never saw asked for, and the number they typed went to that instead. | only visible by hand, in a store |
 | The article in *"You must trade for ..."* was the wrong way round: `T$(0)` is `"a "` and `T$(1)` is `"an "`, and `T$(B = 2)` picks between them, so the original says **"an ox"** and **"a wheel"**. | cosmetic |
 
 The allowed-set reading is now `ui.allowed_chars`, and it applies to **both** user
@@ -244,4 +246,11 @@ interfaces, so a scripted test sees exactly what a player sees. It is guarded by
 * `tests/test_ui.py::test_a_name_prompt_accepts_any_letters` -- the reported symptom,
   including that a name takes no digits;
 * `tests/pty_check.py`, which types at the real game through a pty, types
-  `Ebenezer` as the leader and chooses a **carpenter** rather than a banker.
+  `Ebenezer` as the leader and chooses a **carpenter** rather than a banker;
+* `tests/test_store.py`, which checks that the bill panel is numbered, that the
+  item prompt follows the leave-store label with no keypress between them, and that
+  the bill is the sum of the five lines.
+
+A note for anyone writing another allowed set: a range is written **dash first**, so
+1 to 5 is ``"-15"`` and not ``"1-5"``. Written the other way it means the literal
+characters 1, dash and 5. Every set in the game is written the game's way.

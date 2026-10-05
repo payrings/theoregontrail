@@ -94,6 +94,9 @@ ALLOWED = {
     "FORT": "-18",                       # BUY.LIB: the seven goods, then leave
     "REST": "-09",                       # one digit: how many days to rest
     # the store asks quantities
+    # line 250 accepts 1 to 5 and nothing else: "ON (Z < 49 OR Z > 53) AND
+    # Z <> 32 GOTO 252". Spelled as the game spells a range.
+    "STORE_ITEM": "-15",
     "STORE_YOKE": "-19",                 # 1 to 9 yoke
     "STORE_FOOD": "-09",                 # up to four digits
     "STORE_CLOTHES": "-09",              # two digits
@@ -109,6 +112,9 @@ def allowed_chars(spec: str) -> set:
     ``-`` are an inclusive range, and anything else stands for itself. So
     ``"-AZ-az '.-"`` gives every letter plus space, apostrophe and period, and
     ``"-14"`` gives 1 to 4.
+
+    Note the shape of it: a range is written dash-first, so 1 to 5 is ``"-15"`` and
+    not ``"1-5"``. Every set in the game is written that way.
 
     This is the single rule behind several bugs: read as a literal set, a name
     prompt allows only ``A``, ``Z``, ``a`` and ``z``, and a four-choice menu allows
@@ -149,6 +155,16 @@ class UI:
 
     def line_to(self):
         """``& CEL``: clear from the cursor to the end of the line."""
+
+    def flush(self):
+        """``USR (1)``: throw away anything already typed.
+
+        Not a wait. Line 3030 of the store prints "Press SPACE BAR to leave store"
+        and then does ``Z = USR (1)``, which clears the keyboard so a keypress left
+        over from the previous screen cannot answer the question that follows.
+        Treating that as a wait makes the store ask for a key that was never
+        asked for.
+        """
 
     def space(self, n: int):
         self.print(" " * n)
@@ -305,6 +321,10 @@ class TerminalUI(UI):
             self._eof = True
             return None
         return data.decode("latin-1")
+
+    def flush(self):
+        """``USR (1)``: discard pending input without waiting."""
+        self._drain()
 
     def _drain(self):
         """Throw away anything else already typed, without waiting.
