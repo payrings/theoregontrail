@@ -1,11 +1,12 @@
 # FINDINGS.md — what the ROM and the source actually do
 
-Private research notes for the Python rebuild in this directory. Written from
-direct execution of a real Apple IIe ROM and from the release 1.4 BASIC listings.
+Notes on the Python translation in `oregon/`, written from direct execution of a
+real Apple IIe ROM and from the release 1.4 BASIC listings. They are the evidence
+for the paper's claims, and where they disagree with it they say so.
 
-It lives in the repository root rather than in `docs/` because `docs/` holds the
-copyrighted reference material and is git-ignored; these notes are my own and
-belong with the code they describe.
+It lives beside the code because it is about the code: it is the record of what the
+translation found by executing a real Apple IIe ROM, and where that corrected the
+paper or the review. The paper itself is in `paper/`.
 
 Everything below was **checked by running something**, not inferred. Where a claim
 came from reading the listing alone it says so. Every number quoted here is one this

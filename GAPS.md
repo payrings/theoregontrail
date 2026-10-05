@@ -1,7 +1,9 @@
 # GAPS.md — everything approximated, replaced or missing
 
-Private research project. This file says what is **not** a faithful transcription,
-with the reason and the source reference, so that a reader never has to guess.
+**The paper is the work; this file is the code's.** `paper/01-analysis.md` is the
+research; this is the honest register of what the Python translation does not
+reproduce, with the reason and the source reference, so that a reader never has to
+guess which claims are tested and which are merely transcribed.
 
 Ordered by how much it matters.
 
@@ -185,10 +187,9 @@ Still not exercised:
 * `FLOAT`'s landing at position 17 -- the win rather than the missed landing -- is
   reached by steering, and a scripted run has nothing to steer with, so every
   scripted raft misses the landing at pass 225.
-* `TALK.LIB` reads its text from `docs/Appendix D Dialogue records.md` at run time
-  rather than holding it in the repository, because the dialogue is MECC's and
-  `docs/` is git-ignored. A game played without `docs/` will raise a clear error at
-  the first conversation rather than silently having nothing to say.
+* `TALK.LIB` reads its text at run time from `paper/02-appendix-d-dialogue.md`,
+  because the dialogue is MECC's. A game played without that file raises a clear
+  error at the first conversation rather than silently having nothing to say.
 * The management program's teacher menu is reachable but the top-ten *insertion*
   routine (`win.insert`) has not been run against a real list.
 * **A day-by-day trace from the original.** This is the one that would settle

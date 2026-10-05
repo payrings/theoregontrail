@@ -1,7 +1,7 @@
 # PLAN.md — rebuilding The Oregon Trail (MECC, 1985, Apple II) in Python
 
-Private research project. Not for distribution. Reference material in `docs/` is
-copyrighted and is never committed (see `.gitignore`).
+The module map and the ambiguities found while transcribing. The paper itself is
+in `paper/`; this is the working document behind the translation in `oregon/`.
 
 Authority order used throughout: **Appendix X (BASIC source)** first, then the
 paper, then Appendices D–H, then Appendix Z (machine code). Where the paper
