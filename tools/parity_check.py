@@ -1,4 +1,23 @@
-"""Compare the pure-Python backend with the emulated ROM, operand by operand."""
+"""Compare the pure-Python arithmetic with the emulated ROM, operand by operand.
+
+This is the paper's section 12.4 argument, made runnable. The claim is that a
+host-language implementation of this arithmetic cannot reproduce the original,
+because the rounding points, the guard byte and the generator all live in the
+Applesoft ROM. So run both and see:
+
+    python tools/parity_check.py 4000
+
+With the ROM present the ``add`` and ``INT`` columns should be zero everywhere,
+because those are the operations the two agree on exactly. ``mul`` and ``sub``
+differ on some operands by one unit in the last place -- the ROM keeps a single
+guard bit during a shift-and-add and truncates the rest, while the Python model
+keeps a whole guard byte and rounds -- and that difference is exactly the point of
+the section rather than a flaw in either implementation.
+
+``tests/test_parity.py`` holds the same comparisons as assertions, together with
+the fifteen ``RND`` values the review supplied and the ROM's own decimal
+conversions.
+"""
 import random
 import sys
 
