@@ -213,3 +213,28 @@ what make a missing or an extra draw visible on the day it happens.
 
 **No test in this repository compares against a "known good" output**, because none
 exists. Every expectation is worked out by hand from the BASIC line named beside it.
+
+
+---
+
+## 9. Defects found by playing it, not by testing it
+
+Added after the game was first run by hand. All of these were invisible to the
+library tests because the tests drove a scripted screen, and all of them made the
+game unplayable or misleading.
+
+| What | Why it hid |
+| --- | --- |
+| **Every menu's allowed-character set was written as `-` plus the first and last digit** -- `"-14"`, `"-16"`, `"-15"`, `"-18"`, `"-13"`. `& INP` ignores a character outside its set and waits for another, so only choice 1 and the last choice were ever selectable. On the profession screen **2 (carpenter) and 3 (farmer) could not be chosen at all**, and the main menu could not reach "learn about the trail" or the top ten. | the scripted tests always answered "1" or a last choice, which happened to be allowed |
+| **`tty.setcbreak` sets the terminal with `TCSAFLUSH`**, which discards pending input. Entering cbreak lazily, on the first read of a session, threw away any key pressed while the game was drawing -- intermittent, because it depended on which side of that call the keystroke fell. | only a real terminal; a pipe has no line discipline to flush |
+| **A prompt that read one character raced its own Return.** It tried to *drain* the Return the player pressed, and usually lost the race, so the **next** prompt got a bare Return, rejected it, and sat there: every answer landed one prompt late. | same |
+| The command line never asked for the departure month or read the hand-over back out of memory, so a journey began from an uninitialised state. | only the library path was tested |
+| The main menu sent choice 1 to Management: line 1015 tests `A = 1`, the character code of **Control-A**, not the digit. | the scripted test answered "1" and went to Management, which is also a legitimate destination, so nothing looked wrong |
+| The profession screen did not loop back on an invalid answer, though line 4025 ends with `GOTO 4005` for every answer. | only reachable with an invalid answer |
+| The article in *"You must trade for ..."* was the wrong way round: `T$(0)` is `"a "` and `T$(1)` is `"an "`, and `T$(B = 2)` picks between them, so the original says **"an ox"** and **"a wheel"**. | cosmetic |
+
+The allowed-set bug is now guarded by
+`tests/test_ui.py::test_every_menu_prompt_allows_every_choice_it_offers`, which
+compares every prompt's set against the numbers its screen actually prints, and by
+`tests/pty_check.py`, which types at the real game through a pty and chooses
+something other than 1 to prove it.
