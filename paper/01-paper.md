@@ -38,7 +38,7 @@ The source code is not reproduced in this paper because it remains under copyrig
 
 ### 1.4 Limits of this analysis
 
-The machine-language routines reached through the `&` command were disassembled and read at their entry points, which establishes their argument lists and general function (Appendix F). The hunting routine was analysed in more depth (section 11.1), though its graphics and movement code were not. The routines used only by the river-floating program, and the picture, image and tune data formats, were not decoded. None of the machine code was executed. The claims in section 12 about the interpreter's arithmetic rest on the published ROM disassembly (Sander-Cederlof, n.d.); they were not confirmed by executing the ROM.
+The machine-language routines reached through the `&` command were disassembled and read at their entry points, which establishes their argument lists and general function (Appendix F). The hunting routine was analysed in more depth (section 11.1), though its graphics and movement code were not. The routines used only by the river-floating program, and the picture, image and tune data formats, were not decoded. The claims in section 12 about the interpreter's arithmetic were read from the published ROM disassembly (Sander-Cederlof, n.d.) and have since been confirmed by executing the ROM; see 12.6. The machine code of the game itself has still not been run, so section 11's findings about the hunting routine remain a reading of the disassembly rather than an observation of play.
 
 ### 1.5 Design intentions behind the mechanics
 
@@ -466,7 +466,9 @@ With no oxen, or with a broken part and no spare, the variable `B` is set and th
 
 Each travelling day the program tests fifteen events in order, 0 to 14, drawing one random number for each. An event fires when the draw is below its chance `RE(n)`. The loop is skipped entirely on a stopped day (resting, delayed, waiting).
 
-The loop does not stop after the first event. It ends early only when `B` is above zero, which happens when the player presses Return during an event message or when the party cannot continue. Otherwise the remaining events are still tested, so two events can occur on one day.
+**At most one event fires on a travelling day.** `L8 = 20` is the last statement of the loop body, and Applesoft has no block structure, so an `IF ... THEN` clause runs to the end of the line: `L8 = 20` executes whenever an event fires, whether or not `B` is above zero. `NEXT L8` then sets `L8 = 21`, and the loop runs `FOR L8 = C0 TO RE` with `RE = 14`, so `21 > 14` ends it. `B` matters only for whether the action menu is opened afterwards, not for whether the loop continues.
+
+The consequence for the draw count is worth stating, because it is easy to assume fifteen: the loop draws once per event *tested*, so a travelling day costs `k + 1` draws, where `k` is the index of the event that fired, and fifteen only when none fires. The events after `k` are not tested and spend nothing.
 
 ### 8.2 The fifteen events
 
@@ -738,7 +740,9 @@ Calculations take place in a register called FAC (addresses 9D to A2) with an ex
 - **Rounding at pushes.** When an expression needs to set a partial result aside, the evaluator rounds it to 32 bits before pushing it on the stack (DE20). A partial result that is used at once keeps its extension byte. The same formula can therefore give different last bits depending on the order of its terms.
 - **Alignment loses bits.** In addition, the smaller operand is shifted right into the extension byte, and bits shifted beyond it are discarded.
 
-Numeric constants in the program text are converted from decimal digits every time a line runs. This is why the programmers held 0, 1, 2, 3, 4 and 0.5 in the variables `C0` to `C4` and `P5`. It also means a constant such as `.8` is whatever the ROM's own conversion routine produces, not necessarily the nearest representable value.
+A numeric constant in the program text is converted from its decimal digits **once**, when the line is tokenised, and the resulting 5-byte value is stored inline; `LIST` reconstructs the printed form from those bytes rather than from the digits. Nothing is re-converted when the line runs. The reason the programmers nevertheless held 0, 1, 2, 3, 4 and 0.5 in the variables `C0` to `C4` and `P5` is speed: an expression using a variable does not have to tokenise and convert a literal at all.
+
+The conversion itself is still the ROM's, and a replica must use it rather than a host-language parse. A constant such as `.8` is whatever that routine produces, not necessarily the nearest representable value: `.8` is `80 4C CC CC CD` and `.2` is `7E 4C CC CC CD`.
 
 ### 12.3 The random number generator
 
@@ -791,7 +795,25 @@ Full emulation is the only approach with no reimplementation risk. The second ap
 
 ### 12.6 Status of verification
 
-The statements in 12.2 and 12.3 come from the published commented disassembly of the ROM (Sander-Cederlof, n.d.). Neither approach in 12.5 has yet been run for this paper. The next step is to execute the ROM and confirm three things: the stored bytes of the game's constants, the first values of `RND` for a known seed, and a day-by-day comparison of state against the running game.
+The statements in 12.2 and 12.3 come from the published commented disassembly of the ROM (Sander-Cederlof, n.d.). The ROM has since been executed, and two of the three items below are settled.
+
+**The stored bytes of the constants.** `.8` converts to `80 4C CC CC CD`, `.2` to `7E 4C CC CC CD`, `.1` to `7D 4C CC CC CD`, `.9` to `80 66 66 66 66`, and `1.0` to `81 00 00 00 00`. None is the nearest representable value, which is the point of 12.2.
+
+**The two constants in `RND`,** read out of the image: five bytes at `$EFA6` are `98 35 44 7A 68`, the multiplier, and five at `$EFAA` are `68 28 B1 46 20`, the addend. The addend is about 1.9 times 10 to the minus 8 against products of order 10 to the 7, which is why it has almost no effect; its fifth byte, `20`, is the opcode of the `JSR` at `$EFAE` that begins the routine, which is what "each is read together with the byte that happens to follow it" means in practice.
+
+**Fifteen values of `RND` from a known seed,** starting from `81 00 00 00 00`:
+
+```
+0.4072949116816744   0.608041618950665      0.25951706536579877
+0.08268766026594676  0.35866158816497773    0.9610444016288966
+0.5672113706823438   0.6001326921395957     0.33425431547220796
+0.6068662970792502   0.6758213557768613     0.3164409970631823
+0.036882334752590396 0.03491484130790923    0.2833032483467832
+```
+
+which leave the seed at `$C9`–`$CD` as `7F 11 0D 1F 95`.
+
+Still outstanding is the third item: a day-by-day comparison of state against the running game, which needs the disk image rather than the ROM.
 
 ## 13. Bugs and quirks a replica must keep
 
