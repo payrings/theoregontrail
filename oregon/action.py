@@ -171,14 +171,28 @@ def do_rest(c):
     a = c.ui.key(ALLOWED["REST"], 1, default="1")
     st.SD = int(a) if a and a.isdigit() else 1
     if st.SD:
+        # Line 4505: "IF SD THEN F9 = 0:JQ = P:P = 0:ZX = D:ZY = M:D = 0:
+        # FOR K1 = 1 TO SD: GOSUB 3100: ...: NEXT". It sets D = 0 and then calls
+        # line 3100 **directly**, SD times -- not through the day loop.
+        #
+        # This used to call trail.daily_cycle, whose condition is "while D != 0"
+        # (3499, "L0 = NOT D: NEXT L0"). D had just been set to 0, so the loop
+        # condition was false and **no day passed at all**: resting consumed
+        # nothing, ate nothing and left health exactly where it was, however many
+        # times it was repeated. Reported from play. run_stopped_days already had
+        # this right, which is why a one-day delay worked and a nine-day rest did
+        # nothing.
         saved_d, saved_m, saved_p = st.D, st.M, st.P
+        st.F9 = 0
         st.D = num.ZERO
         st.P = num.ZERO
         for _ in range(st.SD):
-            trail.daily_cycle(c)
+            trail.day_body(c)
+            common.wait_key(c)
             c.ui.print(common.date_text(c))
         st.SD = 0
         st.D, st.M, st.P = saved_d, saved_m, saved_p
+        st.I[8] = st.PF
     return st.SD
 
 

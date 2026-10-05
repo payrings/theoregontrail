@@ -66,7 +66,9 @@ def attempt(c):
     q = st.Q
     want = v
     give = f
-    word = _wording(x, num.as_int(want))
+    # line 50030: "I = F:L = X + 2:F = V: GOSUB 50250" -- the name is read at
+    # X + 2, so x is the S$ index and the I$ index is x + 2
+    word = _wording(x + 2, num.as_int(want))
     c.ui.print(f"You meet another emigrant who wants {num.str_(want)[1:]} {word}.  ")
     if num.lt(q, want):
         c.ui.print("You don't have this.")
@@ -76,8 +78,12 @@ def attempt(c):
     who = "He"
     if num.gt(c.rng.rnd1("50031 he or she"), num.parse(".67")):
         who = "She"
+    # Line 50032 sets "L = Y + 2" and then GOSUB 50250, which reads "Z$ = I$(L)".
+    # The inventory names are indexed 1 to 8, so the index is Y + 2 -- passing Y
+    # picked up I$(0), which is empty, and the sentence came out as
+    # "She will trade you 1 ." with nothing named. FINDINGS.md 19.8, seen in play.
     from .lf import _line
-    offered = _line(0, give, y)
+    offered = _line(0, give, y + 2)
     c.ui.print(f"{who} will trade you {offered}.")
     c.ui.print("Are you willing to trade? ")
     if common.yes_no(c) != "Y":
@@ -113,10 +119,30 @@ def _over_limit(st, item: int, amount) -> bool:
     return False
 
 
+#: ``LF.LIB``/``FLOAT`` 50250, 50255 and 50260, which between them give every good its
+#: name. ``I$`` is 1-based and ``I$(8)`` is "pounds of food", so the name is never
+#: assembled by appending an "s" to a stem:
+#:
+#: * 50250 -- ``Z = (F = 1) * ((L = 8) + (L = 2) + (L = 3) + ("s" = RIGHT$(Z$,1)))``,
+#:   and ``IF NOT Z THEN RETURN``. With ``F`` not 1 the name is used **unchanged**,
+#:   which is how "pounds of food" and "wagon wheels" come out right.
+#: * 50255 -- ``IF L <> 8 AND L <> 3 THEN Z$ = LEFT$(Z$, LEN (Z$) - 1 - (L = 2))``:
+#:   the singular of anything else drops its trailing "s", and oxen lose two letters.
+#: * 50260 -- ``Z = 6 - 2 * (L = 3)`` splits the name into a stem and a qualifier:
+#:   "pound of food", "sets of clothing".
 def _wording(item: int, n: int) -> str:
-    if item == 2:
-        return "bullet" + ("s" if n != 1 else "")
-    return G.UNIT[item] + G.PLURAL[item]
+    """*item* is the ``I$`` index, 2 to 8; *n* is ``F``, the quantity."""
+    from .data.text import I_NAMES
+    name = I_NAMES[item]
+    if n == 1:                                  # 50250's Z is true, so 50255/50260 run
+        if item == 8:                           # "pounds of food" -> "pound of food"
+            return "pound of food"
+        if item == 3:                           # 50260: Z = 6 - 2 = 4, so LEFT$(Z$,3)
+            return "set of clothing"             # & RIGHT$(Z$, 16 - 4)
+        if item == 2:                           # 50255: LEN - 1 - 1
+            return "ox"
+        return name[:-1] if name.endswith("s") else name
+    return name
 
 
 def show_supplies(c):

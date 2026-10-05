@@ -107,11 +107,17 @@ def store(c) -> dict:
     while True:
         show_bill(c)
         # Line 3030 prints this on a box at the foot of the panel and then does
-        # "Z = USR (1)", which *clears the keyboard*. It is not a request for a
-        # keypress, so nothing waits here; the flush is just to stop a keypress
-        # left over from the previous screen answering this one.
-        c.ui.print("Press SPACE BAR to leave store")
-        c.ui.flush()
+        # "Z = USR (1)", which **waits for a key** -- the same routine line 950 uses
+        # for "Press SPACE BAR to continue", and WIN 956 shows what it does:
+        # "Z = USR (2): IF Z < 128 THEN 955", so it loops until a key arrives with the
+        # high bit set, which is any ordinary key, space included.
+        #
+        # This used to print the prompt and flush instead, on the reading that USR(1)
+        # clears the keyboard. That was wrong, and it was reported from play: the
+        # prompt said "Press SPACE BAR to leave store", pressing space did nothing at
+        # all, and only Return worked -- because Return was answering the *next*
+        # question, "Which item would you like to buy?". FINDINGS.md 22.
+        c.ui.wait_key("Press SPACE BAR to leave store")
         c.ui.print()
         c.ui.print("Which item would you like to buy? ")
         # Line 250's reader accepts 1 to 5 and nothing else -- "ON (Z < 49 OR Z > 53)

@@ -118,17 +118,13 @@ def thief(c):
 
 
 def _line(z: int, amount, item: int) -> str:
-    """``T$(Z) = STR$(X) + " " + Z$`` with the wording of the goods table."""
-    n = num.as_int(amount)
-    word = T.I_NAMES[item]
-    if item == 8:
-        text = ("pound" if n == 1 else "pounds") + " of food"
-    elif item == 3:
-        text = ("set" if n == 1 else "sets") + " of clothing"
-    elif item == 2:
-        text = "ox" + ("en" if n != 1 else "")
-    elif item == 4:
-        text = "bullet" + ("s" if n != 1 else "")
-    else:
-        text = word + ("s" if n != 1 else "")
-    return f"{n} {text}"
+    """``T$(Z) = STR$(X) + " " + Z$`` with the wording of 50250, 50255 and 50260.
+
+    *item* is the ``I$`` index, 2 to 8. The wording is not "stem plus s": 50250 returns
+    immediately unless the quantity is 1, so a plural keeps the name as it stands --
+    "pounds of food", "wagon wheels" -- and only the singular is rewritten. Getting
+    that wrong produced "1 wagon wheels" and "3 wagon wheelss"; see ``FINDINGS.md``
+    20.4. The rules live in :func:`oregon.trade._wording`, which this shares.
+    """
+    from .trade import _wording
+    return f"{num.as_int(amount)} {_wording(item, num.as_int(amount))}"

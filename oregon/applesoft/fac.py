@@ -135,6 +135,21 @@ class Fac:
     def __repr__(self) -> str:
         return f"Fac({self.b.hex(' ')})"
 
+    def __str__(self) -> str:
+        """The number, as text.
+
+        Without this, ``str()`` falls back to ``__repr__`` and yields
+        ``Fac(85 20 00 00 00)``, which :func:`oregon.num.parse` reads as **0**.
+        That is not a cosmetic slip: ``num.parse(str(x))`` is a natural-looking way to
+        get a plain number out of a ``Fac``, and it was used in three places. Every
+        holding on both supplies screens printed as zero, so a party that had bought
+        oxen, food and clothing appeared to own nothing; and ``HR``, the event
+        hardship term of the health sum, contributed nothing at all, which is why
+        health never moved. ``repr`` keeps the byte form for debugging.
+        """
+        f = self.to_float()
+        return str(int(f)) if f == int(f) else repr(f)
+
     def __bool__(self) -> bool:
         return not self.is_zero()
 
