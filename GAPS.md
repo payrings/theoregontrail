@@ -66,15 +66,71 @@ matters.** The ROM is the default.
 
 | # | Paper | Code | What this does |
 | --- | --- | --- | --- |
-| A1 | §8.1: "the loop does not stop after the first event … so two events can occur on one day" | line 3180 ends with `L8 = 20` after **every** firing event, so `NEXT L8` leaves the loop | **At most one event per day.** `trail.event_loop` breaks after one. If the paper is right about the original's behaviour, this is the single most consequential divergence and it should be checked against a real run. |
+| A1 | §8.1: "the loop does not stop after the first event … so two events can occur on one day" | line 3180 ends `L8 = 20` **inside** `IF B > 0`, so it runs only when an event has fired and `B` is above zero | **none — the paper is right and the code agrees with it.** `trail.event_loop` breaks only when `B > 0`. An earlier draft of this table claimed the opposite and called it the single most consequential divergence; that was wrong, and `FINDINGS.md` 5.1 records the retraction. |
 | A2 | §9.3: rough fording, "each good has a 10% to 40% chance" | line 50070 draws `V = .1 + RND (1) * .3` **once**, then all six goods share it | one V per tipping; the draw order is tip?, V, then six goods draws |
-| A3 | §4.2 item 4: "At a landmark with a second segment, the player chooses a branch" | line 2110 asks, but `Z$ = "3"` also shows the map and `IF Z = 3 THEN GOSUB 4200` | choice 3 shows the map and then takes the **first** segment |
+| A3 | §4.2 item 4: "At a landmark with a second segment, the player chooses a branch" | line 2110 asks; choice 3 also shows the map, and `IF Z = 3 THEN GOSUB 4200: GOSUB 190: GOTO 1015` puts the `GOTO` inside the `THEN`, so the question is asked again | **none — the code shows the map and asks again**, which is what the line does. `FINDINGS.md` 5.5 records the retraction. One residue remains: `GOTO 1015` re-executes `Z = 1`, so the original stops offering the map after one look, and it re-runs the no-oxen message and menu; `trail.choose_segment` loops inside itself and does neither. See `FINDINGS.md` 18. |
 | A4 | §10.1: the Barlow toll is paid "only if `MY > V`" | line 50020 is exactly that, so a party holding precisely the toll is refused | reproduced; `endl.the_dalles` |
 | A5 | §2.3 Table 4 | the two layouts are as stated | reproduced exactly, including that `FLOAT` reads the oxen from 909 and the bullets from 904/905 while the store wrote the yokes to 905 and the boxes to 909 |
 | A6 | §4.1: "The shortest route … is 1,771 miles to The Dalles and 1,871 by the Barlow Road" | summing Table 8's own miles along the shortest route gives **1,821** and **1,921** | the table is used as printed, since it is what `LM(Z,0)` holds; the paper's two totals are 50 miles short. Worth checking against a real run. |
 | A7 | §8.2 event 2: "no routine exists / none" | line 3180's `ON … GOSUB` list names `10200`, which the program does not have | `RE(2) = 0` at 29001, so it cannot be reached; reaching it would be UNDEF'D STATEMENT. `events.fire` raises rather than silently running something else. |
 
 ---
+
+## 2a. Divergences from the original that are deliberate, and were not declared
+
+Three places where the code knowingly does something the listing does not. Each was
+found by the audit in `FINDINGS.md` 18; they are here because a reader comparing the
+two should not have to find them by reading the source.
+
+| where | what the listing does | what the code does | why |
+| --- | --- | --- | --- |
+| `trail.run`, the action menu at 1015 | `ON B > 0 GOSUB 4000` runs the menu once, then control falls through to 1016, `GOSUB 2200: GOSUB 3000`. With no oxen `V = I(2) / 4` is 0, so `BS` is 0, `D` never decreases and the day loop at 3499 grinds on at zero speed until the party dies | the menu is reopened until oxen appear, and only then is the segment loaded | an unreproducible grind at zero speed is not a behaviour worth shipping, and it is indistinguishable from a hang. It changes the outcome: the original almost always loses the party here, this lets the player trade and continue |
+| `trail.lose_days` | line 570 reads `B = (PEEK (-16384) = 13)` **immediately after** `GOSUB 30000`, the keypress wait, so a Return pressed at the message sets `B = 1`; that is what makes line 3180 open the menu and end the event loop | the wait consumes the key and `c.ui.poll_key()` is non-blocking, so `B = 1` is almost never set after a lost-days event | `poll_key` exists to model the interrupt at line 810, not a blocking `PEEK`. The consequence is that the original usually stops testing events on a day with lost days, and this continues. `GOSUB 400` and `GOSUB 300` from the same line are also not done |
+| `trail.choose_segment`, choice 3 | `GOTO 1015` re-runs `Z = 1`, `GOSUB 3500` is not re-run but `GOSUB 21000` and `ON B > 0 GOSUB 4000` are, and the map is not offered a second time | loops inside `choose_segment`, so the map is offered every time and the no-oxen message is not repeated | cosmetic; no river landmark has a second segment, so `Z` cannot matter. The map re-offer is a small usability difference |
+
+## 2b. Where the code is wrong and known to be wrong
+
+Written so that a reader does not have to assume the suite is green. `FINDINGS.md` 18 to 20 record twenty defects found by three audits, and 22 two more
+found by playing the game. The twenty are **not fixed**; the two in 22 are. They are
+listed together because until they are, a green suite says less than it appears to: the
+tests were written against the code, so they agreed with the code.
+
+| what | where | what it costs |
+| --- | --- | --- |
+| `INT(RND * 1 + 0)`: four sites where the listing multiplies by the holding | `river.py`, `lf.py` ×3 | **every announced loss is zero.** Goods survive every ford, fire and theft |
+| `R = LEN(Z$)` where the listing has `R = Z * VAL (Z$)` | `ration.py` | **rations 2 and 3 cannot be selected**; the party always eats three pounds a head |
+| a river crossed again after the action menu | `trail.py` | a whole extra crossing, with its draws and losses |
+| `ON n GOTO` with two targets modelled as three | `events.py` | an invented "ox wanders off" plus a stray draw |
+| short-circuit `and` skipping a draw | `part.py`, `lf.py`, `floatraft.py` | the generator desynchronises |
+| the top-ten list shifted the wrong way | `win.py` | `HISCORE.SEQ` corrupted on every arrival |
+| the scalar `SN` written into the array `SN()` | `trail.py` | tombstone records destroyed; the same grave re-met |
+| `& INP` given a longer maxlen than the listing | `fortbuy.py` | two digits raise `IndexError` instead of the error screen |
+| first grave on disk side two lands in side one's slot | `files.py` | the stone is filed under the wrong side and side two reads empty |
+| `ZP` computed backwards | `trail.trail` | fixed; `FINDINGS.md` 16 |
+| " has " dropped and the death announced twice | `illness.py` | fixed; `FINDINGS.md` 23.1 |
+| the reseed counter never advanced, so every game was identical | `context.py` | fixed; `FINDINGS.md` 23.2 |
+| a rest passed no days at all -- it called the day *loop* with `D = 0` | `action.py` | fixed; `FINDINGS.md` 24.1 |
+| goods named by appending "s": "81 pounds", "3 wagon wheelss" | `trade.py`, `lf.py` | fixed; `FINDINGS.md` 24.2 |
+| `USR (1)` read as a keyboard flush, so the store never waited for a key | `buysupplies.py` | fixed; `FINDINGS.md` 22.1 |
+| the trade named the good at `I$(Y)` instead of `I$(Y + 2)` | `trade.py` | fixed; `FINDINGS.md` 22.2 |
+
+Two of these are outright container-semantics mistakes rather than misreadings of
+Applesoft: the bytearray slice clamp in `files.write_tomb`, and Python's `and`. The
+Applesoft-specific ones are the two the paper's 2.5 warns about -- a literal where the
+listing has a variable, and a short-circuit where the listing has no short-circuit.
+
+## 2d. One ambiguity in the paper, recorded rather than resolved
+
+Paper Table 12 gives the climate zone by "segments leaving landmarks", with ranges
+0-2, 3-5, 6-10, 11-13, 14-16. Line 1000 computes the zone from the **landmark**, and
+landmarks and segments stop being numbered alike at South Pass, where the Green River
+route skips Fort Bridger and segment 8 never occurs. On that route the code gives zone
+2 to segments 6, 7, 10 and 11, where the table says 6 to 10.
+
+The code follows the listing, which is unambiguous, and the ranges in the table read as
+landmark ranges -- which is what the column header allows. Recorded so that a reader
+comparing the two does not think the code is wrong. `FINDINGS.md` 21.2 has the working.
+The paper is not edited.
 
 ## 3. Deliberately replaced
 
@@ -83,7 +139,7 @@ matters.** The ROM is the default.
 | All graphics, pictures, images and sound | non-goal; the formats were never decoded (Appendix H, table H1) | the `PEEK 278,170` colour test at line 312 and every `& IMAGE`, `& PUT`, `& TAKE`, `& UIM`, `& DUN`, `& BOX` call site has no text equivalent. `GAPS.md` records them; the UI interface keeps the methods so the call sites stay visible. |
 | `& CDN` disk-volume check | no disk | `common.check_side` prompts and changes `S`, which is the part that matters, because the two sides hold one grave each |
 | `& INP`'s beep count `ZN` and the allowed-character set | no speaker, and the terminal filters instead | `ui.ALLOWED` keeps the sets the BASIC passes, for the record |
-| The travel screen's six labels at columns 95, 70, 81, 95, 23, 20 | no hi-res screen | `trail.travel_screen` prints the same six labels and values one per line, in the listing's order |
+| The travel screen's six labels at columns 95, 70, 81, 95, 23, 20 | no hi-res screen | `trail.travel_screen` prints six label/value pairs one per line. It does **not** pair them the way line 320 does: the listing reads six labels from the DATA at 22000 and prints six values from `T$(0 to 5)`, so row 0 carries "Press RETURN to size up the situation" over the *date*, and "Miles traveled" — the seventh datum — is never printed. This implementation pairs each label with the value that belongs under it and drops the "Press RETURN…" row, prints the landmark name from line 305, and prints the date once. No number changes; see `FINDINGS.md` 18. |
 | `MAP.LIB`'s plotted route | no map picture | `maplib.show` lists the landmarks passed, plus the miles to the next one |
 | `B` as both the status-screen column array and the cannot-continue flag | cosmetic aliasing | the five label columns come from Appendix E.5 and are not aliased; the flag itself is modelled |
 | `TEST FLOAT`, the developer's test program on side 2 | dead code | not implemented |
@@ -105,8 +161,10 @@ matters.** The ROM is the default.
 
 ## 5. Bugs reproduced on purpose
 
-All nine from paper section 13, plus one more found in the source. Each is marked in
-the code with the BASIC line that causes it.
+All **eleven** of paper section 13's table, plus one more found in the source. Each is
+marked in the code with the BASIC line that causes it. The count was nine when this
+table was written; section 13 gained two, the trade that rounds the holding and the
+thief that names no item, and the earlier count should not be read as a shortfall.
 
 | Bug | Where reproduced |
 | --- | --- |
@@ -120,7 +178,7 @@ the code with the BASIC line that causes it.
 | A party with exactly the Barlow toll cannot pay | `endl.the_dalles` tests `MY > V` |
 | February always has 28 days | `trail.advance_date`, `MONTH_DAYS` |
 | **Found in the source, not in the paper:** on the trail leaving a fort, menu choice 8 "Buy supplies" runs the **hunt**, and choice 9 "Hunt for food" does nothing | line 4090's `Z = Z * (VAL(Z$) > 7) + VAL(Z$)` with `Z = 2` on the trail. `action.action_menu` reproduces it and says so. |
-| **Found in the source:** `Q` is one variable used both as the map's landmark history (`Q(0 to 16)`) and as a scalar by `BUY.LIB` 50003 (the fort tier) and `TRADE.LIB` 50011 (the rounded holding) | modelled faithfully: `state.Q` is one array and both scalar uses write `Q(0)`. The consequences are that the map loses its first landmark, and an accepted trade **rounds the player's holding** -- `I(X+2) = Q - V`, so five and a half oxen become six minus whatever is taken. I first thought a fort tier would also make `TOMB.LIB` 50005 subscript outside `DIM H1(4)`; that is wrong, because line 3504 assigns `Q` from its own loop counter before using it, and `tests/test_rng.py` keeps the retraction. |
+| **Retracted:** `Q` is one variable used both as the map's landmark history (`Q(0 to 16)`) and as a scalar by `BUY.LIB` 50003 and `TRADE.LIB` 50011 | **there is no bug here.** A simple variable and an array of the same name are two different variables (paper 2.5, rule b), so `state.Q` and `state.Q_arr` are separate and a fort purchase does not disturb the map. What survives is real and is in section 13: an accepted trade rounds the holding, because `TRADE.LIB` sets the scalar `Q` to `INT (I(X + 2) + .5)` and stores `Q - V`, so five and a half oxen that trade one away leave five. `FINDINGS.md` 6.2 records the retraction. |
 | **Found in the source:** the paper's §9.3 "rough" ford wording implies a per-good draw; the code draws one `V` for the whole crossing | A2 above |
 
 ---

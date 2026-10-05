@@ -215,3 +215,73 @@ def test_the_hunt_seed_uses_the_keyboard_counter(game):
     b = hunt._seed_bytes(c)
     assert a != b, "the counter is part of the hunt's seed"
     assert len(a) == 5
+
+
+#: ``MENU`` 1015: ``Z = RND (-( PEEK (78) + PEEK (79) * 256))``. On the Apple II the
+#: keyboard routine advances 78 and 79 while it waits for a key, so the seed -- and
+#: therefore the whole game -- is fixed by how long the player took.
+#:
+#: Nothing advanced the counter, so every run reseeded from the same value and every
+#: game was identical. Reported from play: the same party member died on the same day
+#: in two separate games.
+def test_the_keyboard_counter_advances_while_the_player_thinks(tmp_path):
+    import time
+    from oregon.context import Context
+    from oregon.files import Files
+    from oregon.ui import ScriptedUI
+
+    class Slow(ScriptedUI):
+        def key(self, allowed="", maxlen=1, default=""):
+            time.sleep(0.02)
+            return super().key(allowed, maxlen, default)
+
+    c = Context(ui=Slow(["1"] * 40, allow_repeat=True),
+                files=Files(tmp_path / "data"))
+    before = c.mem.keyboard_counter
+    for _ in range(5):
+        c.ui.key("1", 1)
+    after = c.mem.keyboard_counter
+    assert after > before, f"the counter did not move: {before} -> {after}"
+    assert after - before >= 50, f"five 20ms waits should count ~100ms, got {after - before}"
+
+
+def test_a_scripted_front_end_leaves_the_counter_alone(tmp_path):
+    """Otherwise every test would get a different seed and nothing would be
+    reproducible."""
+    from oregon.context import Context
+    from oregon.files import Files
+    from oregon.ui import ScriptedUI
+
+    c = Context(ui=ScriptedUI(["1"] * 40, allow_repeat=True),
+                files=Files(tmp_path / "data"))
+    before = c.mem.keyboard_counter
+    for _ in range(5):
+        c.ui.key("1", 1)
+    assert c.mem.keyboard_counter == before, "a scripted prompt answers instantly"
+
+
+def test_each_counter_gives_a_different_game():
+    """The reseed is the only one in the game, so the counter is the whole difference
+    between one playthrough and the next. Checked with a real generator, not
+    ``ScriptedRnd``, which returns its script whatever the seed."""
+    from oregon import applesoft
+    from oregon.rng import Rnd
+
+    class Real(Rnd):
+        def __init__(self):
+            super().__init__()
+            self._backend = applesoft.use(
+                "rom" if applesoft.rom_available() else "pure")
+
+        def rnd(self, arg):
+            return self._backend.rnd(arg)
+
+    games = {}
+    for counter in (0, 1, 4242, 4660, 65535):
+        r = Real()
+        r.seed_from_keyboard(counter)
+        games.setdefault(tuple(str(v) for v in (r.rnd1() for _ in range(5))),
+                         []).append(counter)
+    assert all(len(v) == 1 for v in games.values()), (
+        "two counters produced the same game: %r" % games)
+    assert len(games) == 5, "five counters gave %d distinct games" % len(games)

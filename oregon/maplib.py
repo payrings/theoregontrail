@@ -35,9 +35,10 @@ def show(c):
     c.ui.print()
     visited = []
     for i in range(0, max(1, min(st.Q1 - 1, 17))):
-        # Q(0) may not be a landmark at all: a fort purchase or a trade writes the
-        # fort tier or the rounded holding there. That is the cosmetic half of
-        # Q's double life, and the map really does plot it. See GAPS.md.
+        # Q() holds the landmark history only. The fort tier set by BUY.LIB 50003
+        # and the rounded holding set by TRADE.LIB 50011 are the *scalar* Q, a
+        # different variable (paper 2.5, rule b), so neither can land in here.
+        # FINDINGS.md 6.2 retracts the earlier claim that it could.
         n = num.as_int(st.Q_arr[i])
         if n and 0 <= n < 18 and n not in visited:
             visited.append(n)

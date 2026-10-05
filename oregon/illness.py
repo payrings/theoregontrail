@@ -50,14 +50,23 @@ def illness(c):
     who = choose_victim(c)
     name = st.N[who]
     if not num.eq(st.H1[who], num.ZERO):
-        # a second disease while the first is still running: the member dies and the
-        # new disease is never named (paper section 1.5, Table 1)
-        st.T[0] = name + " " + ILL.DEATH_SENTENCE
+        # Line 10300: "Z$ = N$(Z) + \" has \": A$ = IL$(V): IF H1(Z) THEN A$ = \"died\":
+        # V$ = Z$ + A$ + \".\"" -- so the text is the name, " has ", then "died", then
+        # a full stop. Any illness already running kills, whatever it was; the new
+        # disease is never named (paper section 1.5, Table 1).
+        #
+        # This used to read name + " " + "died", which printed "Zeke died" -- and
+        # then die() printed "Zeke has died." as well, so a death was announced
+        # twice, once wrongly. Reported from play; FINDINGS.md 23.
+        st.T[0] = name + " has " + ILL.DEATH_SENTENCE + "."
         common.message(c, st.T[0])
         st.H1[who] = num.parse("-1")
         die(c, who)
         return
-    st.T[0] = name + " " + ILL.IL_NAMES[disease]
+    # Line 10310: "V$ = Z$ + A$ + \".\"", with Z$ already ending " has ", so the
+    # full stop is added here. The same " has " was missing here as in the branch
+    # above: it read name + " " + IL_NAMES[disease], giving "Zeke a snakebite".
+    st.T[0] = name + " has " + ILL.IL_NAMES[disease] + "."
     common.message(c, st.T[0])
     st.H1[who] = num.parse(str(disease))
     st.H2[who] = num.parse("10")
@@ -95,7 +104,10 @@ def die(c, who: int):
         return "DIED"
     from . import trail
     trail.speed(c)
-    common.message(c, f"{st.N[np_after]} has died.")
+    # No message here. Line 10300 has already printed one -- "V$ = Z$ + A$ + \".\"" --
+    # before it reaches 8000, and the drowning path (3504 -> TOMB.LIB 50000 -> 50005)
+    # is silent as well: the name is in the loss list from 50175. Printing a second
+    # announcement here is what produced "Zeke died" followed by "Zeke has died.".
     return "died"
 
 

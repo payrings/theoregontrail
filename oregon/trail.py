@@ -254,7 +254,9 @@ def remove_drowned(c):
     The loop assigning ``Q`` before using it is what keeps this safe. An earlier
     reading of mine held that a fort tier left in ``Q`` would make line 50005
     subscript outside ``DIM H1(4)``; it does not, because ``Q`` is overwritten
-    first. What ``Q``'s double life really costs is the map -- see ``GAPS.md``.
+    first. There is no ``Q`` aliasing problem here at all: ``Q`` and ``Q()`` are
+    separate variables (paper 2.5, rule b), and ``FINDINGS.md`` 6.2 retracts the earlier
+    claim that a fort tier could reach this array.
     """
     from . import illness
     st = c.st

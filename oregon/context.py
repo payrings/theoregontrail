@@ -42,6 +42,41 @@ class Context:
         self.program = "OREGON TRAIL"      # PN$, for the error handler
         self.quit = False
         self.outcome = None                # set when the game ends
+        self._count_keyboard_time(self.ui, self.mem)
+
+    @staticmethod
+    def _count_keyboard_time(ui, mem):
+        """Let ``PEEK (78) + PEEK (79) * 256`` count the time spent waiting for a key.
+
+        Line 1015 seeds the generator with that counter:
+        ``Z = RND (-( PEEK (78) + PEEK (79) * 256))``. On the Apple II the keyboard
+        routine advances it while it waits, so the seed is fixed by how long the player
+        took to press the key -- which is why two games differ.
+
+        Nothing here advanced it, so every run reseeded from the same value and every
+        game was identical: reported from play, where the same member died on the same
+        day in two separate games. It is now advanced by the time each prompt actually
+        took, in milliseconds. A scripted front end answers instantly, so the counter
+        stays put and the tests remain deterministic.
+        """
+        import time
+
+        def counting(name):
+            inner = getattr(ui, name)
+
+            def wrapper(*a, **kw):
+                t0 = time.monotonic()
+                try:
+                    return inner(*a, **kw)
+                finally:
+                    ms = int((time.monotonic() - t0) * 1000)
+                    if ms:
+                        mem.keyboard_counter = (mem.keyboard_counter + ms) & 0xFFFF
+            return wrapper
+
+        for name in ("key", "wait_key", "yes_no"):
+            if hasattr(ui, name):
+                setattr(ui, name, counting(name))
 
     def set_program(self, name: str):
         self.mem.program = name
