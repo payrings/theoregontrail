@@ -1,12 +1,10 @@
 # Apple firmware: obtained separately, never redistributed.
-rom/
+game/rom/
 
 # The game's save files.
-data/
+game/data/
 
-# The material that is not redistributed: the release 1.4 BASIC source listings,
-# the on-screen text and the machine-code listings. MECC's and Apple's, kept out.
-docs/
+paper/*(private)*
 
 .venv/
 __pycache__/
