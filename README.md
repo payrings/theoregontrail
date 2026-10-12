@@ -41,9 +41,6 @@ needs to cite.
 
 ### The short version of what the paper found
 
-- **The game is a daily simulation with one number for everything.** A single
-  health value, seven penalties a day, and the party is best described as a wagon
-  losing a fight with a continent.
 - **The random-number sequence is the game.** Every chance decision is a comparison
   against an `RND` value, so reproducing the game means reproducing *when* each
   number is drawn — which is why Appendix G lists the order of every draw.
