@@ -9,8 +9,7 @@ for the Apple II**, specifically version 1.4, the 1985 MECC release by R. Philip
 (lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin,
 Roger Shimada and Steve Splinter.
 
-The question the paper asks is simple: **can anyone else write this game again
-based on this paper and its artefacts, and get the same behaviour?**
+The question the paper asks is simple: **can anyone code this game based on this paper and its artefacts, and get the same behaviour as the original game?**
 
 The paper answers it by documenting the actual BASIC code, the machine code, variables, algorithms, tables, and various data. It also finds the places where the documented behaviour and the program behaviour disagree.
 
