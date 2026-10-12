@@ -1,4 +1,4 @@
-# Appendix D. Dialogue records
+# Appendix D: Dialogue records
 
 The 51 monologues of OREGON1.SEQ (landmarks 0-4) and OREGON2.SEQ (landmarks 5-16). Three 256-byte records per landmark; each record holds the speaker and the text, each ended by a carriage return. Record offset = (landmark - 5 \* side) \* 768 + slot \* 256, side being 0 or 1.
 
