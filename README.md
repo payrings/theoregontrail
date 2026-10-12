@@ -116,7 +116,11 @@ How the work went, month by month.
 - **October 2026** — The rebuild's first, approximate Python model of the arithmetic
   removed from the code and the paper; the experiment reports the ROM against the
   transcription, rounded floats and plain floats (§12.7, §12.8), with Claude Opus 5.5
-  (High).
+- **October 2026** — Tests added for the two departures that the day-by-day comparison
+  with the original found (`tests/test_daily_cycle_order.py`), and the suite revised
+  when the rebuild's first model of the arithmetic was removed.
+- **October 2026** — Addition of diagrams demonstrating the paper thesis.
+- **October 2026** — Further hand review of the paper.
 
 ---
 
