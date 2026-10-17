@@ -1,0 +1,8 @@
+# The arithmetic engine is a real Apple IIe ROM executed by a 6502 emulator.
+py65>=1.2.0
+
+# Tests only.
+pytest>=8.0
+
+# Optional: the graphical mode (python -m oregon --graphics).
+# pillow

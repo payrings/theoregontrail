@@ -1,4 +1,4 @@
-![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](images/title.png)
+![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](title.png)
 
 # The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages
 
@@ -9,7 +9,7 @@ for the Apple II**, specifically version 1.4, the 1985 MECC release by R. Philip
 (lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin,
 Roger Shimada and Steve Splinter.
 
-The question the paper asks is simple: **can anyone code this game based on this paper and its artefacts, and get the same behaviour as the original game?**
+The question the paper asks is simple: **can anyone replicate the Oregon Trails for Apple II based on this paper and its artefacts, and get the same behaviour?**
 
 The paper answers it by documenting the actual BASIC code, the machine code, variables, algorithms, tables, and various data. It also finds the places where the documented behaviour and the program behaviour disagree.
 
@@ -40,6 +40,9 @@ needs to cite.
 
 ### The short version of what the paper found
 
+- **The game is a daily simulation with one number for everything.** A single
+  health value, seven penalties a day, and the party is best described as a wagon
+  losing a fight with a continent.
 - **The random-number sequence is the game.** Every chance decision is a comparison
   against an `RND` value, so reproducing the game means reproducing *when* each
   number is drawn — which is why Appendix G lists the order of every draw.
@@ -115,11 +118,7 @@ How the work went, month by month.
 - **October 2026** — The rebuild's first, approximate Python model of the arithmetic
   removed from the code and the paper; the experiment reports the ROM against the
   transcription, rounded floats and plain floats (§12.7, §12.8), with Claude Opus 5.5
-- **October 2026** — Tests added for the two departures that the day-by-day comparison
-  with the original found (`tests/test_daily_cycle_order.py`), and the suite revised
-  when the rebuild's first model of the arithmetic was removed.
-- **October 2026** — Addition of diagrams demonstrating the paper thesis.
-- **October 2026** — Further hand review of the paper.
+  (High).
 
 ---
 
@@ -257,6 +256,21 @@ where the two save files live, `--num exact` uses the Python transcription of th
 ROM's arithmetic (the same games, with no ROM image), `--num float` and
 `--num rounded` select the approximate arithmetics of §12.7 and §12.8, which are
 **not** bit-exact, and `--no-interrupt` stops travel being interruptible.
+
+### The graphical mode (optional)
+
+```fish
+pip install pillow
+python -m oregon --graphics [--assets DIR] [--scale 4]
+```
+
+This draws the screens in a window, laid out the way the Apple II drew them: the
+proportional letters, the text windows, the pictures and boxes. It is a second
+front end behind the same `UI` interface, so the game logic is the same, and the
+text mode stays the default. The pictures are ordinary PNG files that you supply in
+a folder (`game/assets` by default; `game/oregon/graphics/assets.py` describes the
+names), so any of them can be replaced. Which screens have a graphical layout is
+listed in `game/NOTES.md`; the others are drawn as plain text in the same font.
 
 ### Tests
 

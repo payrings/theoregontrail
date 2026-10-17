@@ -1,0 +1,16 @@
+{
+  "name": "oregon-trail",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Oregon Trail in TypeScript: the whole game for a browser (pictures and sound from your own files), with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild and the ROM games.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "demo": "node dist/cli.js",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
