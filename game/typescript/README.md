@@ -18,7 +18,7 @@ starts after the first key press, as browsers require.
     python3 build-site.py        # the folder to publish: site/ (index.html, dist/, data/)
     python3 -m http.server 8000 --directory site    # try it at http://localhost:8000/
 
-**Publishing.** `.github/workflows/pages.yml` does the same on every push to `main` and deploys to GitHub Pages (set
+**Publishing.** `.github/workflows/pages.yml` does the same on every push to `master` and deploys to GitHub Pages (set
 Settings > Pages > Source to "GitHub Actions"). Any static host works: ES modules need `http(s)://`, not `file://`. The
 browser needs `DecompressionStream` (Chrome 80, Firefox 113, Safari 16.4 or later).
 

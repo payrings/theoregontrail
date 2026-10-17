@@ -20,8 +20,9 @@ The paper answers it by documenting the actual BASIC code, the machine code, var
 | Folder | Contents |
 | --- | --- |
 | [`paper/`](paper/) | The paper and its public appendices (D to H). This is the main work. |
-| [`game/`](game/) | Everything about the Python rebuild of the game: the `oregon` package, its tests and tools, the experiment script with a small sample of its results, and `NOTES.md`. |
-| [`images/`](images/) | The title image at the top of this page. |
+| [`game/python/`](game/python/) | The Python rebuild of the game: the `oregon` package, its tests and tools, the experiment script with a small sample of its results, and `NOTES.md`. |
+| [`game/typescript/`](game/typescript/) | The TypeScript rebuild of the game, which plays in a browser at [https://payrings.github.io/theoregontrail/](https://payrings.github.io/theoregontrail/) and whole games by itself from the command line. |
+| [`title.png`](title.png) | The title image at the top of this page. |
 
 ---
 
@@ -197,16 +198,41 @@ the game very slightly harder (arrival 22.73% against 22.86%).
 `python compare_csv.py 0 65535 8 results exact,float,rounded` runs the experiment
 (many hours; its output is not kept in the repository), and
 `python summarise_csv.py results/exact results/float results/rounded` prints its
-figures; `game/sample_games.csv` and `game/sample_pairs.csv` hold a small sample.
+figures; `game/python/sample_games.csv` and `game/python/sample_pairs.csv` hold a
+small sample.
 
 What the rebuild reproduces and what it does not is in
-**[`game/NOTES.md`](game/NOTES.md)**.
+**[`game/python/NOTES.md`](game/python/NOTES.md)**.
+
+---
+
+## The TypeScript translation
+
+> **This is secondary too.** It exists to show that the rules in the paper and
+> the listing carry over to another language, and that Applesoft's arithmetic
+> can be reproduced there.
+
+The whole game, rebuilt a second time from the paper and the Python rebuild, in
+TypeScript: the same five-byte numbers with their extension byte, the ROM's
+arithmetic transcribed line for line (`src/fp.ts`), the same draw order and the
+same rules, and a graphical front end that lays out the screens the way the
+Apple II drew them, with the pictures and the sound.
+
+**Anyone can play it from a web address, with nothing to install:**
+[https://payrings.github.io/theoregontrail/](https://payrings.github.io/theoregontrail/).
+
+It also plays whole games by itself from the command line, which is how it is
+checked: for every seed from 0 to 65,535 and every arithmetic backend, the
+Python and TypeScript programs play the same game and their day-by-day traces
+must agree, and the two graphical front ends are compared frame by frame.
+What is in it, and how to run and check it, is in
+**[`game/typescript/README.md`](game/typescript/README.md)**.
 
 ---
 
 ## Installing the Python code
 
-All commands below are run from inside the `game/` folder.
+All commands below are run from inside the `game/python/` folder.
 
 The code needs Python 3.12 or later and one small dependency, `py65`. It also
 needs **an Apple IIe ROM image**, which is Apple firmware and is *not* distributed
@@ -214,7 +240,7 @@ here.
 
 ```fish
 git clone https://github.com/payrings/theoregontrail.git
-cd theoregontrail/game            # everything about the game lives in game/
+cd theoregontrail/game/python     # the Python rebuild lives in game/python/
 
 python -m venv .venv
 source .venv/bin/activate.fish          # fish; on bash use .venv/bin/activate
@@ -268,9 +294,10 @@ This draws the screens in a window, laid out the way the Apple II drew them: the
 proportional letters, the text windows, the pictures and boxes. It is a second
 front end behind the same `UI` interface, so the game logic is the same, and the
 text mode stays the default. The pictures are ordinary PNG files that you supply in
-a folder (`game/assets` by default; `game/oregon/graphics/assets.py` describes the
-names), so any of them can be replaced. Which screens have a graphical layout is
-listed in `game/NOTES.md`; the others are drawn as plain text in the same font.
+a folder (`game/python/assets` by default; `game/python/oregon/graphics/assets.py`
+describes the names), so any of them can be replaced. Which screens have a
+graphical layout is listed in `game/python/NOTES.md`; the others are drawn as
+plain text in the same font.
 
 ### Tests
 
@@ -300,8 +327,9 @@ does the same for number-to-text conversion.
 
 - **The Apple IIe ROM image** — Apple firmware, obtained as above.
 
-The dialogue is not copied into `game/`: the game reads it at run time from
-`paper/02-appendix-d-dialogue.md`.
+The dialogue is not copied into `game/python/`: the game reads it at run time
+from `paper/02-appendix-d-dialogue.md`.
 
-`game/NOTES.md` is the honest list of what is approximated, replaced or unfinished in the
-translation. The paper is the document that matters; the code is the evidence.
+`game/python/NOTES.md` is the honest list of what is approximated, replaced or
+unfinished in the translation. The paper is the document that matters; the code
+is the evidence.
