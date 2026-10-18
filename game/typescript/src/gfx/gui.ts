@@ -137,6 +137,7 @@ export class GraphicalUI implements UI {
   refresh(): void { this.backend.show(this.cv.render()); }
   flush(): void { this.backend.flush(); }
   async pump(): Promise<void> { await this.backend.pump(); }
+  pollRaw(): string | null { return this.backend.poll(); }
   pollKey(): string | null { const k = this.backend.poll(); return k === "\r" || k === "\n" ? "\r" : null; }
   async sleep(seconds: number): Promise<void> { await this.backend.sleep(seconds); }
 

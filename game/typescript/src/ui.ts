@@ -51,6 +51,8 @@ export interface UI {
   yesNo(prompt?: string): Maybe<string>;
   waitKey(allowed?: string, prompt?: string, opts?: { y?: number; tune?: boolean }): Maybe<string>;
   pollKey(): string | null;
+  /** the next waiting key whatever it is (the raft's steering, the hunt's arrows); null when there is none or no keyboard */
+  pollRaw?(): string | null;
   flipDisk(side: number, title?: string): Maybe<string>;
   /** let time pass (seconds): the browser waits, a script does not */
   sleep?(seconds: number): Maybe<void>;

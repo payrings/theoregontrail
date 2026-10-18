@@ -28,6 +28,8 @@ const LEFT_KEYS = ["\x1b[D", "\x1b[A", "\x08", "\x0b", "l", "\x1c", "\x1e"];
 const RIGHT_KEYS = ["\x1b[C", "\x1b[B", "\x15", "h", "\x1d", "\x1f"];
 
 function readKey(c: Context): string | null {
+  // in the window the arrow keys arrive as one character each, and `pollKey` would pass nothing but Return
+  if (c.ui.pictures && c.ui.pollRaw) return c.ui.pollRaw();
   let key = c.ui.pollKey();
   if (key === "\x1b") {
     const a = c.ui.pollKey();
