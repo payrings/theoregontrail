@@ -2,7 +2,7 @@
 
 Every expectation here is worked out by hand from the BASIC line named beside it.
 Nothing here is an "expected output" from the original -- no reference trace exists
-(Appendix H) -- so these are checks of the transcription, not of parity.
+(Appendix G) -- so these are checks of the transcription, not of parity.
 """
 import pytest
 

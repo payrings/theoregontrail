@@ -147,7 +147,7 @@ def shuffle_names(c) -> list:
 
     Ten draws, one per name, always: ``Z = INT (RND (1) * 10)`` and if that slot is
     taken the code steps forward, wrapping from 9 to 0. So the number of draws does
-    not depend on the values, which is what Appendix G.1 records.
+    not depend on the values, which is what Appendix F.1 records.
     """
     names = [""] * 10
     for _ in range(10):

@@ -101,7 +101,7 @@ export class Memory {
   }
 }
 
-/** One line per game day, in the form the paper's Appendix H gives for a reference trace. */
+/** One line per game day, in the form the paper's Appendix G gives for a reference trace. */
 export class Tracer {
   days = 0;
   lines: string[] = [];

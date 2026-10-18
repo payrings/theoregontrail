@@ -37,10 +37,10 @@ const preset = flag("--preset");
 const wander = flag("--wander");
 const showScreen = flag("--screen");
 
-/** talking to people needs the dialogue document: the player's own copy */
+/** talking to people needs the dialogue document: data/dialogue.md, or the one named by --dialogue or OREGON_DIALOGUE */
 {
   const given = option("--dialogue");
-  const candidates = [given, process.env.OREGON_DIALOGUE, "data/dialogue.md", "game/typescript/data/dialogue.md"];
+  const candidates = [given, process.env.OREGON_DIALOGUE, "data/dialogue.md", "game/typescript/data/dialogue.md"];   // the last two: run from here, or from the repository root
   for (const p of candidates) if (p && existsSync(p)) { dialogue.setSource(readFileSync(p, "utf8")); break; }
 }
 

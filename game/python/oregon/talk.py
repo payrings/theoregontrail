@@ -5,8 +5,8 @@ holds landmarks 0 to 4 and side two 5 to 16, and ``A`` is the slot: it starts as
 random 0, 1 or 2 on arrival and advances by one each time the action menu is drawn,
 so the three speakers come round in turn.
 
-The dialogue itself is MECC's and is read from the reference document rather than
-copied into this repository; see :mod:`oregon.data.dialogue`.
+The dialogue is replacement text written for this project, read from ``dialogue.md``;
+see :mod:`oregon.data.dialogue`.
 """
 
 from __future__ import annotations

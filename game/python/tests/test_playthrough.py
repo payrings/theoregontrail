@@ -1,6 +1,6 @@
 """A whole game, played from a script, to each ending.
 
-There is no reference trace to compare against (Appendix H), so these tests check
+There is no reference trace to compare against (Appendix G), so these tests check
 that the game *runs* to each ending without stalling, that the numbers move the way
 the formulas say, and that the same seed and answers give the same game twice.
 They are the tests that found the missing oxen at Fort Laramie and the action menu
@@ -249,7 +249,7 @@ def make_game(rules=None, value="0.5", data=None, draws=400000, max_prompts=3000
     if rng is None:
         rng = ScriptedRnd(" ".join([value] * draws))
     # Every game starts from a known backend state. The hunt reads the
-    # Applesoft seed bytes (Appendix G.6), and the backend fixture is
+    # Applesoft seed bytes (Appendix F.6), and the backend fixture is
     # session-scoped, so a seed left by an earlier test would make the
     # hunt -- and therefore the whole journey -- depend on the order the
     # tests ran in. Resetting the seed here makes each game reproducible
@@ -515,7 +515,7 @@ def test_a_varied_game_is_reproducible(busy_runs):
 
 
 def test_the_hunt_never_draws_from_the_game(busy_runs):
-    """Appendix G.6: the hunting routine has its own generator."""
+    """Appendix F.6: the hunting routine has its own generator."""
     from oregon import hunt
     from oregon.applesoft import fac
     seed, c, ui, got, where = busy_runs[0]

@@ -53,7 +53,7 @@ def fire(c):
     # not short-circuited: 50010 is "IF YY AND RND (1) < .5", so the coin-flip draw
     # happens even when no food is held
     if c.rng.below("50010 fire food", num.HALF) and not held.is_zero():
-        # one draw for the amount: Appendix G.4 lists exactly one here, and this
+        # one draw for the amount: Appendix F.4 lists exactly one here, and this
         # line once drew twice, which shifted every later number in the game
         x = num.int_(num.add(
             num.mul(c.rng.rnd1("50010 fire food amount"), held), num.ONE))

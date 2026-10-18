@@ -1,6 +1,6 @@
 """The text arrays held in the saved variable table, and the DATA statements.
 
-Everything here is a string the game prints or compares. Appendix E.2 lists the
+Everything here is a string the game prints or compares. Appendix D.2 lists the
 arrays that ``VAR.BIN`` restores; the rest come from DATA lines in the source:
 ``MENU`` 29000 for the default names and the scoring text, ``MENU`` 20060 for the
 management options, ``OREGON TRAIL`` 22000 for the travel-screen labels, and

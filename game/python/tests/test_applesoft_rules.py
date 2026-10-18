@@ -42,7 +42,7 @@ def test_fort_always_runs_its_body_at_least_once(start, limit, want):
 
 
 def test_half_an_ox_gives_one_draw_at_a_river():
-    """Appendix G: ``FOR L = 1 TO X`` with X = 0.5 makes one draw, not none.
+    """Appendix F: ``FOR L = 1 TO X`` with X = 0.5 makes one draw, not none.
 
     ``range(int(0.5))`` is empty, which is the reading rule (c) forbids.
     """

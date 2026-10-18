@@ -145,7 +145,7 @@ class State:
         self.Q = num.ZERO                 # Q, the scalar
         self.Q_arr = [0] * 17             # Q(0 to 16), the landmark history
         self.B_arr = [95, 70, 81, 95, 23, 20]   # B(0 to 5), the travel-screen
-                                          # column positions from Appendix E.5
+                                          # column positions from Appendix D.5
         self.Q1 = 1                       # the next slot in Q()
         self.Z = num.ZERO                 # the scalar Z, scratch
         self.Z_arr = []                    # Z(), a separate variable

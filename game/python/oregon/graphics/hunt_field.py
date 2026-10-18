@@ -1,7 +1,7 @@
 """The hunting field for the graphical mode.
 
 **A stand-in.** The original draws the field and moves the animals in machine code that
-the paper did not analyse (section 1.4, Appendix H), and its sprites are not among the
+the paper did not analyse (section 1.4, Appendix G), and its sprites are not among the
 pictures on the disks. So this field, its hunter and its animals are drawn here in plain
 shapes, and the animals' movement and the aim are a plausible game of my own. What *is*
 the paper's: the keys (Return starts and stops walking, the arrow keys point the rifle,

@@ -1,7 +1,7 @@
 """Every table the game uses, in one place.
 
-Nothing here is logic. The contents come from the paper, from Appendix E (the saved
-variable table ``VAR.BIN``), Appendix D (the dialogue records) and the BASIC source
+Nothing here is logic. The contents come from the paper, from Appendix D (the saved
+variable table ``VAR.BIN``) and the BASIC source
 itself where the data sits in DATA statements. Appendix F of the design notes, and
 the transcription rules, both insist that tables do not end up scattered through
 the code, so they live here and the game modules import them.

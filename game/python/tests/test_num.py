@@ -42,7 +42,7 @@ def test_the_money_pattern_rounds_to_the_nearest_cent():
 
 
 def test_the_constants_hold_what_var_bin_holds():
-    """C0 to C4 and P5 are 0, 1, 2, 3, 4 and 0.5 (Appendix E.1)."""
+    """C0 to C4 and P5 are 0, 1, 2, 3, 4 and 0.5 (Appendix D.1)."""
     assert num.C0.raw() == bytes(5)
     assert num.C1.to_int() == 1
     assert num.C2.to_int() == 2

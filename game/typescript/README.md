@@ -31,9 +31,10 @@ Keys: letters and digits as asked, Return, Backspace, the arrow keys and Space i
 the button under the picture). The top ten and the tombstones are kept in `localStorage`; "Erase top ten & tombstones"
 on the first page clears them.
 
-**Rights.** The dialogue is MECC's 1985 text, published here under the fair-use basis stated in Appendix D of the paper;
-the pictures and the music are recreations. Anyone who forks the project and does not want to publish the dialogue can
-build without it (`build-site.py --dialogue /nonexistent`): people then see placeholder lines unless they add the document.
+**Rights.** The dialogue (`data/dialogue.md`) is replacement text written for this project; the original game's text is not
+included. It is the same file, byte for byte, as `../python/oregon/data/dialogue.md`, and `verify.py` refuses to run if the
+two differ. The pictures and the music are recreations too. A dialogue document in the same format (`Landmark N (name), slot S`,
+then `Speaker:` and `Text:`) can replace it: `--dialogue FILE` on the command line, or "Use my own files" in the browser.
 
 ## What is in it
 

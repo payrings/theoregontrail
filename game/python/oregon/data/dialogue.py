@@ -1,45 +1,39 @@
-"""The 51 monologues, read from the reference document rather than copied here.
+"""The 51 monologues, read from ``dialogue.md`` beside this module.
 
-Appendix D holds the dialogue as ``OREGON1.SEQ`` and ``OREGON2.SEQ``: three
+The original game keeps its dialogue in ``OREGON1.SEQ`` and ``OREGON2.SEQ``: three
 256-byte records for each of the seventeen landmarks that have any, each record a
 speaker and a text separated by a carriage return. The record read is at byte offset
-``(LM - S * 5) * 768 + A * 256``, where ``S`` is the disk side -- 0 for
-landmarks 0 to 4, 1 for 5 to 16 -- and ``A`` is the slot.
+``(LM - S * 5) * 768 + A * 256``, where ``S`` is the disk side -- 0 for landmarks 0
+to 4, 1 for 5 to 16 -- and ``A`` is the slot (paper section 9.1).
 
-The text is MECC's. It is loaded at run time from the appendix in ``paper/``, and
-this repository does not redistribute it: the published copy of Appendix D is a
-research extract, and the full dialogue is MECC's. :func:`load` raises if the
-document is not there, because talking to people is part of playing the game and a
-silent empty list would be worse than a clear failure.
+The original text is MECC's and is not part of this repository. ``dialogue.md`` is
+replacement dialogue written for this project, with the same shape: three records of
+speaker and text for each landmark, none longer than the game's 240-character read.
+The TypeScript rebuild ships a byte-identical copy of the file.
 
-The speaker and the text are kept exactly as the reference has them, spelling and
-spacing included, because the on-screen text is part of what is being reproduced.
+A different document in the same format can be used by setting the environment
+variable ``OREGON_DIALOGUE`` to its path, or by passing a path to :func:`load`.
+:func:`load` raises if no document is found, because talking to people is part of
+playing the game and a silent empty list would be worse than a clear failure.
 """
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
 __all__ = ["Dialogue", "load", "available", "source_path", "count"]
 
-# Where to look for the dialogue, in order: the copy beside the code, then the
-# published appendix.
-# ``_HERE`` is the ``game/python`` folder; the paper sits at the top of the
-# repository, two levels up.
-_HERE = Path(__file__).resolve().parents[2]
-_REPO = _HERE.parent.parent
-_CANDIDATES = (
-    _REPO / "paper" / "02-appendix-d-dialogue.md",
-    _HERE / "paper" / "02-appendix-d-dialogue.md",
-    _REPO / "docs" / "Appendix D Dialogue records.md",
-    _HERE / "docs" / "Appendix D Dialogue records.md",
-)
+_HERE = Path(__file__).resolve().parent
+#: the replacement dialogue that ships with the game
+DEFAULT = _HERE / "dialogue.md"
 
 
 def _find() -> Path | None:
-    for path in _CANDIDATES:
-        if path.is_file():
+    given = os.environ.get("OREGON_DIALOGUE")
+    for path in (Path(given) if given else None, DEFAULT):
+        if path is not None and path.is_file():
             return path
     return None
 
@@ -92,13 +86,12 @@ def count() -> int:
 
 
 def load(path: Path | None = None) -> Dialogue:
-    """Read the records out of the appendix."""
+    """Read the records out of the dialogue document."""
     p = Path(path) if path else _find()
     if p is None or not p.is_file():
-        where = ", ".join(str(c) for c in _CANDIDATES)
         raise FileNotFoundError(
-            f"the dialogue records were not found. They are MECC's text and are "
-            f"not redistributed here; put Appendix D at one of: {where}")
+            f"the dialogue records were not found: expected {DEFAULT}, "
+            f"or a document named by OREGON_DIALOGUE")
     records: dict[int, list] = {}
     landmark = slot = None
     speaker = text = None

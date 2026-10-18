@@ -1,6 +1,6 @@
 """Screen output and keyboard input, behind one interface.
 
-This module plays the part of the ``&`` command package (Appendix F): the game asks
+This module plays the part of the ``&`` command package (Appendix E): the game asks
 for text, a position, a clear or a line of input, and never touches the terminal
 itself. Game logic must not call ``print`` or ``input``.
 

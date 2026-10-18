@@ -1,7 +1,7 @@
 """OREGON TRAIL 10000 to 11400: the fifteen random events.
 
 Each is one function, named for the number the listing gives it, and each draws
-exactly what Appendix G.4 lists -- no more, no fewer, and including the draws whose
+exactly what Appendix F.4 lists -- no more, no fewer, and including the draws whose
 result is thrown away. Remember that Applesoft has no short-circuit: a draw on the
 right of ``AND`` or ``OR`` happens whatever the left side says.
 """

@@ -136,7 +136,7 @@ def test_the_trace_has_one_line_per_day_and_the_papers_fields():
     assert tr.days == 2
     line = tr.line(st, "travel")
     cells = line.split()
-    assert len(cells) == len(FIELDS), "one column per name in Appendix H"
+    assert len(cells) == len(FIELDS), "one column per name in Appendix G"
     assert cells[0].isdigit() and cells[1].isdigit(), "the date comes first"
     assert cells[-1] == "0000000000", "the five seed bytes come last"
     assert cells[-2] == "travel"

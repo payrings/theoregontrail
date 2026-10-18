@@ -48,7 +48,7 @@ TWO = _fac.TWO
 THREE = _fac.THREE
 FOUR = _fac.FOUR
 
-# The constants C0 to C4 and P5, from the saved variable table (Appendix E.1).
+# The constants C0 to C4 and P5, from the saved variable table (Appendix D.1).
 # The programmers held them in variables because Applesoft re-converts a literal
 # every time its line runs; these are those variables.
 C0, C1, C2, C3, C4, P5 = ZERO, ONE, TWO, THREE, FOUR, HALF

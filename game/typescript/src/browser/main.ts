@@ -45,7 +45,7 @@ function looksLikeDialogue(bytes: Uint8Array): boolean {
   return /^Landmark \d+ \(.*\), slot \d+$/m.test(head);
 }
 
-/** the dialogue records: the player's document, or a placeholder line for each person when there is none */
+/** the dialogue records: the document among the files (the bundled one, or the player's own), or a placeholder line for each person when there is none */
 function installDialogue(files: Map<string, Uint8Array>): boolean {
   for (const [k, v] of files) {
     if (/\.(md|txt)$/i.test(k) && looksLikeDialogue(v)) { dialogue.setSource(new TextDecoder().decode(v)); return true; }

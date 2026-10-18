@@ -1,7 +1,7 @@
 /**
- * The 51 monologues, read from the reference document at run time and never copied into this
- * repository. The document is the player's own: the browser build reads it from the folder they pick,
- * the command line from a path.
+ * The 51 monologues, read from a dialogue document at run time: `data/dialogue.md`, the replacement text written
+ * for this project (the same file as the Python rebuild's), or any document in that format that the player
+ * supplies: the browser build reads it from the files they pick, the command line from a path.
  *
  * Landmark records: three per landmark, each a speaker and a text. The record read is at byte offset
  * (LM - S * 5) * 768 + A * 256, where S is the disk side and A the slot.
@@ -56,6 +56,6 @@ let loaded: Dialogue | null = null;
 export function setSource(source: string): void { loaded = parse(source); }
 export function available(): boolean { return loaded !== null; }
 export function load(): Dialogue {
-  if (!loaded) throw new Error("the dialogue records were not loaded. They are MECC's text and are not redistributed here: give the game your copy of the reference document.");
+  if (!loaded) throw new Error("the dialogue records were not loaded: give the game data/dialogue.md (--dialogue FILE on the command line).");
   return loaded;
 }

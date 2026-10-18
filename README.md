@@ -1,4 +1,4 @@
-![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](title.png)
+![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](README_01.png)
 
 # The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages
 
@@ -32,8 +32,7 @@ The paper answers it by documenting the actual BASIC code, the machine code, var
 | | |
 | --- | --- |
 | [`paper/01-paper.md`](paper/01-paper.md) | The paper. Fourteen sections covering set-up, the daily cycle, health, weather, the fifteen random events, rivers, forts, trading, endings, the two arcade games, and what the Applesoft ROM does to every number. |
-| [`paper/02-appendix-d-dialogue.md`](paper/02-appendix-d-dialogue.md) | Appendix D — the 51 dialogue records, as a research extract. |
-| [`paper/03-appendices-e-to-h.md`](paper/03-appendices-e-to-h.md) | Appendices E–H — the data tables decoded from `VAR.BIN`, the `&` command reference, the exact order of the random-number draws, and what is still missing. |
+| [`paper/02-appendices-d-to-g.md`](paper/02-appendices-d-to-g.md) | Appendices D–G — the data tables decoded from `VAR.BIN`, the `&` command reference, the exact order of the random-number draws, and what is still missing. |
 | [`paper/figures/`](paper/figures/) | The five figures of section 12.7, comparing the ROM's arithmetic with rounded floats and plain floats, and an Excel workbook with the same charts and their data. |
 
 Where the Python rebuild and the paper disagree, the BASIC listing decides; none of
@@ -47,7 +46,7 @@ needs to cite.
   losing a fight with a continent.
 - **The random-number sequence is the game.** Every chance decision is a comparison
   against an `RND` value, so reproducing the game means reproducing *when* each
-  number is drawn — which is why Appendix G lists the order of every draw.
+  number is drawn — which is why Appendix F lists the order of every draw.
 - **Several events can fire on one day.** `L8 = 20` ends the body of the
   loop at line 3180, and Applesoft has no block structure, so an `IF ... THEN` clause
   runs to the end of the line. Line 3180 is
@@ -115,7 +114,7 @@ How the work went, month by month.
 - **October 2026** — Day-by-day comparison of the rebuild with the original game running
   in the LinApple emulator, for two games, from copies of the disk images changed to play
   themselves and print each day's values; two departures of the rebuild found and
-  corrected, and the experiment over all 65,536 seeds run again (§12.6, Appendix H),
+  corrected, and the experiment over all 65,536 seeds run again (§12.6, Appendix G),
   with Claude Opus 5.5 (High).
 - **October 2026** — The rebuild's first, approximate Python model of the arithmetic
   removed from the code and the paper; the experiment reports the ROM against the
@@ -289,7 +288,7 @@ emulated ROM with the transcription over thousands of operand pairs, literals an
 conversions to text, so a reader can see the agreement rather than take it on trust.
 
 Two games were also compared day by day with the original running in an emulator
-(Appendix H), and the rebuild agreed on every logged value of every day. Test
+(Appendix G), and the rebuild agreed on every logged value of every day. Test
 expectations are worked out by hand from the BASIC line beside them,
 and the tables are checked against numbers the paper prints independently of the
 table. The formulas are also checked against the Applesoft interpreter itself:
@@ -304,8 +303,8 @@ does the same for number-to-text conversion.
 
 - **The Apple IIe ROM image** — Apple firmware, obtained as above.
 
-The dialogue is not copied into `game/python/`: the game reads it at run time from
-`paper/02-appendix-d-dialogue.md`.
+The dialogue is not the original's: `game/python/oregon/data/dialogue.md` is replacement text written for this
+project (the original is MECC's), and `game/typescript/data/dialogue.md` is an identical copy.
 
 `game/python/NOTES.md` is the honest list of what is approximated, replaced or unfinished in the
 translation. The paper is the document that matters; the code is the evidence.

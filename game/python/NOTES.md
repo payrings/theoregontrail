@@ -14,7 +14,7 @@ Where the code and the paper disagree, the BASIC listing of release 1.4 decides.
   endings, scoring and the top-ten list, translated line by line from the listing.
 - **The data.** Landmarks, segment distances, climate rows, river data, prices and
   event probabilities are transcribed from `VAR.BIN` (paper Tables 7 and 8,
-  Appendix E) and checked field by field in `tests/test_landmark_tables.py`.
+  Appendix D) and checked field by field in `tests/test_landmark_tables.py`.
 - **The arithmetic** (`--num rom`, the default). Every add, subtract, multiply,
   divide, `INT`, `RND`, decimal literal and number-to-text conversion runs in a real
   Apple IIe ROM under the py65 6502 emulator. The game holds its numbers as five
@@ -45,7 +45,7 @@ Where the code and the paper disagree, the BASIC listing of release 1.4 decides.
 
 | What | Status |
 |---|---|
-| Graphics, pictures, the map and sound | Replaced by text. The picture formats were not decoded (paper Appendix H). |
+| Graphics, pictures, the map and sound | Replaced by text. The picture formats were not decoded (paper Appendix G). |
 | Hunting: animal movement and hit testing | **Approximated.** This part of the machine code was not analysed. `hunt.approximate_movement` decides whether a shot hits by a simple rule of its own. Spawn rules, weights, bullets, meat and the carry limit follow the listing and the machine code, including the comparison at $E161 that tests only the low byte of the draw, so an animal appears 8 times in 1,000 attempts (paper Table 23). |
 | Rafting | The loop and the loss rules follow the listing; the display is text and the speed is not paced to a 1 MHz machine. |
 | Number-to-text conversion (`STR$`, `PRINT`) | On the ROM backend it is the ROM's own `FOUT` ($ED34): nine significant digits, rounded, and no space before a positive number. `tests/data/str_cases.json` holds 327 values recorded from it. The `exact` backend transcribes `FOUT`; the `float` and `rounded` backends follow the same rules and can differ in the ninth digit. |
@@ -59,7 +59,7 @@ Where the code and the paper disagree, the BASIC listing of release 1.4 decides.
 
 **Two traces from the original game.** Seeds 1234 and 10190 of the preset start were
 played by the original in the LinApple emulator, from copies of the disk images changed
-to play themselves and print each day's values (paper Appendix H), and compared with
+to play themselves and print each day's values (paper Appendix G), and compared with
 `--preset --demo --seed N --num exact --trace FILE`: every logged value of every day
 agreed, including the seed bytes (158 and 196 days). The first comparison found two
 departures, both corrected: the event chances of line 3160 are recomputed on a stopped

@@ -13,7 +13,7 @@ Fish-syntax examples are in ``README.md``. The options are:
     other three are the approximate arithmetics of paper sections 12.7 and 12.8.
 
 ``--trace FILE``
-    write one line per game day in the form Appendix H describes.
+    write one line per game day in the form Appendix G describes.
 
 ``--inputs FILE``
     play from a script: one answer per line, for a whole game.
@@ -93,7 +93,7 @@ def apply_preset(c):
     It ends by loading the trail state, and ``main`` loads it again, so the opening
     draws of lines 29000 and 29004 are made twice and the journey starts two draws
     further along the sequence than the original would after the same reseeding.
-    Every result in the paper was recorded this way (paper 12.7, Appendix H), so it
+    Every result in the paper was recorded this way (paper 12.7, Appendix G), so it
     is kept; a trace from the original must make the same two extra draws.
     """
     from . import num

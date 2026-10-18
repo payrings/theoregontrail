@@ -1,11 +1,11 @@
 """The random-number interface, and the discipline that goes with it.
 
 Every draw of ``RND`` in the game goes through an object of this kind, so that the
-number and order of draws can be checked. Appendix G lists every draw the BASIC
+number and order of draws can be checked. Appendix F lists every draw the BASIC
 code makes; three rules apply everywhere and are enforced by review and by
 ``tests/test_rng.py``:
 
-* exactly the draws Appendix G lists, in the same order, including the ones whose
+* exactly the draws Appendix F lists, in the same order, including the ones whose
   result the original throws away;
 * no draw added, removed, merged or reordered;
 * **Applesoft has no short-circuit evaluation**, so a draw on the right of ``AND``
@@ -13,7 +13,7 @@ code makes; three rules apply everywhere and are enforced by review and by
   false -- ``LF.LIB`` 50000 and 50205 and ``FLOAT`` 1070 all do this -- and
   ``PART.LIB`` 42010 draws whether or not the player agreed to repair the wagon.
 
-The hunting module has its **own** generator (paper 11.1, Appendix G.6) and never
+The hunting module has its **own** generator (paper 11.1, Appendix F.6) and never
 advances the Applesoft seed; see :mod:`oregon.hunt`.
 """
 
@@ -26,7 +26,7 @@ __all__ = ["Rnd", "SeededRnd", "ScriptedRnd", "CountingRnd", "DrawLog"]
 
 
 class DrawLog:
-    """A record of every draw, for the tests that check Appendix G."""
+    """A record of every draw, for the tests that check Appendix F."""
 
     __slots__ = ("entries",)
 
@@ -125,7 +125,7 @@ class ScriptedRnd(Rnd):
     """Returns values from a list, for tests. Exhaustion is an error, not a wrap.
 
     A draw that runs off the end of the list means the game asked for more numbers
-    than Appendix G says it should, which is exactly the kind of mistake these tests
+    than Appendix F says it should, which is exactly the kind of mistake these tests
     exist to catch.
     """
 
@@ -141,7 +141,7 @@ class ScriptedRnd(Rnd):
         if self.i >= len(self.values):
             raise AssertionError(
                 f"ScriptedRnd ran out of values at draw {self.i}; the game asked "
-                f"for more numbers than Appendix G lists")
+                f"for more numbers than Appendix F lists")
         v = self.values[self.i]
         self.i += 1
         if arg.is_negative():
@@ -155,7 +155,7 @@ class ScriptedRnd(Rnd):
 
 
 class CountingRnd(Rnd):
-    """Counts draws and returns a fixed value, for checking Appendix G."""
+    """Counts draws and returns a fixed value, for checking Appendix F."""
 
     def __init__(self, value: float = 0.5):
         super().__init__()

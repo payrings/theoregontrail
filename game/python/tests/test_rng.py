@@ -1,4 +1,4 @@
-"""The random-number interface: the draws of Appendix G, and the discipline around them.
+"""The random-number interface: the draws of Appendix F, and the discipline around them.
 
 Applesoft evaluates both sides of ``AND`` and ``OR``, so a draw on the right of one
 always happens; these tests pin that down where the original relies on it.
@@ -10,7 +10,7 @@ from oregon.rng import CountingRnd, Rnd, ScriptedRnd
 
 
 def test_a_scripted_run_out_is_an_error_not_a_wrap():
-    """A game that asks for more numbers than Appendix G lists is a bug."""
+    """A game that asks for more numbers than Appendix F lists is a bug."""
     r = ScriptedRnd(["0.1", "0.2"])
     assert r.rnd1().to_float() == pytest.approx(0.1)
     assert r.rnd1().to_float() == pytest.approx(0.2)
@@ -81,7 +81,7 @@ def test_a_collision_steps_forward_and_wraps(game):
 
 
 def test_the_hunt_does_not_touch_the_games_generator(game):
-    """Appendix G.6: the hunting routine has its own generator."""
+    """Appendix F.6: the hunting routine has its own generator."""
     from oregon import hunt
     before = game.rng.log.count()
     seed_before = _seed()
@@ -97,7 +97,7 @@ def _seed() -> bytes:
 
 # ------------------------------------------------- the crossing animation
 def test_the_crossing_animation_spends_the_numbers_appendix_g_lists(game):
-    """Appendix G.5: 106 always, then 122, 0, or 22 groups of three.
+    """Appendix F.5: 106 always, then 122, 0, or 22 groups of three.
 
     The numbers place water marks and change nothing, but they advance the
     generator, so every draw after a river crossing depends on them.

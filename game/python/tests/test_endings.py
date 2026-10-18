@@ -182,7 +182,7 @@ def test_the_raft_lands_and_hands_over():
 
 
 def test_the_raft_draws_two_numbers_a_pass():
-    """Appendix G.6: 2 per pass, plus 2 for each new rock.
+    """Appendix F.6: 2 per pass, plus 2 for each new rock.
 
     The generator is set high so that no rock ever spawns -- with a low value the
     raft runs into one and the game ends in a few passes, which is correct but does

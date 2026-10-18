@@ -3,7 +3,7 @@
 Lines 50000 to 50110 of the listing draw random numbers only to place the water
 marks on the screen. Those numbers change nothing at all, but they **advance the
 generator**, so every draw the game makes after a river crossing is offset by
-however many the animation spent. Appendix G.5 records the counts:
+however many the animation spent. Appendix F.5 records the counts:
 
 ======================================  ==========================================
 first half of the animation             106

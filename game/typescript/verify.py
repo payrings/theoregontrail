@@ -39,6 +39,10 @@ KEYS = ["ending", "route_end", "score", "rating", "days", "end_day", "end_month"
 # talking to people reads the dialogue document; the TypeScript is told where this repository keeps it
 _DOC = TS / "data" / "dialogue.md"
 DIALOGUE = ["--dialogue", str(_DOC)] if _DOC.is_file() else []
+# the two games must talk with the same words, or a comparison of what they print means nothing
+_PY_DOC = GAME / "oregon" / "data" / "dialogue.md"
+if _DOC.is_file() != _PY_DOC.is_file() or (_DOC.is_file() and _DOC.read_bytes() != _PY_DOC.read_bytes()):
+    sys.exit(f"the two dialogue files differ: {_DOC} and {_PY_DOC}. Copy one over the other.")
 
 
 def same(a, b):

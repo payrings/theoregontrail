@@ -967,7 +967,7 @@ def arrive(c):
     ``A = INT (RND (1) * 3)`` picks the first of the three monologues, and
     ``ZO = (LM > 2) + (LM > 5) + (LM > 10) + (LM > 13)`` sets the climate zone, which
     holds for the segment that follows. **This draw happens at every landmark,
-    including Independence**, which is what Appendix G.2 records.
+    including Independence**, which is what Appendix F.2 records.
     """
     st = c.st
     st.A = c.rng.int_range("1000 arrival dialogue", 3)

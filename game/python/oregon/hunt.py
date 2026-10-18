@@ -8,7 +8,7 @@ What the paper establishes (section 11.1), and what is honoured here:
 * the routine has **its own** random generator, seeded at the start of each hunt from
   the Applesoft seed bytes and the keyboard counter, and it **reads the Applesoft seed
   without writing it** -- so a hunt never advances the game's sequence
-  (Appendix G.6). :class:`HuntRng` below is separate from the game's for that reason.
+  (Appendix F.6). :class:`HuntRng` below is separate from the game's for that reason.
 * six animal types; type 0 appears between Chimney Rock and the Snake River, type 1
   past Independence Rock, type 2 up to Independence Rock, and types 3, 4 and 5
   everywhere. A new animal's type is drawn evenly from those allowed.
@@ -18,7 +18,7 @@ What the paper establishes (section 11.1), and what is honoured here:
 * a hunt lasts 2500 passes of the routine's main loop, and the space bar fires while
   Return starts and stops walking.
 
-**What was not analysed** (paper section 1.4 and Appendix H): the animal movement,
+**What was not analysed** (paper section 1.4 and Appendix G): the animal movement,
 the hit testing and the pictures. Those are in one clearly marked function,
 :func:`approximate_movement`, which is an approximation and says so. Everything the
 paper does specify -- the spawn rules, the weights, the ammunition, the session
@@ -58,7 +58,7 @@ class HuntRng:
 
     Separate from the game's ``rng`` on purpose: the paper says the routine reads the
     Applesoft seed but never writes it, so hunting does not advance the game's
-    sequence. Appendix G.6 says the same, and the test for it checks that a hunt
+    sequence. Appendix F.6 says the same, and the test for it checks that a hunt
     leaves the seed bytes untouched.
     """
 
@@ -100,7 +100,7 @@ def approximate_movement(c, animal, session):
     """**An approximation.** Animal movement and hit testing were never analysed.
 
     The paper is explicit that the movement code was not decoded (section 1.4,
-    Appendix H), so this decides whether a shot connects by a simple rule: the closer
+    Appendix G), so this decides whether a shot connects by a simple rule: the closer
     the animal is to the hunter and the longer it has been still, the better the
     chance. Everything else in the hunt -- the spawn rules, the weights, the session
     length, the ammunition and the hundred-pound limit -- follows the paper.
@@ -228,7 +228,7 @@ def hunt_session(c, st, bullets: int) -> dict:
 def _seed_bytes(c) -> bytes:
     """The hunting module's own seed.
 
-    The paper (11.1) and Appendix G.6 both say the routine is "seeded at the start
+    The paper (11.1) and Appendix F.6 both say the routine is "seeded at the start
     of each hunt from the Applesoft seed bytes combined with the keyboard counter at
     addresses 78 and 79". So the seed is a function of the game's seed *and* of how
     long the player took to press the key, which is why a hunt is reproducible from

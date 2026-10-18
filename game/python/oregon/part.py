@@ -6,7 +6,7 @@ repair succeeds half the time.
 
 **The draw at line 42010 happens whether or not the player agreed to try.**
 ``IF (Z$ = "Y") AND (RND (1) < .5) THEN`` has no short-circuit in Applesoft, so the
-number is spent either way; Appendix G.4 records exactly that.
+number is spent either way; Appendix F.4 records exactly that.
 
 If the repair fails, a spare part is used. With none left the player must trade for
 one, and ``B`` stays set so the action menu keeps explaining that.

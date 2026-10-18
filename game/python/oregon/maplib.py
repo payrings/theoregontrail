@@ -2,7 +2,7 @@
 
 Lines 50000-50015. The original draws the trail so far on the map picture from the
 landmark history in ``Q(0 to Q1 - 1)``, plus the part of the current segment not yet
-covered, and then waits for a key. The coordinates in Appendix E.5 are kept in
+covered, and then waits for a key. The coordinates in Appendix D.5 are kept in
 :mod:`oregon.data.landmarks`, so this draws the same route as text.
 """
 

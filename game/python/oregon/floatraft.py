@@ -1,7 +1,7 @@
 """FLOAT: the Columbia River rafting game.
 
 The BASIC is fully available in the listing and is transcribed here; the machine code
-it uses for the drawing is not analysed (Appendix F.4), so the raft is shown as text.
+it uses for the drawing is not analysed (Appendix E.4), so the raft is shown as text.
 
 The rules, all from paper section 11.2:
 

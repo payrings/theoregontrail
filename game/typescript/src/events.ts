@@ -1,4 +1,4 @@
-/** OREGON TRAIL 10000 to 11400: the fifteen random events. Each draws exactly what Appendix G.4 lists. */
+/** OREGON TRAIL 10000 to 11400: the fifteen random events. Each draws exactly what Appendix F.4 lists. */
 import * as N from "./num.js";
 import * as D from "./data.js";
 import type { Context } from "./context.js";

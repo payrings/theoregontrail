@@ -141,16 +141,27 @@ def test_the_text_arrays_have_the_lengths_the_tables_give():
 
 
 def test_the_dialogue_records_load_and_are_the_papers_fifty_one():
-    pytest.importorskip("pathlib")
     from oregon.data import dialogue
-    if not dialogue.available():
-        pytest.skip("Appendix D is not present, so the dialogue cannot be checked")
+    assert dialogue.available()
     d = dialogue.load()
     assert len(d) == 51
     assert d.landmarks() == list(range(17))
-    assert d.speaker(1, 2) == "A ferry operator"
-    # the game keeps the original spelling of the dialogue
-    assert "Keep'em moving but set them a fair pace" in d.text(2, 2)
+    for landmark in range(17):
+        for slot in range(3):
+            speaker, text = d.get(landmark, slot)
+            assert speaker and text
+            # the game's `& TREED` reads at most 240 characters of a text; a record is 256 bytes
+            assert len(text) <= 240 and len(speaker) + len(text) + 2 <= 256
+
+
+def test_the_two_games_use_the_same_dialogue_file():
+    """The TypeScript rebuild keeps its own copy; the two must not drift apart."""
+    import pathlib
+    from oregon.data import dialogue
+    ts = pathlib.Path(dialogue.DEFAULT).parents[3] / "typescript" / "data" / "dialogue.md"
+    if not ts.is_file():
+        pytest.skip("the TypeScript folder is not beside this one")
+    assert ts.read_bytes() == pathlib.Path(dialogue.DEFAULT).read_bytes()
 
 
 def test_the_climate_zone_covers_the_segments_the_code_actually_runs():

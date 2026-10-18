@@ -1,13 +1,13 @@
 """A day-by-day trace, in the form the paper says a reference trace should take.
 
-Appendix H says a useful trace records, for each day: the date, ``D``, ``M``,
+Appendix G says a useful trace records, for each day: the date, ``D``, ``M``,
 ``H``, ``FS``, ``H0``, ``HR``, ``W``, ``TM``, ``PP``, ``AR``, ``AS``, ``PF``, the
 inventory ``I(2)`` to ``I(8)``, ``MY``, ``H1()``, ``H2()``, any event fired, and the
 five seed bytes at ``C9`` to ``CD`` in hexadecimal. The seed bytes are the point:
 they make a missing or an extra ``RND`` draw visible on the day it happens.
 
 Two reference traces were recorded from the original running in an emulator, seeds
-1234 and 10190 of the preset start (paper Appendix H), and this output, with
+1234 and 10190 of the preset start (paper Appendix G), and this output, with
 ``--preset --demo``, agreed with both on every logged value of every day. Numbers are
 printed to a few significant digits, so a comparison allows half a unit in the last
 digit printed here. Note that the seed bytes are the *emulated* Applesoft seed at

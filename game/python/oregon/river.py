@@ -496,7 +496,7 @@ def _lose_oxen(c, chance) -> list:
     """Line 50185: ``FOR L = 1 TO X`` with X the oxen count.
 
     The limit can end in a half, and Applesoft's FOR stops at the last whole number
-    below it, so five and a half oxen give five draws (Appendix G.5).
+    below it, so five and a half oxen give five draws (Appendix F.5).
     """
     st = c.st
     x = st.I[2]
