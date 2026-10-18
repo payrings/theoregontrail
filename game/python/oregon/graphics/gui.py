@@ -65,6 +65,22 @@ class GraphicalUI(UI):
         for ch in s:
             self.cx += self.cv.glyph(ch, wx + self.cx, wy + self.cy, self.inverse) + self.hsp
 
+    def cell(self) -> int:
+        """The advance of one digit: the width of a column when BASIC pads a number with spaces."""
+        return self.width("0")
+
+    def padded(self, s, n: int, newline: bool = False):
+        """Print *s* right-aligned in *n* digit-wide columns (BASIC's ``RIGHT$("   " + s, n)``).
+
+        The padding is counted in digit cells, not in space glyphs, so the right edge of a column of
+        numbers stays straight in a font whose space is narrower than its digits.
+        """
+        s = str(s)[-n:]
+        self.cx += self.cell() * (n - len(s))
+        self.put(s)
+        if newline:
+            self.nl()
+
     def nl(self):
         self.cx = 0
         self.linebase = 0

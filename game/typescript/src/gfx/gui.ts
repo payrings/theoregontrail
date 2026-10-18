@@ -87,6 +87,15 @@ export class GraphicalUI implements UI {
     const [wx, wy] = this.win;
     for (const ch of s) this.cx += this.cv.glyph(ch, wx + this.cx, wy + this.cy, this.inverse) + this.hsp;
   }
+  /** the advance of one digit: the width of a column when BASIC pads a number with spaces */
+  cell(): number { return this.width("0"); }
+  /** print s right-aligned in n digit-wide columns (BASIC's RIGHT$("   " + s, n)); padding counts digit cells, not space glyphs */
+  padded(s: unknown, n: number, newline = false): void {
+    const t = String(s).slice(-n);
+    this.cx += this.cell() * (n - t.length);
+    this.put(t);
+    if (newline) this.nl();
+  }
   nl(): void { this.cx = 0; this.linebase = 0; this.cy += 8 + this.vsp; }
   line(s: string, newline = true, centre = false): void {
     if (centre) this.cx = Math.floor((this.win[2] - this.width(s)) / 2);

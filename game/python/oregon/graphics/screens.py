@@ -186,12 +186,14 @@ def shop_list(ui, rows, total: str, money: str, date: str, verb: str):
         ui.co(0, ui.cy)
         ui.put(f"{i + 1}. {name}")
         ui.co(135, ui.cy)
-        ui.line(("   " + rows[i])[-8:])
+        ui.padded(rows[i], 8, newline=True)
     ui.dfw(0, 0, 280, 192)
     ui.co(111, 106)
-    ui.put("Total bill: " + ("   " + total)[-8:])
+    ui.put("Total bill: ")
+    ui.padded(total, 8)
     ui.co(61, 135)
-    ui.put("Amount you have: " + ("    " + money)[-8:])
+    ui.put("Amount you have: ")
+    ui.padded(money, 8)
     ui.dfw(70, 150, 180, 41)
     ui.co(0, 23)
     ui.para("Press SPACE BAR to leave store")
@@ -423,12 +425,12 @@ def supplies(ui, counts, money: str, trade_text: str | None = None, offer: str |
         y = ui.cy
         ui.put(label)
         ui.co(130, y)
-        ui.line(f"{n:>4}")
+        ui.padded(n, 4, newline=True)
     if trade_text is None:
         y = ui.cy
         ui.put("money left")
         ui.co(120, y)
-        ui.line(("   $" + money)[-8:])
+        ui.padded("$" + str(money), 8, newline=True)
     else:
         ui.dfw(0, 150, 279, 41)
         ui.para(trade_text)
@@ -465,7 +467,8 @@ def fort_list(ui, place: str, date: str, goods, money: str):
     zy = ui.cy + 9
     ui.dfw(150, y0, 129, 191 - y0)
     for name, price, unit in goods:
-        ui.line((" " + price)[-5:] + " per " + unit)
+        ui.padded(price, 5)
+        ui.line(" per " + unit)
     ui.prompt_y = zy
     ui.dfw(0, zy, 279, 191 - zy)
     ui.line(f"You have ${money} to spend.")
@@ -666,7 +669,7 @@ def top_ten(ui, entries, headings: bool = True):
         ui.co(0, y)
         ui.put(str(name))
         ui.co(139, y)
-        ui.put(str(points).rjust(4))
+        ui.padded(points, 4)
         ui.co(189, y)
         ui.put(str(rating))
         y += 9
@@ -732,7 +735,7 @@ def how_points(ui, page: int, score_text):
             ui.co(10, ui.cy)
             ui.put(word)
             ui.co(190)
-            ui.put(str(pts).rjust(2))
+            ui.padded(pts, 2)
             ui.nl()
     else:
         ui.cv.image("first_03", 10, 30)
@@ -770,13 +773,13 @@ def win_points(ui, rows, total: int, redraw: bool = True):
         y = ui.cy
         ui.put(text)
         ui.co(245, y)
-        ui.put(str(pts).rjust(4))
+        ui.padded(pts, 4)
         ui.nl()
     ui.nl()
     ui.co(185)
     ui.put("Total:")
     ui.co(237)
-    ui.put(str(total).rjust(5))
+    ui.padded(total, 5)
     ui.nl()
     ui.nl()
     ui.nl()
@@ -784,7 +787,8 @@ def win_points(ui, rows, total: int, redraw: bool = True):
 
 
 # ================================================================ the trail itself
-LABEL_X = (95, 70, 81, 95, 23, 20)         # B(0 to 5): where each label starts
+LABEL_X = (95, 70, 81, 95, 23, 20)         # B(0 to 5): where each label starts (monospace font)
+COLON_X = 131                               # where every label's colon ends: the original's colons line up
 
 
 def travel(ui, side: str, ni: int, ix: int, wg: int, ground: int, labels, values,
@@ -823,8 +827,9 @@ def travel(ui, side: str, ni: int, ix: int, wg: int, ground: int, labels, values
     ui.dfw(0, 0, 280, 192)
     ui.inverse = True
     y = 125
-    for x, label in zip(LABEL_X, labels):
-        ui.co(x, y)
+    for label in labels[:len(LABEL_X)]:
+        # B(L) in the original is the start that puts the colon at 131; place by width so it holds in any font
+        ui.co(COLON_X - ui.width(label + ":"), y)
         ui.put(label + ":")
         y += 9
     y = 125

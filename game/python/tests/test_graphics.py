@@ -567,3 +567,38 @@ def test_every_tune_file_has_a_tune():
         assert sum(n for _, n in melody) == sum(n for _, n in bass)
         assert abs(sound.duration(sound.wait_tune(name=name)) - secs) < 0.3, name
     assert len({str(tunes.melody_and_bass(n)[0]) for n in tunes.names()}) == 19    # all different
+
+
+def _proportional_space(folder):
+    """The same blocks, but a space only 2 wide (as in the themed font), so space padding would drift."""
+    p = os.path.join(folder, "font", "font.json")
+    j = json.load(open(p))
+    j["glyphs"]["32"]["width"] = 2
+    json.dump(j, open(p, "w"))
+
+
+def test_padded_numbers_end_on_the_same_edge_whatever_the_space_width(folder):
+    _proportional_space(folder)
+    ui, _ = make(folder)
+    ui.dfw(0, 0, 280, 192)
+    for text in ("5", "50", "500", "5000"):
+        ui.cx = 0
+        ui.padded(text, 4)
+        assert ui.cx == 4 * ui.cell()
+
+
+def test_trail_colons_line_up_in_one_column(folder):
+    _proportional_space(folder)
+    ui, _ = make(folder)
+    seen = []
+    orig = ui.put
+
+    def spy(s):
+        if s.endswith(":"):
+            seen.append(ui.win[0] + ui.cx + ui.width(s))
+        orig(s)
+    ui.put = spy
+    screens.travel(ui, "prairie", 8, -22, 2, 1, ["Date", "Weather", "Health", "Food",
+                                                 "Next landmark", "Miles traveled"],
+                   ["a", "b", "c", "d", "e", "f"])
+    assert len(seen) == 6 and set(seen) == {screens.COLON_X}

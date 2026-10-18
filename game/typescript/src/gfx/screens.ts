@@ -16,7 +16,6 @@ type UI = GraphicalUI;
 const GREEN = 1, VIOLET = 2, BLUE = 6, ORANGE = 5;
 const floorDiv = (a: number, b: number): number => Math.floor(a / b);
 const mod2 = (x: number): number => ((x % 2) + 2) % 2;
-const rjust = (v: unknown, n: number): string => String(v).padStart(n);
 
 /** the title picture and the two borders (MENU 1000 and 6000) */
 function frame(ui: UI): void {
@@ -175,13 +174,15 @@ export function shopList(ui: UI, rows: string[], total: string, money: string, d
     ui.co(0, ui.cy);
     ui.put(`${i + 1}. ${name}`);
     ui.co(135, ui.cy);
-    ui.line(("   " + rows[i]).slice(-8));
+    ui.padded(rows[i], 8, true);
   });
   ui.dfw(0, 0, 280, 192);
   ui.co(111, 106);
-  ui.put("Total bill: " + ("   " + total).slice(-8));
+  ui.put("Total bill: ");
+  ui.padded(total, 8);
   ui.co(61, 135);
-  ui.put("Amount you have: " + ("    " + money).slice(-8));
+  ui.put("Amount you have: ");
+  ui.padded(money, 8);
   ui.dfw(70, 150, 180, 41);
   ui.co(0, 23);
   ui.para("Press SPACE BAR to leave store");
@@ -409,13 +410,13 @@ export function supplies(ui: UI, counts: readonly (string | number)[], money: st
     const y = ui.cy;
     ui.put(SUPPLY_LABELS[i]);
     ui.co(130, y);
-    ui.line(rjust(counts[i], 4));
+    ui.padded(counts[i], 4, true);
   }
   if (tradeText === null) {
     const y = ui.cy;
     ui.put("money left");
     ui.co(120, y);
-    ui.line(("   $" + money).slice(-8));
+    ui.padded("$" + money, 8, true);
   } else {
     ui.dfw(0, 150, 279, 41);
     ui.para(tradeText);
@@ -445,7 +446,7 @@ export function fortList(ui: UI, place: string, date: string, goods: [string, st
   ui.nl();
   const zy = ui.cy + 9;
   ui.dfw(150, y0, 129, 191 - y0);
-  for (const [, price, unit] of goods) ui.line((" " + price).slice(-5) + " per " + unit);
+  for (const [, price, unit] of goods) { ui.padded(price, 5); ui.line(" per " + unit); }
   ui.promptY = zy;
   ui.dfw(0, zy, 279, 191 - zy);
   ui.line(`You have $${money} to spend.`);
@@ -632,7 +633,7 @@ export function topTen(ui: UI, entries: readonly (readonly unknown[])[], _headin
     ui.co(0, y);
     ui.put(String(name));
     ui.co(139, y);
-    ui.put(rjust(points, 4));
+    ui.padded(points, 4);
     ui.co(189, y);
     ui.put(String(rating));
     y += 9;
@@ -699,7 +700,7 @@ export function howPoints(ui: UI, page: number, scoreText: readonly (readonly [s
       ui.co(10, ui.cy);
       ui.put(word);
       ui.co(190);
-      ui.put(rjust(pts, 2));
+      ui.padded(pts, 2);
       ui.nl();
     }
   } else {
@@ -738,14 +739,14 @@ export function winPoints(ui: UI, rows: readonly (readonly [string, unknown])[],
     const y = ui.cy;
     ui.put(text);
     ui.co(245, y);
-    ui.put(rjust(pts, 4));
+    ui.padded(pts, 4);
     ui.nl();
   }
   ui.nl();
   ui.co(185);
   ui.put("Total:");
   ui.co(237);
-  ui.put(rjust(total, 5));
+  ui.padded(total, 5);
   ui.nl();
   ui.nl();
   ui.nl();
@@ -753,7 +754,8 @@ export function winPoints(ui: UI, rows: readonly (readonly [string, unknown])[],
 }
 
 // ================================================================ the trail itself
-export const LABEL_X = [95, 70, 81, 95, 23, 20];     // B(0 to 5): where each label starts
+export const LABEL_X = [95, 70, 81, 95, 23, 20];     // B(0 to 5): where each label starts (monospace font)
+export const COLON_X = 131;                           // where every label's colon ends: the original's colons line up
 
 export interface TravelOptions {
   prompt?: string | null; message?: string | null; box?: readonly number[];
@@ -794,7 +796,7 @@ export function travel(ui: UI, side: string, ni: number, ix: number, wg: number,
   ui.inverse = true;
   let y = 125;
   const n = Math.min(LABEL_X.length, labels.length);
-  for (let i = 0; i < n; i++) { ui.co(LABEL_X[i], y); ui.put(labels[i] + ":"); y += 9; }
+  for (let i = 0; i < n; i++) { ui.co(COLON_X - ui.width(labels[i] + ":"), y); ui.put(labels[i] + ":"); y += 9; }   // placed by width so the colons line up in any font
   y = 125;
   for (const value of values) {
     ui.dfw(135, 125, 144, 57);
