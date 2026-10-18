@@ -66,11 +66,11 @@ class AutoGUI extends GraphicalUI {
     this.countsKeyboardTime = false;                  // real time must not seed the generator in a test (Python runs on a fake clock)
   }
   next() { return this.answers.length ? this.answers.shift() : ""; }
-  answer(maxlen) {
+  answer(maxlen, ret = true) {
     const a = maxlen ? this.next().slice(0, maxlen) : this.next();
-    this.backend.keys = [...a, ...(a.length < maxlen || maxlen === 0 ? ["\r"] : [])];
+    this.backend.keys = [...a, ...(ret ? ["\r"] : [])];            // a line ends with Return
   }
-  async key(allowed = "", maxlen = 1, def = "", ret = true) { this.answer(maxlen); return super.key(allowed, maxlen, def, ret); }
+  async key(allowed = "", maxlen = 1, def = "", ret = true) { this.answer(maxlen, ret); return super.key(allowed, maxlen, def, ret); }
   async yesNo(prompt = "") {
     let z = "";
     for (let i = 0; i < 64; i++) { z = this.next().slice(0, 3); if (z) break; }

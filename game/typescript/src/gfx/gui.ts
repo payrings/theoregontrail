@@ -186,7 +186,7 @@ export class GraphicalUI implements UI {
       if (k.length !== 1 || k < " " || k > "~") continue;          // arrow keys and the like
       if (got.length >= maxlen || (ok && !ok.has(k))) continue;
       got.push(k);
-      if (maxlen === 1) break;                                      // one key answers at once
+      if (maxlen === 1 && !ret) break;                              // only the store's item prompt answers on the key itself
     }
     this.cv.clearText(wx + x0, wy + y0, wx + x0 + 120, wy + y0 + 9);
     this.cx = x0; this.cy = y0;

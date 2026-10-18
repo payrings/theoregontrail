@@ -17,6 +17,12 @@
   #status { min-height: 1.5em; color: var(--accent); } #status.bad { color: var(--bad); }
   #play { text-align: center; padding: 8px 0; }
   #screen { width: min(100vw, calc((100vh - 70px) * 280 / 192)); aspect-ratio: 280 / 192; image-rendering: pixelated; background: #000; outline: none; }
+  #play { position: relative; }
+  /* the field the phone's keyboard types into: a real text field, since a canvas never raises the keyboard */
+  #kbd { position: absolute; left: 0; top: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; margin: 0; font-size: 16px; caret-color: transparent; background: transparent; color: transparent; }
+  #pad { display: none; margin-top: 6px; }
+  #pad button { min-width: 3rem; padding: .7rem .6rem; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+  @media (pointer: coarse) { #pad { display: block; } }
   #bar { margin-top: 6px; } #hint { color: var(--muted); font-size: .85rem; }
   #error { white-space: pre-wrap; color: var(--bad); font: 13px/1.4 ui-monospace, monospace; padding: 1rem; }
 </style>
@@ -25,7 +31,7 @@
 <main id="setup">
   <h1>The Oregon Trail</h1>
   <p>A rebuild of the 1985 game: you lead a wagon party along the trail to Oregon. Press Play. Keys: letters and digits as asked,
-  Return, Backspace, the arrow keys and Space in the hunt, Control-S for sound.</p>
+  Return, Backspace, the arrow keys and Space in the hunt, Control-S for sound. On a phone or tablet, tap the picture to bring up the keyboard.</p>
   <button id="go" class="primary" disabled>Play</button>
   <p id="have"></p>
   <p id="status"></p>
@@ -41,6 +47,11 @@
 </main>
 <div id="play" hidden>
   <canvas id="screen" width="280" height="192" tabindex="0" aria-label="The Oregon Trail"></canvas>
+  <input id="kbd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="enter" aria-label="Type your answer here">
+  <div id="pad" aria-label="On-screen keys">
+    <button data-k="left">&#9664;</button><button data-k="up">&#9650;</button><button data-k="down">&#9660;</button><button data-k="right">&#9654;</button>
+    <button data-k="space">Space</button><button data-k="enter">Return</button><button data-k="back">&#9003;</button>
+  </div>
   <div id="bar"><button id="soundbtn">Sound on/off</button> <span id="hint"></span></div>
 </div>
 <pre id="error" hidden></pre>

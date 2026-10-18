@@ -32,7 +32,7 @@ window.__oregonSetup = (ui, backend) => {
   ui.key = async function (allowed = "", maxlen = 1, def = "", ret = true) {
     if (i >= answers.length) { window.__done = true; return stall(); }
     const a = maxlen ? next().slice(0, maxlen) : next();
-    backend.queue = [...a, ...(a.length < maxlen || maxlen === 0 ? ["\\r"] : [])];
+    backend.queue = [...a, ...(ret ? ["\\r"] : [])];
     return Object.getPrototypeOf(ui).key.call(ui, allowed, maxlen, def, ret);
   };
   ui.yesNo = async function (prompt = "") {

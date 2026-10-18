@@ -80,6 +80,13 @@ async function start(): Promise<void> {
   ui.sound = sound;
   backend.onKey = () => sound.unlock();
   $("soundbtn").onclick = () => backend.push("\x13");
+  backend.attachField($("kbd"));
+  backend.focusField();                                     // we are inside the Play click: the phone may raise its keyboard now
+  // the on-screen keys (shown on touch screens): they must not take the focus from the typing field
+  const PAD: Record<string, string> = { left: "\x1c", up: "\x1e", down: "\x1f", right: "\x1d", space: " ", enter: "\r", back: "\x7f" };
+  for (const b of G.document.querySelectorAll("#pad button")) {
+    b.addEventListener("pointerdown", (e: any) => { e.preventDefault(); backend.onKey(); backend.push(PAD[b.dataset.k]); backend.focusField(); });
+  }
   $("hint").textContent = heard ? "" : "Dialogue document not supplied: people have nothing to say yet.";
   if (G.__oregonSetup) G.__oregonSetup(ui, backend);   // a hook for the browser tests, before the first game starts
   const files = new Files(storage);

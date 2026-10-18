@@ -1,4 +1,4 @@
-![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](title.png)
+![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](images/title.png)
 
 # The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages
 
@@ -9,7 +9,8 @@ for the Apple II**, specifically version 1.4, the 1985 MECC release by R. Philip
 (lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin,
 Roger Shimada and Steve Splinter.
 
-The question the paper asks is simple: **can anyone replicate the Oregon Trails for Apple II based on this paper and its artefacts, and get the same behaviour?**
+The question the paper asks is simple: **can anyone else write this game again
+based on this paper and its artefacts, and get the same behaviour?**
 
 The paper answers it by documenting the actual BASIC code, the machine code, variables, algorithms, tables, and various data. It also finds the places where the documented behaviour and the program behaviour disagree.
 
@@ -20,9 +21,9 @@ The paper answers it by documenting the actual BASIC code, the machine code, var
 | Folder | Contents |
 | --- | --- |
 | [`paper/`](paper/) | The paper and its public appendices (D to H). This is the main work. |
-| [`game/python/`](game/python/) | The Python rebuild of the game: the `oregon` package, its tests and tools, the experiment script with a small sample of its results, and `NOTES.md`. |
-| [`game/typescript/`](game/typescript/) | The TypeScript rebuild of the game, which plays in a browser at [https://payrings.github.io/theoregontrail/](https://payrings.github.io/theoregontrail/) and whole games by itself from the command line. |
-| [`title.png`](title.png) | The title image at the top of this page. |
+| [`game/python/`](game/python/) | Everything about the Python rebuild of the game: the `oregon` package, its tests and tools, the experiment script with a small sample of its results, and `NOTES.md`. |
+| [`game/typescript/`](game/typescript/) | The second implementation, in TypeScript: the whole game for a browser, with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild. Its own folder, README, pictures and dialogue copy; it shares no code with the Python. |
+| [`images/`](images/) | The title image at the top of this page. |
 
 ---
 
@@ -120,6 +121,8 @@ How the work went, month by month.
   removed from the code and the paper; the experiment reports the ROM against the
   transcription, rounded floats and plain floats (§12.7, §12.8), with Claude Opus 5.5
   (High).
+- **October 2026** — Published a Typescript version of the game using Claude Sonnet 5.5, 
+  which confirm the paper's thesis and accuracy, and runs on a web browser.
 
 ---
 
@@ -163,7 +166,7 @@ own argument made real:
 | `Q` and `Q()` are different variables (§2.5) | separate fields; a fort purchase does not disturb the map |
 | a `FOR` always runs its body once (§2.5) | `FOR L = 1 TO X` with `X = 0.5` gives one draw, so half an ox is one draw |
 | the route is 1,771 miles to The Dalles, 1,871 with the Barlow Road (§4.1) | segments 0–7, 10–14 and 16 sum to 1,771; Fort Walla Walla gives 1,821, and segment 18 adds 100 to either, for 1,871 and 1,921 |
-| `LM$` and `LM()` come from `VAR.BIN`, Tables 7 and 8 (§4.1) | every field transcribed and checked by `game/tests/test_landmark_tables.py`, which is how the type of landmark 0 and the name of landmark 9 were found to be wrong |
+| `LM$` and `LM()` come from `VAR.BIN`, Tables 7 and 8 (§4.1) | every field transcribed and checked by `game/python/tests/test_landmark_tables.py`, which is how the type of landmark 0 and the name of landmark 9 were found to be wrong |
 | the `RND` constants are of magnitude 1.19 × 10⁷ and 3.9 × 10⁻⁸ (§12.6) | decoded from `$EFA6` and `$EFAA`, the implied top bit included |
 | the article quirk that makes "an ox" and "a wheel" (line 4070) | reproduced in `action.py` |
 
@@ -198,35 +201,10 @@ the game very slightly harder (arrival 22.73% against 22.86%).
 `python compare_csv.py 0 65535 8 results exact,float,rounded` runs the experiment
 (many hours; its output is not kept in the repository), and
 `python summarise_csv.py results/exact results/float results/rounded` prints its
-figures; `game/python/sample_games.csv` and `game/python/sample_pairs.csv` hold a
-small sample.
+figures; `game/python/sample_games.csv` and `game/python/sample_pairs.csv` hold a small sample.
 
 What the rebuild reproduces and what it does not is in
 **[`game/python/NOTES.md`](game/python/NOTES.md)**.
-
----
-
-## The TypeScript translation
-
-> **This is secondary too.** It exists to show that the rules in the paper and
-> the listing carry over to another language, and that Applesoft's arithmetic
-> can be reproduced there.
-
-The whole game, rebuilt a second time from the paper and the Python rebuild, in
-TypeScript: the same five-byte numbers with their extension byte, the ROM's
-arithmetic transcribed line for line (`src/fp.ts`), the same draw order and the
-same rules, and a graphical front end that lays out the screens the way the
-Apple II drew them, with the pictures and the sound.
-
-**Anyone can play it from a web address, with nothing to install:**
-[https://payrings.github.io/theoregontrail/](https://payrings.github.io/theoregontrail/).
-
-It also plays whole games by itself from the command line, which is how it is
-checked: for every seed from 0 to 65,535 and every arithmetic backend, the
-Python and TypeScript programs play the same game and their day-by-day traces
-must agree, and the two graphical front ends are compared frame by frame.
-What is in it, and how to run and check it, is in
-**[`game/typescript/README.md`](game/typescript/README.md)**.
 
 ---
 
@@ -240,7 +218,7 @@ here.
 
 ```fish
 git clone https://github.com/payrings/theoregontrail.git
-cd theoregontrail/game/python     # the Python rebuild lives in game/python/
+cd theoregontrail/game/python     # the Python game lives in game/python/
 
 python -m venv .venv
 source .venv/bin/activate.fish          # fish; on bash use .venv/bin/activate
@@ -294,10 +272,9 @@ This draws the screens in a window, laid out the way the Apple II drew them: the
 proportional letters, the text windows, the pictures and boxes. It is a second
 front end behind the same `UI` interface, so the game logic is the same, and the
 text mode stays the default. The pictures are ordinary PNG files that you supply in
-a folder (`game/python/assets` by default; `game/python/oregon/graphics/assets.py`
-describes the names), so any of them can be replaced. Which screens have a
-graphical layout is listed in `game/python/NOTES.md`; the others are drawn as
-plain text in the same font.
+a folder (`game/python/assets` by default; `game/python/oregon/graphics/assets.py` describes the
+names), so any of them can be replaced. Which screens have a graphical layout is
+listed in `game/python/NOTES.md`; the others are drawn as plain text in the same font.
 
 ### Tests
 
@@ -327,9 +304,8 @@ does the same for number-to-text conversion.
 
 - **The Apple IIe ROM image** — Apple firmware, obtained as above.
 
-The dialogue is not copied into `game/python/`: the game reads it at run time
-from `paper/02-appendix-d-dialogue.md`.
+The dialogue is not copied into `game/python/`: the game reads it at run time from
+`paper/02-appendix-d-dialogue.md`.
 
-`game/python/NOTES.md` is the honest list of what is approximated, replaced or
-unfinished in the translation. The paper is the document that matters; the code
-is the evidence.
+`game/python/NOTES.md` is the honest list of what is approximated, replaced or unfinished in the
+translation. The paper is the document that matters; the code is the evidence.

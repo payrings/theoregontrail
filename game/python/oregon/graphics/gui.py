@@ -193,8 +193,9 @@ class GraphicalUI(UI):
         return reader(self.BLINK) if reader else self.backend.read()
 
     def key(self, allowed: str = "", maxlen: int = 1, default: str = "", ret: bool = True) -> str:
-        """``ret=False`` makes Return an ignored key (the store's item prompt takes
-        1 to 5 or the space bar, and nothing else)."""
+        """``& INP`` reads a line: the answer is typed, shown, and ends with Return.
+        ``ret=False`` makes Return an ignored key and the first accepted key the
+        answer (the store's item prompt takes 1 to 5 or the space bar, and nothing else)."""
         ok = allowed_chars(allowed) | ({"\r", "\n"} if ret else set()) if allowed else None
         wx, wy, _, _ = self.win
         x0, y0 = self.cx, self.cy
@@ -226,7 +227,7 @@ class GraphicalUI(UI):
             if len(got) >= maxlen or (ok and k not in ok):
                 continue
             got.append(k)
-            if maxlen == 1:                         # one key answers at once
+            if maxlen == 1 and not ret:             # only the store's item prompt answers on the key itself
                 break
         self.cv.clear_text(wx + x0, wy + y0, wx + x0 + 120, wy + y0 + 9)
         self.cx, self.cy = x0, y0

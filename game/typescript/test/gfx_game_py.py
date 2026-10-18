@@ -67,13 +67,13 @@ class AutoGUI(GraphicalUI):
     def _next(self):
         return self.answers.pop(0) if self.answers else ""
 
-    def _answer(self, maxlen, allowed=""):
+    def _answer(self, maxlen, allowed="", ret=True):
         a = self._next()[:maxlen] if maxlen else self._next()
-        self.backend.keys = list(a) + (["\r"] if len(a) < maxlen or maxlen == 0 else [])
+        self.backend.keys = list(a) + (["\r"] if ret else [])
         return a
 
     def key(self, allowed="", maxlen=1, default="", ret=True):
-        self._answer(maxlen)
+        self._answer(maxlen, ret=ret)
         return super().key(allowed, maxlen, default, ret)
 
     def yes_no(self, prompt=""):

@@ -26,6 +26,41 @@ export class BrowserBackend implements Backend {
     target.addEventListener("keydown", (e: any) => this.keydown(e));
   }
 
+  /**
+   * Phones raise their keyboard only for a text field, never for a canvas. `field` is a tiny invisible one:
+   * tapping the picture focuses it, and what the keyboard types into it is turned into keys. It always holds
+   * one placeholder character, so that Backspace has something to delete and shows up as a shrinking value.
+   * Soft keyboards often report no usable `key` on keydown (Android sends "Unidentified"), so the text that
+   * lands in the field is what counts; keys that do identify themselves are handled by keydown as on a desktop.
+   */
+  attachField(field: any, tapTarget: any = this.canvas): void {
+    const MARK = " ";
+    const reset = (): void => { field.value = MARK; try { field.setSelectionRange(1, 1); } catch { /* not every type allows it */ } };
+    reset();
+    this.field = field;
+    tapTarget.addEventListener("pointerdown", () => { this.focusField(); });
+    field.addEventListener("input", (e: any) => {
+      const v: string = field.value;
+      if (e.inputType === "insertLineBreak") this.typed("\r");
+      else if (v.length < MARK.length) this.typed("\x7f");
+      else for (const ch of v.slice(MARK.length)) this.typed(ch);
+      reset();
+    });
+    field.addEventListener("blur", () => { this.fieldFocused = false; });
+    field.addEventListener("focus", () => { this.fieldFocused = true; reset(); });
+  }
+
+  private field: any = null;
+  private fieldFocused = false;
+  /** bring up the soft keyboard (must be called from a tap or click) */
+  focusField(): void { if (this.field) { try { this.field.focus({ preventScroll: true }); } catch { this.field.focus(); } } }
+
+  private typed(k: string): void {
+    if (k !== "\r" && k !== "\x7f" && (k.length !== 1 || k < " " || k > "~")) return;
+    this.onKey();
+    this.push(k);
+  }
+
   /** a key as the game sees it, or null for one it ignores */
   static translate(e: { key: string; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }): string | null {
     if (e.ctrlKey && e.key.toLowerCase() === "s") return "\x13";                  // Control-S: the sound switch
@@ -36,7 +71,9 @@ export class BrowserBackend implements Backend {
 
   private keydown(e: any): void {
     const t = e.target;
-    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "BUTTON") && e.key !== "Enter") return;
+    if (t && t !== this.field && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "BUTTON") && e.key !== "Enter") return;
+    // a soft keyboard that cannot name the key: the text arriving in the field is read instead (attachField)
+    if (t === this.field && (e.key === "Unidentified" || e.keyCode === 229)) return;
     const k = BrowserBackend.translate(e);
     if (k === null) return;
     e.preventDefault();
