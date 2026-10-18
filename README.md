@@ -1,4 +1,4 @@
-![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](images/title.png)
+![The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages](title.png)
 
 # The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages
 
@@ -23,7 +23,7 @@ The paper answers it by documenting the actual BASIC code, the machine code, var
 | [`paper/`](paper/) | The paper and its public appendices (D to H). This is the main work. |
 | [`game/python/`](game/python/) | Everything about the Python rebuild of the game: the `oregon` package, its tests and tools, the experiment script with a small sample of its results, and `NOTES.md`. |
 | [`game/typescript/`](game/typescript/) | The second implementation, in TypeScript: the whole game for a browser, with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild. Its own folder, README, pictures and dialogue copy; it shares no code with the Python. |
-| [`images/`](images/) | The title image at the top of this page. |
+| [`title.png`](title.png) | The title image at the top of this page. |
 
 ---
 
