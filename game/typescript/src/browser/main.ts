@@ -80,6 +80,13 @@ async function start(): Promise<void> {
   ui.sound = sound;
   backend.onKey = () => sound.unlock();
   $("soundbtn").onclick = () => backend.push("\x13");
+  // show the state on the button: the word that is current (on or off) is bold and underlined
+  const showSound = () => {
+    const on = !!sound.enabled();
+    $("son").classList.toggle("cur", on);
+    $("soff").classList.toggle("cur", !on);
+  };
+  G.setInterval(showSound, 150);
   backend.attachField($("kbd"));
   backend.focusField();                                     // we are inside the Play click: the phone may raise its keyboard now
   // the on-screen keys (shown on touch screens): they must not take the focus from the typing field
