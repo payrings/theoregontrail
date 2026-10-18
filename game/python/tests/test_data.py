@@ -152,6 +152,9 @@ def test_the_dialogue_records_load_and_are_the_papers_fifty_one():
             assert speaker and text
             # the game's `& TREED` reads at most 240 characters of a text; a record is 256 bytes
             assert len(text) <= 240 and len(speaker) + len(text) + 2 <= 256
+            # the screen reads "<speaker> tells you:" on one line 260 dots wide; 21 characters of the widest
+            # letters still fit in full, so a longer speaker risks a clipped line
+            assert len(speaker) <= 21, speaker
 
 
 def test_the_two_games_use_the_same_dialogue_file():
