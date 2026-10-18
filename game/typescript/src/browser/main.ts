@@ -160,7 +160,6 @@ async function main(): Promise<void> {
     chosen = bundled;
     usingBundled = true;
     $("own").hidden = false;                          // choosing your own files stays possible, as an override
-    $("have").textContent = "The game's pictures, music and dialogue are included.";
     $("go").disabled = false;
     say("Ready.");
     return;
