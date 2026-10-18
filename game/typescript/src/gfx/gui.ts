@@ -152,6 +152,8 @@ export class GraphicalUI implements UI {
 
   /** & SPACE writes at 184 and makes no sound; the program's own line 950 (and WIN's) writes at 182 and
    *  plays the tune while it waits (`tune`). */
+  /** true while a screen with its tune is waiting for a key (Control-S then restarts the tune) */
+  tuneWaiting = false;
   async waitKey(_allowed = "", prompt = "Press SPACE BAR to continue", opts: { y?: number; tune?: boolean } = {}): Promise<string> {
     const y = opts.y ?? 184, tune = !!opts.tune;
     this.window(0, 0, W, H);
@@ -160,6 +162,7 @@ export class GraphicalUI implements UI {
     this.line(prompt, true, true);
     this.refresh();
     if (tune) this.sound.waiting();                      // 955: IF PEEK (975) THEN & PT,1,1
+    this.tuneWaiting = tune;
     try {
       for (;;) {
         const k = await this.backend.read();
@@ -170,7 +173,7 @@ export class GraphicalUI implements UI {
         }
         return k;
       }
-    } finally { this.sound.stop(); }
+    } finally { this.tuneWaiting = false; this.sound.stop(); }
   }
 
   private async readBlinking(): Promise<string | null> { return this.backend.readTimeout(GraphicalUI.BLINK); }

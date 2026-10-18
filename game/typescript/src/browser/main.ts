@@ -79,7 +79,9 @@ async function start(): Promise<void> {
   sound.loadTuneFiles(chosen);
   ui.sound = sound;
   backend.onKey = () => sound.unlock();
-  $("soundbtn").onclick = () => backend.push("\x13");
+  let flipSound: () => void = () => {};
+  // the button always switches the sound; on a screen with its tune, Control-S also restarts or stops the tune
+  $("soundbtn").onclick = () => { if (ui.tuneWaiting) backend.push("\x13"); else flipSound(); showSound(); backend.focusField(); };
   // show the state on the button: the word that is current (on or off) is bold and underlined
   const showSound = () => {
     const on = !!sound.enabled();
@@ -103,6 +105,7 @@ async function start(): Promise<void> {
     c.mem.poke(975, soundFlag);                       // memory byte 975 is the sound switch (MENU 130)
     sound.enabled = () => !!c.mem.peek(975);
     sound.toggle = () => c.mem.poke(975, c.mem.peek(975) ? 0 : 1);
+    flipSound = () => { sound.toggle(); if (!sound.enabled()) sound.stop(); };
     try { await playGame(c, false); }
     catch (e) { showError(e); return; }
     soundFlag = c.mem.peek(975);
