@@ -22,6 +22,10 @@ GAME = TS.parent / "python"                        # the Python game it is compa
 
 NUM = "exact"
 
+# the TypeScript is told where this repository keeps the dialogue, whatever directory it is run from
+DOC = TS / "data" / "dialogue.md"
+DIALOGUE = ["--dialogue", str(DOC)] if DOC.is_file() else []
+
 def TSNUM():
     """TypeScript has no ROM: `rom` and `exact` both mean its transcription of the ROM"""
     return NUM if NUM in ("rounded", "float") else "exact"
@@ -39,7 +43,9 @@ def py_game(seed):
 def ts_game(seed):
     with tempfile.TemporaryDirectory() as tmp:
         trace = Path(tmp) / "t.log"
-        p = subprocess.run(["node", str(TS / "dist" / "cli.js"), "--num", TSNUM(), str(seed), str(trace)], capture_output=True, text=True, timeout=900)
+        # --preset, as the Python side is run: without it the TypeScript plays the menu and the store, a different game
+        p = subprocess.run(["node", str(TS / "dist" / "cli.js"), "--preset", "--num", TSNUM(), *DIALOGUE, str(seed), str(trace)],
+                           capture_output=True, text=True, timeout=900)
         line = p.stdout.strip().splitlines()[-1] if p.stdout.strip() else ""
         days = trace.read_text().splitlines() if trace.exists() else []
         if line.startswith("SUMMARY "):
@@ -74,7 +80,8 @@ def check_rows(path):
     rows = [r for r in csv.DictReader(open(path, newline="")) if r["backend"] == "rom"]
     bad = 0
     for r in rows:
-        out = subprocess.run(["node", str(TS / "dist" / "cli.js"), r["seed"]], capture_output=True, text=True).stdout.strip()
+        # the recorded rows are games from the preset start (README: "Every seed was played from one preset start")
+        out = subprocess.run(["node", str(TS / "dist" / "cli.js"), "--preset", *DIALOGUE, r["seed"]], capture_output=True, text=True).stdout.strip()
         s = json.loads(out.splitlines()[-1][8:])
         diffs = []
         for k in ["ending", "route_end", "score", "rating", "days", "end_day", "end_month", "end_year", "last_landmark",

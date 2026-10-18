@@ -242,8 +242,9 @@ def test_trail_screens_play_through_the_graphical_interface(folder):
     except Exception:                       # noqa: BLE001
         pytest.skip("no arithmetic backend")
     # supplies, map, pace (and its explanation), rations, talk, the fort store, continue
-    keys = ["2", "\r", " ", "3", "\r", " ", "4", "\r", "4", " ", "2", "5", "\r", "2",
-            "8", "\r", " ", "9", "\r", "8", "1", "\r"]
+    # Every typed answer ends with Return, as & INP's does; only a "press the space bar" key is a bare key.
+    keys = ["2", "\r", " ", "3", "\r", " ", "4", "\r", "4", "\r", " ", "2", "\r", "5", "\r", "2", "\r",
+            "8", "\r", " ", "9", "\r", "8", "\r", "1", "\r"]
 
     class Limited(ScriptBackend):             # a wrong key list must fail, not wait for ever
         reads = 0
@@ -360,8 +361,9 @@ def test_river_crossing_plays_through_the_graphical_interface(folder):
             assert self.reads < 60, "the script ran out of keys"
             return super().read()
 
-    # intro, "get more information" and its three pages, then ford and the result
-    b = Limited([" ", "4", " ", " ", " ", "1", " "])
+    # intro, "get more information" (a typed answer ends with Return) and its three pages, then ford
+    # (typed, Return) and the result
+    b = Limited([" ", "4", "\r", " ", " ", " ", "1", "\r", " "])
     ui = GraphicalUI(Assets(folder), b)
     c = Context(ui=ui, rng=SeededRnd(), files=Files(os.path.join(folder, "data")),
                 trace=Tracer(None))
