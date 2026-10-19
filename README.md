@@ -26,7 +26,7 @@ needs to cite.
 | Folder                                 | Contents                                                                                                                                                                       |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [`game/python/`](game/python/)         | Everything about the Python rebuild of the game: the `oregon` package, its tests and tools, the experiment script with a small sample of its results.                          |
-| [`game/typescript/`](game/typescript/) | The second implementation, in TypeScript: the whole game for a browser, with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild. |
+| [`game/typescript/`](game/typescript/) | The second implementation, in TypeScript: the whole game for a browser, with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild. The game can be played directly at https://payrings.github.io/theoregontrail/ and works on mobile phones too.|
 
 ## Funny facts
 
