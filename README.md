@@ -5,7 +5,7 @@ By Giacomo Paganelli - rift-demote-fence@duck.com
 **This repository is primarily a research paper on *The Oregon Trail*
 for the Apple II**, specifically version 1.4, the 1985 MECC release by R. Philip Bouchard (design), John Krenz (lead programmer), Charolyn Kapplinger (art), with Shirley Keran, Bob Granvin, Roger Shimada and Steve Splinter.
 
-The question the paper asks is simple: **can this game be replicated based on this paper and get the same behaviour, or even achieve algorithmic parity?**
+The question the paper asks is simple: **can this game be replicated from this paper so that it behaves the same way, and how close can a replica get to the original’s own algorithm and arithmetic?**
 
 The paper answers it by documenting the actual BASIC code, the machine code, variables, algorithms, tables, and various data. It also finds the places where the documented behaviour and the program behaviour disagree.
 
