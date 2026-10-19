@@ -80,13 +80,14 @@ How my work went, month by month.
   (High).
 - **October 2026** — Published a Typescript version of the game using Claude Sonnet 5.5, 
   which confirm the paper's thesis and accuracy, and runs on a web browser.
-- October 2026 — Update the README and reorganised the repo.
+- October 2026 — Updated the README and reorganised the repo.
 
 ---
 ## What is not in this repository
 
-- **The Apple IIe ROM image**
+- The Apple IIe ROM image
 - The BASIC listings
 - The dialogues
 - The artworks
+- The tunes
 - The machine code listings
