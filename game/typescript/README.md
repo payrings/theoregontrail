@@ -9,8 +9,10 @@ whole games by itself from the command line, which is how it is checked.
 ## Play it
 
 Anyone can play it from a web address, with nothing to install: the page is static files. The game's pictures
-(`assets/`, this folder's own copy of the recreated pictures), its dialogue (`data/dialogue.md`) and a manifest are copied under the site's `data/`, and the
-page fetches them when it opens. The music is made by the game itself (`src/gfx/sound.ts`), so it needs no files, and it
+(the `assets/` folder, which holds MECC's 1985 artwork and is therefore not in this repository), its dialogue
+(`data/dialogue.md`) and a manifest are copied under the site's `data/`, and the
+page fetches them when it opens. Without the pictures the page asks the player for their own folder, and the game
+plays the same either way. The music is made by the game itself (`src/gfx/sound.ts`), so it needs no files, and it
 starts after the first key press, as browsers require.
 
     npm install                  # TypeScript (and its Node types); `npx tsc` alone also works

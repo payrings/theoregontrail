@@ -34,12 +34,17 @@ for f in (HERE / "dist").rglob("*.js"):
     (out / "dist" / rel).parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(f, out / "dist" / rel)
 names = []
-for f in sorted(assets.rglob("*")):
-    if f.is_file() and f.name != ".DS_Store":
-        rel = "assets/" + f.relative_to(assets).as_posix()
-        (out / "data" / rel).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(f, out / "data" / rel)
-        names.append(rel)
+(out / "data").mkdir(parents=True, exist_ok=True)
+if assets.is_dir():
+    for f in sorted(assets.rglob("*")):
+        if f.is_file() and f.name != ".DS_Store":
+            rel = "assets/" + f.relative_to(assets).as_posix()
+            (out / "data" / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(f, out / "data" / rel)
+            names.append(rel)
+else:
+    print(f"note: no pictures found at {assets}; the page will ask the player "
+          "for the folder that holds font/, images/ and screens/", file=sys.stderr)
 if dialogue.is_file():
     shutil.copy(dialogue, out / "data" / "dialogue.md")
     names.append("dialogue.md")

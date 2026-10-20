@@ -11,7 +11,7 @@ By Giacomo Paganelli - rift-demote-fence@duck.com
 4. **There's a secret menu for teachers.** Press Control-A at the title menu and you get a management screen where a teacher can reset the top ten (option 3) and erase embarrassing gravestones written by naughty kids. Nothing on the menu tells you it's there, and you can't remove a single name, only the whole list.
 5. **You can shoot a bison, but you can't carry it home.** A bison weighs 1,700 to 2,000 pounds, but the game lets you bring back at most 100 pounds per hunt. The lead designer wanted to keep the wagon's load believable and make players think twice about wasting meat.
 6. **The game only remembers two gravestones.** Ten would have interrupted play too often, so there's one grave per disk side, and a new one replaces the old.
-7. **Children got good at hunting fast.** Adults found the hunting game too hard, and the lead designer kept it that way on purpose. In testing, many children became keen hunters after only three or four tries.
+7. **Children got good at hunting fast.** Adults found the hunting game too hard, and the lead designer kept it that way on purpose. Durint the testing, many children became keen hunters after only three or four tries.
 
 ## Odd corners and bugs
 8. **A broken arm does nothing.** The game numbers injuries and illnesses, and the broken arm is number 0, which is also the number for "healthy". So the game thinks the person is fine even with a broken arm!
