@@ -4,7 +4,7 @@ by Giacomo Paganelli - rift-demote-fence@duck.com
 
 Published 12 October 2026
 
-**Abstract:** This paper documents the game logic of The Oregon Trail, the 1985 Apple II release by MECC, in enough detail to rebuild it in another language. Drawing on the original Applesoft BASIC listings, part of the machine code, the game's data files, the lead designer's book and a published study of the game, it gives every state variable, formula, probability and data table, each with the program line that defines it: set-up, supplies, travel, health, weather, random events, rivers, hunting, rafting and scoring. The movement and graphics code of the hunting game and the machine-code routines of the raft game were not decoded (section 1.4). It then asks what a replica needs in order to pass through exactly the same states as the original. The answer is Applesoft's own arithmetic: the ROM's routines, run in an emulator or transcribed instruction by instruction. An experiment over all 65,536 seeds, from one start and played by a fixed program, compares this arithmetic with simpler ones. A Python transcription of the ROM routines matched every game. Host 64-bit arithmetic rounded to Applesoft's precision ended every game the same way, with the same score, though one game in ten differed in a last digit along the way; without the rounding, 55% of the games took a different course and 1.6% ended differently. A Python rebuild using the ROM's arithmetic agreed with the original, running in an emulator, on every logged value of every day of two games.
+**Abstract:** This paper documents the game logic of The Oregon Trail, the 1985 Apple II release by MECC, in enough detail to rebuild it in another language. Drawing on the original Applesoft BASIC listings, part of the machine code, the game's data files, the lead designer's book and a published study of the game, it gives every state variable, formula, probability and data table, each with the program line that defines it: set-up, supplies, travel, health, weather, random events, rivers, hunting, rafting and scoring. The movement and graphics code of the hunting game and the machine-code routines of the raft game were not decoded (section 1.4). It also sets the designer's account of the mechanics against the code and lists where they differ. It then asks what a replica needs in order to pass through exactly the same states as the original. The answer is Applesoft's own arithmetic: the ROM's routines, run in an emulator or transcribed instruction by instruction. An experiment over all 65,536 seeds, from one start and played by a fixed program, compares this arithmetic with simpler ones. A Python transcription of the ROM routines matched every game. Host 64-bit arithmetic rounded to Applesoft's precision ended every game the same way, with the same score, though one game in ten differed in a last digit along the way; without the rounding, 55% of the games took a different course and 1.6% ended differently. A Python rebuild using the ROM's arithmetic agreed with the original, running in an emulator, on every logged value of every day of two games.
 
 **Keywords:** The Oregon Trail; MECC; Apple II; Applesoft BASIC; 6502; game preservation; software archaeology; algorithm analysis; emulation; floating-point arithmetic; educational software
 
@@ -26,7 +26,7 @@ The objective of this paper is to document the game's algorithms exactly enough 
 
 The primary source is the Applesoft BASIC source of release 1.4 (the management screen reads "Version 1.4", last update 87/02/24), read as text listings. Data that the programs load at run time, namely the landmark, segment, river, climate and illness tables, were decoded from the file `VAR.BIN`. The dialogue, high-score and tombstone files were read directly from disk.
 
-Secondary sources are Bouchard's (2016) book on the game's design and a technical study of a long-wait exploit (moralrecordings, 2025). Where the book describes a design intention that the shipped code does not follow, this paper reports the code and notes the difference. Details of the Applesoft interpreter come from the published commented disassembly of its ROM (“Applesoft BASIC,” n.d.; McFadden, n.d.; Sander-Cederlof, n.d.).
+Secondary sources are Bouchard's (2016) book on the game's design and a technical study of a long-wait exploit (moralrecordings, 2025). Where the book describes a design intention that the shipped code does not follow, this paper reports the code and notes the difference. The comparison was made in both directions: each statement the paper attributes to the book was looked up in the book, and each statement the book makes about how the 1985 game works was set against the listings (section 1.5). Details of the Applesoft interpreter come from the published commented disassembly of its ROM (“Applesoft BASIC,” n.d.; McFadden, n.d.; Sander-Cederlof, n.d.).
 
 The game's own 6502 machine code (the `&` command package and the hunting routine) was disassembled and analysed with the assistance of an AI model, Anthropic Claude Opus 5.5 (High). The findings in section 11.1 and Appendix E come from that analysis. They are a static reading of the code and were not verified by execution.
 
@@ -63,7 +63,7 @@ The designer's book (Bouchard, 2016) explains why each mechanic exists. These re
 | Tombstones                        | Ten saved gravestones would have interrupted play too often. Two were approved, one on each side of the disk, with the newest replacing the old one.                                                                                                                                                                                                                                                                                             |
 | Scoring                           | No score is shown unless the party reaches Oregon, so that a new player concentrates on survival. Survivors count most, then their health, then goods and cash. A multiplier for the harder professions allowed a single high-score list, which also suited the limited disk space.                                                                                                                                                              |
 
-Bouchard (2016) also states the health model as designed. The shipped code differs from his description in four places, and a replica of the game should follow the code.
+Bouchard (2016) also describes the mechanics as designed. The shipped code differs from his description in the places listed in Tables 2 and 2a, and a replica of the game should follow the code. The first table covers the health model; the second covers everything else. Each row gives the section that holds the code's rule.
 
 **Table 2.** Differences between the book's description of the health model and the shipped code.
 
@@ -73,12 +73,43 @@ Bouchard (2016) also states the health model as designed. The shipped code diffe
 | Penalty with no food               | add 6                                   | add 8 (section 5.1)                                |
 | Clothing needed to avoid a penalty | 2 sets a person in cold, 4 in very cold | 3 in cold, 5 in very cold, 1 in cool (section 5.1) |
 | Climate zones                      | six, the last based on Portland         | five; the Portland row is never read (section 6.1) |
+| Temperature penalty in cold weather | cold: 0 with 2 or more sets of clothing a person, 2 with none; very cold: 0 with 4 sets, 4 with none | the clothing term `ZC` as above, and in addition `ZT` adds 1 in cold and 2 in very cold whatever the party wears (section 5.1) |
+| Rain and snow                      | not part of the health list             | `ZP` adds 1 in rain or snow and 2 in heavy rain or snow (section 5.1) |
+| Memory of the illness              | the program does not remember which disease a person has | `H1(n)` holds the disease number for the whole illness; it is never displayed (section 5.3) |
+| Injury and disease                 | tracked separately                      | one slot, `H1`/`H2`; a broken arm is number 0, which means healthy, so it has no effect (section 13) |
+
+**Table 2a.** Differences between the book's description of the other mechanics and the shipped code.
+
+| Item | Book's description | Shipped code |
+| --- | --- | --- |
+| Events in one day | no more than one | the loop goes on after an event unless `B` is above zero, so several can fire on one day (section 8.1) |
+| Lose trail or wrong trail | 2% and 1% | 2% in all, half each (section 8.2) |
+| Fire, lost member, stray ox | 2%, 1% and 1% | 1% in all, in equal thirds (section 8.2) |
+| Abandoned wagon, thief | 2% and 2% | 2% in all, half each (section 8.2) |
+| Ox injured or dead, person injured | 2% each on the prairie, 3.5% each in the mountains; no wagon part in the list | one event of 4%, or 7% in zones 3 and 4. A third breaks a wagon part, and the rest is split between ox and person: each 1.34% (2.35% in zones 3 and 4), the part 1.32% (2.31%) (section 8.2) |
+| Snake bite | 0.7% | 0.7%, but only in warm weather or hotter (section 8.2) |
+| Fog and hail | fog after Fort Hall, hail before it | the switch is at landmark 12, the Snake River crossing (section 8.2) |
+| Random events listed | fifteen random events | the code also has snow bound, certain once snow exceeds 30, and the gravesite, which are not random draws (section 8.2) |
+| Mountain travel | half speed in the mountains; rough and impassable trail, 2.5% each, only there | the speed base falls from 20 to 12 miles a day at Fort Laramie, a factor of 0.6 not 0.5, and is set per segment; rough and impassable trail begin in zone 3, at Fort Hall (sections 4.4 and 8.2) |
+| Snow when cold | 8 inches (heavy) and 2 inches (light) | 6.4 and 1.6 (section 6.3) |
+| Snow melting | 3% a day only in very cold, cold or cool weather without heavy rain | 3% a day in every kind of weather, and 5 units also melt in warm or hotter weather or when very rainy (section 6.4) |
+| Snow and speed | up to 100% slower | `1 - AS / 40`, so zero at 40; the snow-bound event starts above 30 (sections 4.5 and 6.4) |
+| Ferry wait | 1 to 6 days | 2 to 6 days (section 9.3) |
+| Goods lost in a ford | "0% to 40%" at 4 feet, up to 80% at 8 feet | each good is lost with chance depth/10, and then `INT (RND * X + 1)` of it, so up to all of it; the mean is the same, the spread wider (section 9.3) |
+| Raft hits | hitting the bank costs even more than hitting a rock | per hit the rock costs more (Table 25); the book may mean how often the bank is hit |
+| Hunting terrain | four to six objects, one to three kinds a zone, six kinds | 4 to 7, one or two kinds, five kinds (section 11.1) |
+| Distance and segments | 18 landmarks, 20 segments, 16 on the main route | 18 landmarks and 19 segments in Table 8, 16 on the main route, 15 if Fort Walla Walla is bypassed; the book's twentieth is the raft trip, which is the program `FLOAT` (section 4.1) |
+| Disk flip | once, "about halfway" | once, at Fort Laramie, 640 miles from the start, about 34% of the 1,871-mile route by the Barlow Road (section 2.1) |
+| Default top ten | "Mary Barlett" | "Mary Bartlett" in the program's DATA lines (section 10.4) |
+| Lowest score | anyone who reaches Oregon beats Elijah White (250) | the lowest possible score is 250, which ties him and is not inserted (section 10.4) |
+
+The reverse check set 119 statements of the book about the game against the paper and the listings. Eighty-four agree with the code, among them all nineteen segment mileages, the eighteen landmarks, the ford, float, ferry and guide thresholds, the prices at Matt's store, the starting money for each profession, the rations and pace terms, the range of points a survivor is worth, the management-menu numbers and the tombstone rules. Seven agree in part, eighteen differ (Tables 2 and 2a), nine are consistent with the code but cannot be proved by it, and one cannot be tested. The check covers what can be tested from the listings. It cannot test graphics, wording, timings, the design history or anything about the earlier versions. The book was read line by line from the framework chapter to the end of Chapter 19, and Appendix 2 in full; the earlier chapters and Appendices 1, 3 and 4 were searched for rules and numbers but not read in full, so a rule stated only there could have been missed.
 
 ## 2. Architecture and data flow
 
 ### 2.1 Programs and libraries
 
-The game is six chained BASIC programs, each loaded when needed, plus fifteen small BASIC libraries; together they would not fit in memory at once. They are spread over two disk sides because side 1 is full. The player flips the disk on reaching Fort Laramie (line 1016); `OREGON TRAIL` stays in memory and carries on from side 2. Each side also holds a short start-up program, `HELLO`. Side 1's loads the `&` machine-language package (Appendix E). Side 2's tells the player that this is side 2 and restarts the machine, so the game cannot be started from the wrong side. Side 2 also holds a second `MENU`, run when the game returns to the menu with side 2 in the drive, which asks for side 1 and runs the title menu, and a test program for the rafting game that the game itself never runs.
+The game is six chained BASIC programs, each loaded when needed, plus fifteen small BASIC libraries; together they would not fit in memory at once. They are spread over two disk sides because side 1 is full. The player flips the disk on reaching Fort Laramie (line 1016), 640 miles from the start, about 34% of the 1,871-mile route by the Barlow Road, so the flip comes earlier than the book's "about halfway"; `OREGON TRAIL` stays in memory and carries on from side 2. Each side also holds a short start-up program, `HELLO`. Side 1's loads the `&` machine-language package (Appendix E). Side 2's tells the player that this is side 2 and restarts the machine, so the game cannot be started from the wrong side. Side 2 also holds a second `MENU`, run when the game returns to the menu with side 2 in the drive, which asks for side 1 and runs the title menu, and a test program for the rafting game that the game itself never runs.
 
 **Table 3.** Programs and libraries, with disk side and role.
 
@@ -151,7 +182,7 @@ Several rules of the Applesoft language differ from those of modern languages. A
 
 ### 3.1 Main menu and the random seed (`MENU`, lines 1000 to 1020)
 
-The menu offers four choices: travel the trail, learn about the trail, see the top ten, and turn sound on or off. Control-A opens the management program, a hidden feature meant to be used by teachers. Immediately after the player's keypress, line 1015 reseeds the random generator:
+The menu offers four choices: travel the trail, learn about the trail, see the top ten, and turn sound on or off. Control-A opens the management program, a hidden feature meant to be used by teachers. Its menu line 1015 (`ON Z GOSUB 900,900,700,200,31000`) dispatches by number; option 3 resets the top ten to the original list and option 4 blanks the tombstones on both disk sides. A single name cannot be removed, as the book says. Immediately after the player's keypress, line 1015 reseeds the random generator:
 
 `Z = RND ( - ( PEEK (78) + PEEK (79) * 256))`
 
@@ -300,7 +331,7 @@ The shortest route, by Green River and straight to The Dalles, is 1,771 miles to
 
 `FC = NP * (4 - R): BS = MD * V * (P + 1) / 2: OP = I(3) / NP: F0 = 2 * (R - 1)`
 
-Base speed `BS` is the segment's speed base (20 miles a day before Fort Laramie, 12 after), scaled down if there are fewer than four oxen, and multiplied by 1, 1.5 or 2 for steady, strenuous or grueling pace. This routine also sets daily food use `FC`, clothing per person `OP` and the ration penalty `F0`. It runs at the start of a segment and after a change of pace or rations, a death, a trade, a theft or an ox injury. It does not run daily, so clothing lost in a fire or a river does not change `OP` until the next of those occasions.
+Base speed `BS` is the segment's speed base (20 miles a day before Fort Laramie, 12 after: a factor of 0.6, set segment by segment rather than by terrain; the book says half), scaled down if there are fewer than four oxen, and multiplied by 1, 1.5 or 2 for steady, strenuous or grueling pace. This routine also sets daily food use `FC`, clothing per person `OP` and the ration penalty `F0`. It runs at the start of a segment and after a change of pace or rations, a death, a trade, a theft or an ox injury. It does not run daily, so clothing lost in a fire or a river does not change `OP` until the next of those occasions.
 
 ### 4.5 The daily cycle (lines 3100 to 3499)
 
@@ -430,6 +461,8 @@ Bouchard (2016) describes six zones based on Kansas City, North Platte, Casper, 
 
 Example: row 0 in January has codes 59 and 43. The minimum temperature is 9 degrees Fahrenheit, the mean 29 degrees, and the rain chance 0.039.
 
+The rain code is 30 plus 10 times the month's average rainfall in inches. Row 0 in June, 78, is the 4.8 inches of Kansas City; row 5 in January, 87, is the 5.7 inches of Portland, and its July code, 35, is 0.5 inches. These match the values the book gives for those towns. Because the daily chance is 0.003 times (code minus 30), it is 0.03 times the inches, and the average precipitation a day-by-day run produces is about 0.34 times the table's inches for the month (computed from the chances in Table 14, not measured in play).
+
 ### 6.3 Daily generation (lines 3205 to 3206)
 
 `IF RND (C1) < P5 THEN TM = QT + INT ( RND (C1) * 41): PP = ( RND (C1) < QP): W = INT ((TM + 10) / 20): TM = W`
@@ -456,7 +489,7 @@ With probability one half the weather changes: a new temperature between the mon
 
 Accumulated rain loses 10% a day and snow 3%. When there is snow and the weather is warm or hotter, or very rainy, 5 units of snow melt and add 0.5 to the rain.
 
-These two values feed the rest of the game. Snow slows travel and, above 30, makes the party snowbound. Rain raises river depth, width and swiftness. Rain below 0.1 enables the water and grass events. The travel screen is drawn white when snow is 1 or more, in the dry colour when rain is 0.2 or less, and green otherwise (line 310).
+These two values feed the rest of the game. Snow slows travel and, above 30, makes the party snowbound. Rain raises river depth, width and swiftness. Rain below 0.1 enables the water and grass events. The travel screen is drawn white when snow is 1 or more, in the dry colour when rain is 0.2 or less, and green otherwise (line 310). Line 310 is reached through `GOSUB 300`, so the colour is refreshed only at the start of a segment, after "look around" and after some events, not every day, as the book says. Drought messages (rain below 0.1) are shown for one day without stopping the journey: line 11400 sets the flag `F9` and line 3170 shows and clears it.
 
 ## 7. Resources
 
@@ -485,7 +518,7 @@ With no oxen, or with a broken part and no spare, the variable `B` is set and th
 
 Each travelling day the program tests fifteen events in order, 0 to 14, drawing one random number for each. An event fires when the draw is below its chance `RE(n)`. The loop is skipped entirely on a stopped day (resting, delayed, waiting).
 
-The loop does not stop after the first event. It ends early only when `B` is above zero, which happens when the player presses Return during an event message or when the party cannot continue. Otherwise the remaining events are still tested, so two events can occur on one day. The statement that ends the loop early, `L8 = 20`, comes after the `THEN` of the test on `B` at the end of line 3180, so it is skipped whenever `B` is zero (section 2.5).
+The loop does not stop after the first event. It ends early only when `B` is above zero, which happens when the player presses Return during an event message or when the party cannot continue. Otherwise the remaining events are still tested, so two events can occur on one day. The book says the opposite: "no more than one random event occurs in a single day" (Bouchard, 2016). The code does not enforce that. The statement that ends the loop early, `L8 = 20`, comes after the `THEN` of the test on `B` at the end of line 3180, so it is skipped whenever `B` is zero (section 2.5).
 
 ### 8.2 The fifteen events
 
@@ -508,6 +541,8 @@ The loop does not stop after the first event. It ends early only when `B` is abo
 | 12 | Fire, lost member, or stray ox | 0.01 | equal thirds: fire in the wagon; a member is lost, lose 1 to 5 days; an ox wanders off, lose 1 to 3 days | 11200 |
 | 13 | Abandoned wagon or thief | 0.02 | half each | 11300 |
 | 14 | Water and grass | 0.5 when rain `AR` is below 0.1 | 20%: bad water, `HR = 20`. Of the rest, half: very little water, `HR = 10`; half: inadequate grass, no effect | 11400 |
+
+The effective chance of each outcome of the combined events is the event's chance times its share. Event 8 gives, outside zones 3 and 4 and in them: a broken wagon part 1.32% and 2.31%, an injured or dead ox 1.34% and 2.35%, an injured member 1.34% and 2.35%. Events 9, 12 and 13 give 1% each for lose trail and wrong trail, 0.33% each for fire, lost member and stray ox, and 1% each for abandoned wagon and thief. Tables 2 and 2a set these against the book's rates. Snow bound and the gravesite are certainties under a condition, not draws, and the book's list of random events omits both.
 
 Chances 1, 2, 7, 9, 12 and 13 are fixed at start-up (line 29001). Chances 8, 10 and 11 are set when a segment begins (line 3060), so they do not change mid-segment. The rest are recomputed daily (line 3160).
 
@@ -657,6 +692,8 @@ The original list, from the management program's DATA lines (20000 to 20010), is
 | Charles Hopper  | 396    | Greenhorn   |
 | Elijah White    | 250    | Greenhorn   |
 
+The book spells the seventh name "Mary Barlett"; the program's DATA lines have "Mary Bartlett". The book also says that anyone who reaches Oregon beats Elijah White. The lowest score possible is exactly 250: one survivor in very poor health is worth 200, the wagon 50, and the multiplier for a banker is 1, with no goods and no cash. That ties Elijah White, and only a score above the tenth entry is inserted, so it does not enter the list. A party holding one ox scores 254 and does.
+
 ## 11. Mini-games
 
 ### 11.1 Hunting (`HUNT.LIB`)
@@ -692,12 +729,14 @@ The routine itself is about 5 kilobytes of 6502 machine code, held outside the f
 
 | Type | Where | Weight shot, pounds | Probable species |
 | --- | --- | --- | --- |
-| 0 | from Chimney Rock until Fort Boise is reached | 100 to 140 | not identified |
-| 1 | from South Pass on | 200 to 400 | elk or bear |
+| 0 | from Chimney Rock until Fort Boise is reached | 100 to 140 | pronghorn (fits the book's pronghorn of the high plains near the Rockies) |
+| 1 | from South Pass on | 200 to 400 | bear, or elk (the book places a bear in the desert) |
 | 2 | until South Pass is reached | 1,700 to 2,000 | bison |
 | 3 | everywhere | 120 to 150 | deer |
 | 4 | everywhere | 2 to 10 | rabbit |
 | 5 | everywhere | 3 to 7 | squirrel |
+
+The identifications of types 0 and 1 are inferences from weight, region and the book's text (Bouchard, 2016), not from the graphics, and type 1 is the weaker. The book wonders whether the weighting by how common each animal is was ever put into the game (Bouchard, 2016). It was not: the draw is even, so a rabbit is as likely as a bison where both are allowed.
 
 **Session.** A hunt lasts 2,500 passes of the routine's main loop. At most two animals are on screen at once. Once four animals have been shot, no more appear. The space bar fires and Return starts or stops walking.
 
@@ -955,6 +994,8 @@ That `FS` value is not an exact multiple of 0.8. A rounding model of the additio
 ## 14. Conclusion
 
 The 1985 Oregon Trail is a daily simulation driven by a small set of formulas: one health value with seven penalties, a five-zone climate model, fifteen random events tested in order, and depth-based river risks. All of them are fully recoverable from the BASIC source and the saved variable table, and this paper gives each with its line number.
+
+Where the designer's book and the code disagree, the code is what ran. Tables 2 and 2a list the differences found when 119 statements of the book were set against the listings: the rates of several events, the one-event-a-day rule, mountain speed, snow, the ferry wait, the loss of goods in a ford and some health terms. A replica that follows the book instead of the code will play a different game.
 
 Replicating the rules is therefore straightforward. Replicating the game's exact behaviour is harder. Every outcome depends on the interpreter's random number generator and on arithmetic whose rounding rules, constant conversion and evaluation order live in the Applesoft ROM. Imitating that arithmetic with masked 64-bit floats (IEEE, 1985), the `decimal` module or a class that rounds exact results does not match the ROM (section 12.4); the experiment of section 12.7 shows it for plain and rounded 64-bit floats.
 

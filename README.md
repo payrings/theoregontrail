@@ -32,7 +32,7 @@ needs to cite.
 
 | Files           | Contents                                                                                                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`20funnyfacts.md`](20funnyfacts.md) | 20 Oregon Trail curiosities I discovered reading R. Philip Bouchard book on the Oregon Trail and while writing the paper and running my experiments!                                                                                                                                                   |
+| [`funnyfacts.md`](funnyfacts.md) | 30 Oregon Trail curiosities I discovered reading R. Philip Bouchard book on the Oregon Trail and while writing the paper and running my experiments!                                                                                                                                                   |
 
 ---
 
@@ -81,7 +81,7 @@ How my work went, month by month.
 - **18 October 2026** — Published a Typescript version of the game using Claude Sonnet 5.5, 
   which confirm the paper's thesis and accuracy, and runs on a web browser.
 - **19 October 2026** — Updated the README and reorganised the repo.
-- **20 October 2026** — Some minor corrections to the paper and the README in the Python game.
+- **20 October 2026** — Some corrections to the paper, the "funny facts", and the README in the Python game.
 
 ---
 ## What is not in this repository
