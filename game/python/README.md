@@ -1,6 +1,6 @@
 # Notes on the Python rebuild
 
-The paper in `../../paper/` is the research. This folder is a Python translation of the
+This folder is a Python translation of the
 1985 Apple II game, written to test whether the paper is enough to rebuild it. This
 file records what the translation does and does not reproduce, and what the
 comparison between the two arithmetic backends showed.
@@ -209,8 +209,7 @@ line of its animation and holds the picture for a second between its stages.
 **The raft.** The river, raft, rock and sign pictures (`float_raft.png`, `float_rock.png`,
 `float_sign.png`, with the river itself from `b_river`) were copied from a recording; with the
 instruction picture (`l16`) they are in the assets, not in the program. A pass of the loop takes
-about 0.45 s on the original (the game here runs it twice as fast, `raft_scene.PASS_SECONDS`), measured from the rocks' steps (the paper's estimate of a few thousand
-passes a second is for the machine code alone and does not describe the game). The signs enter
+about 0.45 s on the original (the game here runs it twice as fast, `raft_scene.PASS_SECONDS`), measured from the rocks' steps. The signs enter
 at (114, 168) and move six dots right and three up a pass; the raft is at (84 + 8 hp + 3, 5 hp - 6)
 and a rock at (RX + 7, RY). The arrival point is `& IMAGE,6` (FLOAT 1146, 1149): it enters at (-8, 218) on pass 175 and moves six dots right and three up a pass, crossing the landing bank around passes 205-225. Its picture, `float_landing.png`, is two wavy wagon ruts redrawn from a screenshot of the original, not copied pixel for pixel. Not verified: the drawing order of the raft and a rock that overlap,
 the sign's first pass (the recording shows it a few passes after the listing's 60, 120 and 170,

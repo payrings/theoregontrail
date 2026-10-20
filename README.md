@@ -25,14 +25,14 @@ needs to cite.
 
 | Folder                                 | Contents                                                                                                                                                                       |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`game/python/`](game/python/)         | Everything about the Python rebuild of the game: the `oregon` package, its tests and tools, the experiment script with a small sample of its results.                          |
+| [`game/python/`](game/python/)         | The first implementation of the game, in Python: the `oregon` package, its tests and tools, the experiment script with a small sample of its results.                          |
 | [`game/typescript/`](game/typescript/) | The second implementation, in TypeScript: the whole game for a browser, with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild. The game can be played directly at https://payrings.github.io/theoregontrail/ and works on mobile phones too.|
 
 ## Funny facts
 
 | Files           | Contents                                                                                                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`20funnyfacts.md`](20funnyfacts.md) | 20 Oregon Trail curiosities I discovered while writing the paper and running the experiments!                                                                                                                                                   |
+| [`20funnyfacts.md`](20funnyfacts.md) | 20 Oregon Trail curiosities I discovered reading R. Philip Bouchard book on the Oregon Trail and while writing the paper and running my experiments!                                                                                                                                                   |
 
 ---
 
@@ -57,30 +57,31 @@ How my work went, month by month.
   variables in depth, with the aid of the lead designer's book.
 - **February 2026** — Second draft version of the paper, mostly corrected by Google
   Gemini 3.1 Pro, with all the findings gained so far.
-- **October 2026** — First official version of the paper, reviewed and corrected by
+- **4 October 2026** — First official version of the paper, reviewed and corrected by
   Claude Opus 5.5 (High), which includes an analysis of the assembly code by Claude.
-- **October 2026** — First attempt to create a Python-based version of the game, based
+- **4 October 2026** — First attempt to create a Python-based version of the game, based
   on the paper and the related artefacts, using Space Bunny Alpha.
-- **October 2026** — Independent review of the paper and the Python rebuild against the
+- **5 October 2026** — Independent review of the paper and the Python rebuild against the
   BASIC listings and the machine code, with corrections to both, by Claude Opus 5.5 (High).
-- **October 2026** — Second full review of the code, the findings and the paper, with
+- **6 October 2026** — Second full review of the code, the findings and the paper, with
   corrections to all three, by Claude Opus 5.5 (High); the experiment over all 65,536
   seeds (§12.7) was run on the rebuild as reviewed.
-- **October 2026** — A Python transcription of the ROM's arithmetic, tested against the
+- **10 October 2026** — A Python transcription of the ROM's arithmetic, tested against the
   ROM, and a measurement of how close a port with simpler arithmetic comes to the
   ROM's (§12.6, §12.8), by Claude Opus 5.5 (High).
-- **October 2026** — Day-by-day comparison of the rebuild with the original game running
+- **11 October 2026** — Day-by-day comparison of the rebuild with the original game running
   in the LinApple emulator, for two games, from copies of the disk images changed to play
   themselves and print each day's values; two departures of the rebuild found and
   corrected, and the experiment over all 65,536 seeds run again (§12.6, Appendix G),
   with Claude Opus 5.5 (High).
-- **October 2026** — The rebuild's first, approximate Python model of the arithmetic
+- **12 October 2026** — The rebuild's first, approximate Python model of the arithmetic
   removed from the code and the paper; the experiment reports the ROM against the
   transcription, rounded floats and plain floats (§12.7, §12.8), with Claude Opus 5.5
   (High).
-- **October 2026** — Published a Typescript version of the game using Claude Sonnet 5.5, 
+- **18 October 2026** — Published a Typescript version of the game using Claude Sonnet 5.5, 
   which confirm the paper's thesis and accuracy, and runs on a web browser.
-- October 2026 — Updated the README and reorganised the repo.
+- **19 October 2026** — Updated the README and reorganised the repo.
+- **20 October 2026** — Some minor corrections to the paper and the README in the Python game.
 
 ---
 ## What is not in this repository
