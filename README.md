@@ -91,6 +91,6 @@ How my work went, month by month.
 - The Apple IIe ROM image
 - The BASIC listings
 - The dialogues
-- The artworks
+- MECC's original artwork
 - The tunes
 - The machine code listings

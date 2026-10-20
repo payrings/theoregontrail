@@ -154,9 +154,10 @@ The Apple IIe ROM image is Apple's and is not distributed. Place it at
 `&` package: a text window, a cursor, proportional letters (advance = width + 2
 dots), nine dots to a line, word wrap (a word moves to the next line when
 `cx + width > window width - 1`), boxes and pictures. Pictures are PNG files in an
-assets folder; the font is `font/font.png` with `font/font.json`. The folder is not in
-this repository: it holds MECC's 1985 artwork, taken from the original disks. Without
-it the graphical mode falls back to the text one, and the game plays the same.
+assets folder; the font is `font/font.png` with `font/font.json`. The folder is
+`game/python/assets/` and is in this repository: the pictures drawn for this rebuild.
+Any folder in the same layout works — `--assets DIR` points at another one. Without
+any pictures the graphical mode falls back to the text one, and the game plays the same.
 
 Screens with their own layout (`graphics/screens.py`), and how each was checked
 against screenshots of the original:
