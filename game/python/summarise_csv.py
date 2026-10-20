@@ -6,10 +6,12 @@
 
 Each folder holds the ``games.csv`` and ``pairs.csv`` that ``compare_csv.py``
 wrote for the ROM against one other backend. Seeds are counted once per
-distinct game, as in paper section 12.7: two seeds are one game when every
-recorded value of both games and the whole ``pairs.csv`` row (apart from the
-seed) are the same. The figures are printed for the distinct games and, in
-brackets, for all the seeds in the folder.
+distinct game: two seeds are one game when every recorded value of both games
+and the whole ``pairs.csv`` row (apart from the seed) are the same.
+The paper's tables in section 12.7 count 62,883 seeds (all seeds except the
+2,653 first-call doubles), while this script's headline figures count distinct
+games. The figures are printed for the distinct games and, in brackets, for
+all the seeds in the folder.
 """
 
 from __future__ import annotations

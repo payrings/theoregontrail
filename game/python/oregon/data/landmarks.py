@@ -80,7 +80,7 @@ def short_name(n: int) -> str:
     return name[4:] if name[:4].lower() == "the " else name
 
 
-#: ``L%(NM - 1, 0 to 1)`` (paper Table E5): for the landmark the party is heading for, the
+#: ``L%(NM - 1, 0 to 1)`` (paper Table D5): for the landmark the party is heading for, the
 #: number of its picture in the travel scene and the offset that places it. Only the
 #: optional graphical mode reads it.
 SCENERY = [(8, 78), (8, 78), (5, 50), (6, 36), (7, 50), (6, 36), (7, 56), (8, 56), (14, 78),

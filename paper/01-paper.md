@@ -42,7 +42,7 @@ The machine-language routines reached through the `&` command were disassembled 
 
 ### 1.5 Design intentions behind the mechanics
 
-The designer's book (Bouchard, 2016) explains why each mechanic exists. These reasons help a those who want to replicate the game to determine which details matter. All statements in this subsection are the book's.
+The designer's book (Bouchard, 2016) explains why each mechanic exists. These reasons help those who want to replicate the game to determine which details matter. All statements in this subsection are the book's.
 
 **Table 1.** Design reasoning behind each game mechanic, as given in the designer's book.
 
@@ -681,7 +681,7 @@ The routine itself is about 5 kilobytes of 6502 machine code, held outside the f
 | `LM > 3 AND LM < 13` | if true, animal type 0 can appear |
 | `LM > 6` | if true, animal type 1 can appear |
 | `LM < 7` | if true, animal type 2 can appear |
-| `1` | if non-zero, halves the threshold for an animal to appear, from 4 to 2. The test compares the threshold with only the low byte of a draw from 0 to 999 (the comparison at E161 tests the high byte first and so never uses it), which makes the chance per attempt 16 in 1,000, or 8 in 1,000 when halved; the game always passes 1 |
+| `1` | if non-zero, halves the threshold for an animal to appear, from 4 to 2. The test compares the threshold with only the low byte of a draw from 0 to 999 (the comparison at E142 to E146 tests the high byte first and so never uses it), which makes the chance per attempt 16 in 1,000, or 8 in 1,000 when halved; the game always passes 1 |
 | `ZO` | climate zone; selects the terrain objects |
 | `L` (returned) | total live weight of the animals shot |
 | `Z` (returned) | bullets left |
@@ -844,7 +844,7 @@ The converter itself leaves .8, .2 and .1 as `80 4C CC CC CC`, `7E 4C CC CC CC` 
 
 Two features of that implementation matter for fidelity. The conversion of numbers to and from text (`STR$`, `PRINT` and the decimal constants in the program text) goes through the ROM's own routines, so the digits the game prints are the interpreter's. The extension byte is carried as the interpreter carries it: the left operand of an operator is rounded by its own extension byte, the right operand keeps its own, and the result of an expression is rounded when it is stored in a variable. The random draws made by the river-crossing animation (Appendix F) are made, because every later draw depends on them. The decisive test is a day-by-day comparison of state, including the seed bytes, against the original game running in an emulator. Two games from the preset start of 12.7, seeds 1,234 and 10,190 played by the rebuild's fixed player, were compared in this way (Appendix G). The first comparison exposed two departures of the rebuild from the listing: the event chances of line 3160 were not recomputed on a stopped day (section 8.3), and `PF` was copied to `I(8)` at the end of every day instead of only when the daily loop ends (section 7). With both corrected, the rebuild agreed with the original on every logged value of every day of both games, including the seed bytes: 158 days for seed 1,234, in which the party dies after passing Fort Walla Walla, and 196 days for seed 10,190, in which it reaches Oregon by the Barlow Road. Two games are a check, not a proof: they cover one start and one player, with no hunting, trading or rafting.
 
-**A transcription.** The rebuild also contains the third approach of 12.5 (`--num exact`): the routines listed there, written in Python from the disassembly, on the same working cells and with the same carries, and called with the same conventions for the extension byte. It reads no ROM byte. It was compared with the emulated ROM on random operands, with a quarter of their bytes set to zero and half of them carrying an extension byte, as a right operand can. On 20,000 pairs of operands, the sum, the difference, the product, the quotient, the comparison, `INT` and `ROUND.FAC` agreed in every byte, and so did 3,528 decimal literals, including every constant written as a decimal literal in the rebuild's code. The multiply's quirk (Table 27) is reproduced: for `88 4D 00 00 00` times `8F DD 00 00 A3` both give `97 B0 F9 00 41`, where the correctly rounded product ends in `83`. The whole game was then played with each arithmetic for all 65,536 seeds, from the start used in 12.7: every game was identical to the ROM's on every day of the trace and in every recorded result (Table 29). The conversion of numbers to text, `FOUT` (ED34), is transcribed as well, and gave the same text as the ROM for 20,000 values, with and without an extension byte. The script `tools/exact_check.py` in the rebuild repeats these comparisons.
+**A transcription.** The rebuild also contains the third approach of 12.5 (`--num exact`): the routines listed there, written in Python from the disassembly, on the same working cells and with the same carries, and called with the same conventions for the extension byte. It reads no ROM byte. It was compared with the emulated ROM on random operands, with a quarter of their bytes set to zero and half of them carrying an extension byte, as a right operand can. On 20,000 pairs of operands, the sum, the difference, the product, the quotient, the comparison, `INT` and `ROUND.FAC` agreed in every byte, and so did 3,528 decimal literals, including every constant written as a decimal literal in the rebuild's code. The multiply's quirk (Table 27) is reproduced: for `88 4D 00 00 00` times `8F DD 00 00 A3` both give `97 B0 F9 00 41`, where the correctly rounded product ends in `83` (the left operand is in stored form with an implicit leading 1, while the right operand and the result are in working form with an explicit leading 1). The whole game was then played with each arithmetic for all 65,536 seeds, from the start used in 12.7: every game was identical to the ROM's on every day of the trace and in every recorded result (Table 29). The conversion of numbers to text, `FOUT` (ED34), is transcribed as well, and gave the same text as the ROM for 20,000 values, with and without an extension byte. The script `tools/exact_check.py` in the rebuild repeats these comparisons.
 
 ### 12.7 An experiment over every seed
 
@@ -890,7 +890,7 @@ All 262,144 games ran to an ending without error.
 
 ![Figure 3](figures/figure-3-survival.png)
 
-**Figure 3.** Top: share of parties with at least one member alive, by day, under each arithmetic; parties that arrived count as alive. Bottom: the difference from the ROM's share, in percentage points. Both panels cover the 62,883 games of Table 29. The curve for rounded floats lies on the ROM's throughout, and that for plain floats is never more than 0.14 of a point away.
+**Figure 3.** Top: share of parties with at least one member alive, by day, under each arithmetic; parties that arrived count as alive. Bottom: the difference from the ROM's share, in percentage points. Both panels cover the 62,883 games of Table 29. The curve for rounded floats stays within 0.004 of a percentage point of the ROM's, and that for plain floats is never more than 0.14 of a point away.
 
 ![Figure 4](figures/figure-4-score-scatter.png)
 
@@ -1073,5 +1073,5 @@ The Oregon Trail (1985 video game). (n.d.). In *Wikipedia*. Retrieved October 4,
 
 Sander-Cederlof, B. (n.d.). *S-C DocuMentor: Applesoft* \[Commented disassembly of the Applesoft ROM; segments E7A0, EB72, DD7B, EE8D and D260 consulted\]. Retrieved October 4, 2026, from <https://www.txbobsc.com/scsc/scdocumentor/E7A0.html>
 
-Sander-Cederlof, B. (1984, May). Analysis of the Applesoft random number generator. *Apple Assembly Line, 4*(8). <https://www.txbobsc.com/aal/1984/aal8405.html>
+Sander-Cederlof, B. (1984, May). Random Numbers for Applesoft. *Apple Assembly Line, 4*(8). <https://www.txbobsc.com/aal/1984/aal8405.html>
 

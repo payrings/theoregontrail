@@ -191,7 +191,7 @@ step down at a time, never both, `dx + dy + 1` dots, the error term starting at 
 The route on the map matches the screenshot this way and not with the usual diagonal line.
 
 The picture of the approaching landmark is drawn at `IX = FX - 2 * D`, moving four dots
-at a time, with `FX = 180 - offset` (Table E5; the offsets agree with the saved variable
+at a time, with `FX = 180 - offset` (Table D5; the offsets agree with the saved variable
 table). Screenshots at 22 miles and at arrival match this dot for dot. One early screenshot
 (82 miles, 20 miles travelled) shows the river further right than the formula gives and is
 not explained; a second one at the same distance agrees with the formula.

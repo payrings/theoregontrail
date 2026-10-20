@@ -15,7 +15,7 @@ These are the contents of the saved variable table `VAR.BIN` that the main paper
 
 ### D.1 Simple variables at start-up
 
-**Table E1.** Values of the simple variables at start-up.
+**Table D1.** Values of the simple variables at start-up.
 
 | Variable | Value | Variable | Value |
 | --- | --- | --- | --- |
@@ -38,7 +38,7 @@ Arrays that start empty or zero: `RE(0 to 14)`, `T$(0 to 10)`, `I(0 to 8)`, `H1(
 
 ### D.2 Text arrays
 
-**Table E2.** Text arrays and their contents in index order.
+**Table D2.** Text arrays and their contents in index order.
 
 | Array | Contents, in index order from 0 |
 | --- | --- |
@@ -55,7 +55,7 @@ Arrays that start empty or zero: `RE(0 to 14)`, `T$(0 to 10)`, `I(0 to 8)`, `H1(
 
 Used by forts, trading and the broken-part messages.
 
-**Table E3.** The goods table: name, base price, unit and plural ending of each good.
+**Table D3.** The goods table: name, base price, unit and plural ending of each good.
 
 | Index | Name | Base price | Unit | Plural ending |
 | --- | --- | --- | --- | --- |
@@ -86,7 +86,7 @@ These do not affect the simulation. A rebuild that redraws the map and travel sc
 
 `MP%(landmark, 0 to 1)`: map x and y of each landmark, used by `MAP.LIB` to draw the route travelled.
 
-**Table E4.** Map coordinates of each landmark.
+**Table D4.** Map coordinates of each landmark.
 
 | Landmark | x | y | Landmark | x | y |
 | --- | --- | --- | --- | --- | --- |
@@ -102,7 +102,7 @@ These do not affect the simulation. A rebuild that redraws the map and travel sc
 
 `L%(next landmark - 1, 0 to 1)`: the picture number of the approaching landmark and a horizontal offset, used at line 3000 to place it on the travel screen.
 
-**Table E5.** Picture number and horizontal offset of the approaching landmark on the travel screen.
+**Table D5.** Picture number and horizontal offset of the approaching landmark on the travel screen.
 
 | Index | Picture | Offset | Index | Picture | Offset |
 | --- | --- | --- | --- | --- | --- |
@@ -120,7 +120,7 @@ These do not affect the simulation. A rebuild that redraws the map and travel sc
 
 ### D.6 Data files on disk
 
-**Table E6.** Data files on disk and their formats.
+**Table D6.** Data files on disk and their formats.
 
 | File | Format |
 | --- | --- |
@@ -137,7 +137,7 @@ The BASIC programs call a machine-language package through the Applesoft ampersa
 
 ### E.1 Screen, window and text commands
 
-**Table F1.** Screen, window and text commands, with their arguments and behaviour.
+**Table E1.** Screen, window and text commands, with their arguments and behaviour.
 
 | Command | Arguments (from the code) | Behaviour |
 | --- | --- | --- |
@@ -163,7 +163,7 @@ The BASIC programs call a machine-language package through the Applesoft ampersa
 
 ### E.2 Graphics and sound commands
 
-**Table F2.** Graphics and sound commands, with their arguments and behaviour.
+**Table E2.** Graphics and sound commands, with their arguments and behaviour.
 
 | Command | Arguments (from the code) | Behaviour |
 | --- | --- | --- |
@@ -179,7 +179,7 @@ The BASIC programs call a machine-language package through the Applesoft ampersa
 
 ### E.3 Disk and program commands
 
-**Table F3.** Disk and program commands, with their arguments and behaviour.
+**Table E3.** Disk and program commands, with their arguments and behaviour.
 
 | Command | Arguments (from the code) | Behaviour |
 | --- | --- | --- |
@@ -217,7 +217,7 @@ The hunting routine was disassembled, and a scan of its code finds no call to th
 
 ### F.1 Setup
 
-**Table G1.** Random draws during setup, by step and program line.
+**Table F1.** Random draws during setup, by step and program line.
 
 | Step | Draws | Line |
 | --- | --- | --- |
@@ -229,7 +229,7 @@ The hunting routine was disassembled, and a scan of its code finds no call to th
 
 ### F.2 Each landmark
 
-**Table G2.** Random draws at each landmark.
+**Table F2.** Random draws at each landmark.
 
 | Step | Draws | Line |
 | --- | --- | --- |
@@ -237,7 +237,7 @@ The hunting routine was disassembled, and a scan of its code finds no call to th
 
 ### F.3 Each day
 
-**Table G3.** Random draws on each day, in order, with program lines.
+**Table F3.** Random draws on each day, in order, with program lines.
 
 | Order | Step | Draws | Line |
 | --- | --- | --- | --- |
@@ -251,7 +251,7 @@ A stopped day (resting, a delay, waiting at a river) omits step 1. Days lost to 
 
 ### F.4 Inside each event
 
-**Table G4.** Random draws inside each event, in order.
+**Table F4.** Random draws inside each event, in order.
 
 | Event | Draws, in order |
 | --- | --- |
@@ -270,7 +270,7 @@ A stopped day (resting, a delay, waiting at a river) omits step 1. Days lost to 
 
 ### F.5 Rivers
 
-**Table G5.** Random draws at river crossings, by step.
+**Table F5.** Random draws at river crossings, by step.
 
 | Step | Draws |
 | --- | --- |
@@ -291,7 +291,7 @@ The crossing animation uses `RND` to place its water marks. These draws change n
 
 ### F.6 Other activities
 
-**Table G6.** Random draws in other activities.
+**Table F6.** Random draws in other activities.
 
 | Activity | Draws |
 | --- | --- |
@@ -323,7 +323,7 @@ The rebuild's preset start (section 12.7 of the paper) is a position the store c
 
 The disk sides were swapped by hand at Fort Laramie, where the game asks for side 2 (line 1016). The changed images are not distributed, because the programs remain under copyright. The rebuild's trace (`--preset --demo --seed N --num exact`, or `--num rom`) was compared with each log, value by value, allowing half a unit in the last digit that the rebuild prints. The first comparison, of seed 1,234, agreed until 24 July 1848 and then differed in the weather and the seed bytes. It exposed two departures of the rebuild from the listing: the event chances of line 3160 were not recomputed on a stopped day, so an event that lost days inside the event loop left the remaining events with the morning's chances; and `PF` was copied to `I(8)` every day instead of only when the daily loop ends. With both corrected, every logged value of every day agreed, including the seed bytes, in both games:
 
-**Table H1.** The two reference traces.
+**Table G1.** The two reference traces.
 
 | Seed | Days logged | Ending |
 | --- | --- | --- |
@@ -334,7 +334,7 @@ The two games cover one start and one player. They do not include hunting, tradi
 
 Besides the source code itself, which is not reproduced because it remains under copyright, three things needed for a complete rebuild are not in the paper or these appendices.
 
-**Table H2.** Remaining gaps, their consequences and what would close them.
+**Table G2.** Remaining gaps, their consequences and what would close them.
 
 | Gap | Consequence | What would close it |
 | --- | --- | --- |
