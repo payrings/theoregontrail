@@ -34,7 +34,7 @@ needs to cite.
 
 | Files           | Contents                                                                                                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`funnyfacts.md`](funnyfacts.md) | 30 Oregon Trail curiosities I discovered reading R. Philip Bouchard book on the Oregon Trail and while writing the paper and running my experiments!                                                                                                                                                   |
+| [`funnyfacts.md`](funnyfacts.md) | "Your Broken Arm Is Fine: A wagon full of Oregon Trail curiosities" is a list of interesting fact I discovered by reading R. Philip Bouchard book, writing the paper, or running my experiments!                                                                                                                                               |
 
 ---
 
