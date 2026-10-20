@@ -1,3 +1,5 @@
+![README](README.jpg)
+
 # The Oregon Trail on the Apple II (1985): An Analysis of Source, Data and Algorithms for Replication in Other Languages
 
 By Giacomo Paganelli - rift-demote-fence@duck.com
