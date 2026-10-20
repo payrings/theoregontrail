@@ -1105,7 +1105,7 @@ Further material for rebuilding the game is in a companion file, `02-appendices-
 
 Applesoft BASIC. (n.d.). In *Wikipedia*. Retrieved October 4, 2026, from <https://en.wikipedia.org/wiki/Applesoft_BASIC>
 
-Bouchard, R. P. (2016). *You have died of dysentery: The creation of The Oregon Trail – the iconic educational game of the 1980s* (1st ed.) \[Kindle edition\]. <https://www.amazon.com.au/You-Have-Died-Dysentery-educational-ebook/dp/B01B8JMKMC>
+Bouchard, R. P. (2016). *You have died of dysentery: The creation of The Oregon Trail – the iconic educational game of the 1980s* (1st ed.) \[Kindle edition\]. <https://www.amazon.com/gp/product/B01B8JMKMC>
 
 Ferreira, A. (2023). *Reinette II Plus Dot Py* \[Computer software\]. GitHub. <https://github.com/ArthurFerreira2/reinette-II-plus-dot-py>
 
