@@ -42,4 +42,3 @@ R. Philip Bouchard's amazing book "[You Have Died of Dysentery: The creation of 
 27. **The game remembers which disease you have.** The book says the program doesn't keep track of which disease a person has. It does: the number is stored for the whole illness. It is just never shown to you, which may be what the book means.
 28. **You flip the disk after a third of the trail, not halfway.** The disk flip comes at Fort Laramie, 640 miles in, which is about 34% of the 1,871-mile route by the Barlow Road. The book says "about halfway".
 29. **The book asked a question, and the code answers it.** The designer wondered whether the frequency weighting of animals (common ones more likely) ever made it into the game. It didn't: the draw is even.
-30. **The book's river numbers are exact.** Past 3 feet, at 4 feet each ox dies with a chance of 30%, and at 8 feet 70%, and the chances for people are 15% and 55%. Every one of those numbers comes out of the code exactly.
