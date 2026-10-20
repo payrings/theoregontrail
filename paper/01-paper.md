@@ -28,7 +28,7 @@ The primary source is the Applesoft BASIC source of release 1.4 (the management 
 
 Secondary sources are Bouchard's (2016) book on the game's design and a technical study of a long-wait exploit (moralrecordings, 2025). Where the book describes a design intention that the shipped code does not follow, this paper reports the code and notes the difference. The comparison was made in both directions: each statement the paper attributes to the book was looked up in the book, and each statement the book makes about how the 1985 game works was set against the listings (section 1.5). Details of the Applesoft interpreter come from the published commented disassembly of its ROM (“Applesoft BASIC,” n.d.; McFadden, n.d.; Sander-Cederlof, n.d.).
 
-The game's own 6502 machine code (the `&` command package and the hunting routine) was disassembled and analysed with the assistance of an AI model, Anthropic Claude Opus 5.5 (High). The findings in section 11.1 and Appendix E come from that analysis. They are a static reading of the code and were not verified by execution.
+The game's own 6502 machine code (the `&` command package and the hunting routine) was disassembled and analysed with the assistance of an AI model, Anthropic Claude Opus 5.5 (High). The findings in section 11.1 and Appendix E come from that analysis. They are a static reading of the code. The hunting routine's logic was also run under a 6502 emulator, with the hardware stubbed, and the results of section 11.1 that the run could test were confirmed (section 11.1, "Execution check"). The rest of the `&` package was not run.
 
 Two AI models assisted with the analysis of the BASIC source: Google Gemini 3.1 Pro (Extended Thinking), and Anthropic Claude Opus 5.5 (High). Both models were also used to assist with the analysis of the data files, the checking of sources, and the drafting and editing of the text of this paper. The author directed the work, wrote the earlier versions of the paper, revised the text by hand alongside the models' revisions, prepared the final version, and is responsible for its content.
 
@@ -38,7 +38,7 @@ The source code is not reproduced in this paper because it remains under copyrig
 
 ### 1.4 Limits of this analysis
 
-The machine-language routines reached through the `&` command were disassembled from the system tracks of the release 1.4 disk and read at their entry points, which establishes their argument lists and general function (Appendix E). The hunting routine was analysed in more depth (section 11.1), though its graphics and movement code were not. The routines used only by the river-floating program, and the image and tune data formats, were not decoded, and the packed-picture format was read from its loader only. Apart from running the whole game in an emulator, none of the game's own machine code was executed. The claims in section 12 about the interpreter's arithmetic rest on the published ROM disassembly (Sander-Cederlof, n.d.) and were tested by executing the ROM's arithmetic routines and random number generator under a 6502 emulator (section 12.6). Two games were recorded day by day from the original running in an emulator and compared with the rebuild (section 12.6 and Appendix G).
+The machine-language routines reached through the `&` command were disassembled from the system tracks of the release 1.4 disk and read at their entry points, which establishes their argument lists and general function (Appendix E). The hunting routine was analysed in more depth (section 11.1), though its graphics and movement code were not. The routines used only by the river-floating program, and the image and tune data formats, were not decoded, and the packed-picture format was read from its loader only. Apart from running the whole game in an emulator, the only machine code of the game that was executed is the hunting routine, run under a 6502 emulator with the Apple II hardware stubbed (section 11.1); the rest of the `&` package was read, not run. The claims in section 12 about the interpreter's arithmetic rest on the published ROM disassembly (Sander-Cederlof, n.d.) and were tested by executing the ROM's arithmetic routines and random number generator under a 6502 emulator (section 12.6). Two games were recorded day by day from the original running in an emulator and compared with the rebuild (section 12.6 and Appendix G).
 
 ### 1.5 Design intentions behind the mechanics
 
@@ -743,6 +743,19 @@ The identifications of types 0 and 1 are inferences from weight, region and the 
 **Terrain.** Each hunt places 4 to 7 terrain objects at random positions. Each zone draws from six entries of a table of object pictures: zone 0 uses object kinds A and C, zone 1 kind C only, zone 2 kinds B and E, zone 3 kinds D and E, and zone 4 kind B only, where A to E are the five kinds of object, three pictures each. Bouchard's (2016) design text gives four to six objects, one to three kinds eligible in each zone and six kinds of object; the code gives 4 to 7, one or two kinds per zone and five kinds, and a replica should follow the code.
 
 **Random numbers.** The routine has its own generator. It is seeded at the start of each hunt from the Applesoft seed bytes combined with the keyboard counter at addresses 78 and 79. It reads the Applesoft seed but never writes it, so hunting does not advance `RND`. Its results, however, depend on how long the player took at earlier keypresses.
+
+**Execution check.** The routine was run at its entry E003 under py65, the way the `& HUNT` handler calls it, with the argument block at 8A3F and the keyboard (C000, C010) and speaker (C030) stubbed; the screen is ordinary memory, so only the logic was tested, not the pictures. The script is `game/python/tools/hunt_check.py`, and it needs the private Appendix Z. It found:
+
+- A hunt with no key pressed ends after exactly 2,500 passes.
+- A hunt places 4, 5, 6 or 7 terrain objects (22, 30, 41 and 27 in 120 hunts), not the book's four to six. The terrain table at E04A and the animal records at E068 agree with the Terrain paragraph and Table 24: zone 0 uses pictures 0 to 2 and 6 to 8, zone 1 pictures 6 to 8 only, zone 2 pictures 3 to 5 and 12 to 14, zone 3 pictures 9 to 14, zone 4 pictures 3 to 5 only.
+- The chance that an animal appears at an attempt was 20 in 2,565 attempts (0.78%) with the halving argument set and 28 in 1,504 (1.9%) without it, which agrees with 8 and 16 in 1,000. The numbers are small, so they test the formula only roughly.
+- With types 0 to 2 allowed, all six types were drawn (6, 4, 7, 3, 3 and 6 draws in 29 spawns); with the three flags off only types 3 to 5 were drawn. Twenty-nine draws cannot show evenness; that rests on the code (E161 to E168).
+- With four animals already shot, 1,665 attempts produced no animal.
+- The space bar takes one bullet (50 to 49). Return takes none.
+- The Applesoft seed bytes at C9 to CD were the same after a full hunt as before. The routine reads them, as the paper says, and does not write them.
+- Two hunts with the same seed bytes and keyboard counter end in the same state, and a counter one higher gives a different hunt.
+
+The command `& IHUNT`, which is named like an initialiser, does nothing in the module: its entry at E000 jumps to F621, which is a return instruction (the handler in the `&` package only switches the language card on and off around that call). The BASIC programs never call it. All set-up happens on each call of `& HUNT`, at E547.
 
 The BASIC code then computes the meat (lines 50011 to 50020):
 
