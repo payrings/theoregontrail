@@ -170,7 +170,7 @@ Every program sets `ONERR GOTO 32000`. The handler reads the error code from add
 Several rules of the Applesoft language differ from those of modern languages. A replica that overlooks any of them will read the listings wrongly, and the errors are easy to miss because the result still looks plausible.
 
 - **Everything after `THEN` belongs to the `IF`.** When the condition is false, the rest of the line is skipped, including a second `IF` and every statement after it. Line 3180 ends `IF B > 0 THEN GOSUB 4000: GOSUB 300:L8 = 20`, so `L8 = 20` runs only when an event has fired and `B` is above zero (section 8.1). Line 1015 ends `IF Z = 3 THEN GOSUB 4200: GOSUB 190: GOTO 1015`, so the `GOTO` is taken only after the map has been shown. In line 4040 the "Buy supplies" entry is nested inside `IF NOT LL`, so it is offered only at a landmark, never on the trail.
-- **A simple variable and an array of the same name are different variables.** `Q` and `Q(0 to 16)`, `B` and `B(0 to 5)`, `RE` and `RE(0 to 14)`, and `Z` and `Z(...)` are each two separate things. When `BUY.LIB` sets `Q` to the fort's price tier, the landmark history in `Q()` is not touched.
+- **A simple variable and an array of the same name are different variables.** `Q` and `Q(0 to 16)`, `B` and `B(0 to 5)`, `RE` and `RE(0 to 14)`, `RC` and `RC(...)`, and `Z` and `Z(...)` are each two separate things. When `BUY.LIB` sets `Q` to the fort's price tier, the landmark history in `Q()` is not touched, and when `RIVER.LIB` sets `RC` to the river's number, the base data in `RC()` is not touched.
 - **A `FOR` loop always runs its body at least once.** The limit is tested at `NEXT`, not at the start, so `FOR A = 0 TO NR` with `NR` equal to -1 still runs once with `A` equal to 0. With a fractional limit, `FOR L = 1 TO 5.5` runs five times and `FOR L = 1 TO 0.5` runs once.
 - **`AND` and `OR` evaluate both sides.** There is no short-circuit, so a `RND` call on the right-hand side always happens (Appendix F).
 - **A comparison is a number**, 1 for true and 0 for false, and the listings use it in arithmetic throughout. `NOT`, `AND` and `OR` follow the same rule: they test their operands for zero and return 1 or 0 (ROM at DE98 and DF4F to DF62). Unlike the bitwise operators of some other Microsoft BASICs, `NOT 0` is 1, not -1, which is what `FN W` (section 6.2) relies on.
@@ -563,7 +563,7 @@ Each landmark has three monologues, stored as 256-byte records in `OREGON1.SEQ` 
 
 ### 9.2 Trading (`TRADE.LIB`)
 
-A trade attempt always costs one day (line 4900). The seven tradable goods and their unit values are oxen 20, clothing 10, bullets 0.10, wheels 10, axles 10, tongues 10 and food 0.20.
+A trade attempt always costs one day (line 4900). The seven tradable goods and their unit values are oxen 20, clothing 10, bullets 0.10, wheels 10, axles 10, tongues 10 and food 0.20. Line 4900 also ends with `I(2) = I(2) * (I(2) > 0)`, which leaves the oxen count as it was: the count is multiplied by one when there are oxen and by zero when there are none, so the statement changes nothing on any game the code can play.
 
 1. Draw the good wanted, `X = INT (RND (1) * 7)`, and the good offered, `Y`, the same way; if they match, `Y` moves on by one, wrapping.
 2. Compute the exchange ratio `Z = ZX / (ZY * (1 + 1.2 * RND (1)))`, the value of the wanted good over the value of the offered good, worsened by a random factor between 1 and 2.2.
