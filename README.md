@@ -83,14 +83,15 @@ How my work went, month by month.
 - **18 October 2026** — Published a Typescript version of the game using Claude Sonnet 5.5, 
   which confirm the paper's thesis and accuracy, and runs on a web browser.
 - **19 October 2026** — Updated the README and reorganised the repo.
-- **20 October 2026** — Some corrections to the paper, the "funny facts", and the README in the Python game.
+- **20 October 2026** — Some corrections to the paper, the curiosities, and the README in the Python game.
+- **21 October 2026** — Changed the name of the updated graphic for the python game, and made further corrections to the curiosities.
 
 ---
 ## What is not in this repository
 
 - The Apple IIe ROM image
 - The BASIC listings
+- The machine code listings
 - The dialogues
 - MECC's original artwork
 - The tunes
-- The machine code listings
