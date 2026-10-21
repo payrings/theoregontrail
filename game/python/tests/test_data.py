@@ -8,14 +8,16 @@ import pytest
 from oregon.data import climate, goods, hiscore, illnesses, landmarks, text
 
 
-def test_the_six_climate_strings_match_table_13():
-    """All 144 character codes, against the paper's table rather than the strings."""
-    for row in range(6):
-        s = climate.WC[row]
+def test_the_six_climate_strings_are_twenty_four_characters():
+    """Paper 6.2: "``WC$(0 to 5)`` holds six strings of 24 characters".
+
+    The codes themselves are checked against the paper's Table 13 in
+    ``test_paper_rules.py``; a copy of the table inside the module would only
+    be checked against itself.
+    """
+    assert len(climate.WC) == 6
+    for row, s in enumerate(climate.WC):
         assert len(s) == 24, f"row {row} is {len(s)} characters"
-        for month in range(12):
-            assert ord(s[month * 2]) == climate.AM_CODES[row][month], (row, month)
-            assert ord(s[month * 2 + 1]) == climate.RAIN_CODES[row][month], (row, month)
 
 
 def test_the_climate_lookup_gives_the_papers_example():

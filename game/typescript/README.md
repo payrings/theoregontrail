@@ -65,7 +65,7 @@ then `Speaker:` and `Text:`) can replace it: `--dialogue FILE` on the command li
 
 ## Check it
 
-The same three layers as the Python rebuild, for every seed from 0 to 65,535 and every backend:
+The same three layers as the Python rebuild, for every seed from 0 to 65,535 and every backend. (The three `verify-exact-*.state` files in this folder record only a 40-seed run; the full range takes hours.)
 
     python3 verify.py --oracle all --first 0 --last 65535 --mode all     # progress, rate, time left; resumable
 
@@ -74,6 +74,10 @@ The same three layers as the Python rebuild, for every seed from 0 to 65,535 and
 trace (every cell of every day, including the five `RND` seed bytes, which show a missing or extra draw on the
 day it happens) and the final summary must agree. `rom` needs `py65` and the ROM image, so it can only run
 where they are; against it the TypeScript is compared through the transcription.
+
+There is no `rom` backend in this port: the TypeScript offers `exact`, `rounded` and `float`, so its
+arithmetic is the transcription of the ROM's routines, and the claim that it matches the original byte
+for byte is inherited from the Python rebuild, where it is checked against the ROM itself.
 
     python3 compare.py 0 399                        # a day-by-day comparison against Python `exact`
     python3 compare.py --rows ../python/sample_games.csv   # against the games recorded from the ROM
@@ -87,7 +91,7 @@ between, on a clock that only the game's own sleeps advance):
 
     test/gfx_compare.sh ASSETS FIRST LAST [--preset] [--wander]     # one game per seed, in parallel (JOBS=n)
     test/gfx_compare.sh assets 0 99                  # a themed (plain-colour) folder
-    test/gfx_compare.sh ../python/assets 0 99                         # the Apple's own colour rules (font only)
+    test/gfx_compare.sh ../python/assets 0 99   # the same pictures, from the Python rebuild
 
 `test/browser_play.py` drives a real browser (Playwright) through a recorded game on the built page (see its header). `test/gfx_hunt_raft.mjs` and `test/gfx_hunt_raft_py.py` compare the hunt and the raft scene by themselves.
 

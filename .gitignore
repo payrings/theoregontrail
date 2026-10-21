@@ -4,8 +4,6 @@ game/python/data/
 
 paper/*(private)*
 
-game/python/assets/
-
 sources/
 
 .venv/

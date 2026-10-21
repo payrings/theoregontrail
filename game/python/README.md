@@ -61,7 +61,7 @@ Where the code and the paper disagree, the BASIC listing of release 1.4 decides.
 played by the original in the LinApple emulator, from copies of the disk images changed
 to play themselves and print each day's values (paper Appendix G), and compared with
 `--preset --demo --seed N --num exact --trace FILE`: every logged value of every day
-agreed, including the seed bytes (158 and 196 days). The first comparison found two
+agreed, including the seed bytes (158 and 196 days). Only the 196-day trace of seed 10190 is in the repository (`tests/data/trace_10190.printer.txt`, checked by `tests/test_reference_trace.py`); the 158-day trace of seed 1234 has to be recorded again, and its test is skipped until the file exists. The first comparison found two
 departures, both corrected: the event chances of line 3160 are recomputed on a stopped
 day, and `I(8)` is copied from `PF` only when the daily loop ends (line 3499). The two
 games include no hunting, trading, fort purchases, resting or raft. Every other test
@@ -153,11 +153,12 @@ The Apple IIe ROM image is Apple's and is not distributed. Place it at
 `oregon/graphics/` is a second implementation of the `UI` interface. It models the
 `&` package: a text window, a cursor, proportional letters (advance = width + 2
 dots), nine dots to a line, word wrap (a word moves to the next line when
-`cx + width > window width - 1`), boxes and pictures. Pictures are PNG files in an
-assets folder; the font is `font/font.png` with `font/font.json`. The folder is
-`game/python/assets/` and is in this repository: the pictures drawn for this rebuild.
-Any folder in the same layout works — `--assets DIR` points at another one. Without
-any pictures the graphical mode falls back to the text one, and the game plays the same.
+`cx + width > window width - 1`), boxes and pictures. Pictures are PNG files in a
+pictures folder; the font is `font/font.png` with `font/font.json`. The folder the
+graphical mode uses by default is `game/python/assets/`, the pictures drawn
+for this rebuild. Any folder in the same layout works — `--assets DIR` points at
+another one — and if the folder is not there the mode says so and the game is
+played in the terminal instead, which plays the same.
 
 Screens with their own layout (`graphics/screens.py`), and how each was checked
 against screenshots of the original:
@@ -202,7 +203,8 @@ The 'bottom line' of line 950 is at y = 182 and
 that of `& SPACE` at y = 184; the graphical `wait_key` takes either.
 
 Everything else is printed in the same font on a black screen. `tests/test_graphics.py`
-runs on a made-up set of pictures, so it needs no assets.
+runs on a made-up set of pictures, so it needs none; two of its tests use the pictures in
+the repository, to check that a clean checkout can start the graphical mode.
 
 **Timing.** Each day's scene stays on the screen for a second at a steady pace, half a second
 at a strenuous pace and 0.3 s at a grueling one (`trail.DAY_SECONDS`); Return during that time
@@ -211,14 +213,14 @@ line of its animation and holds the picture for a second between its stages.
 
 **The raft.** The river, raft, rock and sign pictures (`float_raft.png`, `float_rock.png`,
 `float_sign.png`, with the river itself from `b_river`) were copied from a recording; with the
-instruction picture (`l16`) they are in the assets, not in the program. A pass of the loop takes
+instruction picture (`l16`) they are in the pictures folder, not in the program. A pass of the loop takes
 about 0.45 s on the original (the game here runs it twice as fast, `raft_scene.PASS_SECONDS`), measured from the rocks' steps. The signs enter
 at (114, 168) and move six dots right and three up a pass; the raft is at (84 + 8 hp + 3, 5 hp - 6)
 and a rock at (RX + 7, RY). The arrival point is `& IMAGE,6` (FLOAT 1146, 1149): it enters at (-8, 218) on pass 175 and moves six dots right and three up a pass, crossing the landing bank around passes 205-225. Its picture, `float_landing.png`, is two wavy wagon ruts redrawn from a screenshot of the original, not copied pixel for pixel. Not verified: the drawing order of the raft and a rock that overlap,
 the sign's first pass (the recording shows it a few passes after the listing's 60, 120 and 170,
 because a pass that draws more rocks takes longer), and the screens of a collision.
 
-**The hunting field.** With a `hunt/` folder in the assets, `graphics/hunt_scene.py` draws the
+**The hunting field.** With a `hunt/` folder in the pictures, `graphics/hunt_scene.py` draws the
 hunter's eight poses, the trees and grass and the four animals from sprites copied off
 screen recordings of the original; the keys, the spawn rule, the animals allowed at each
 landmark, the weights and the two-animal and four-shot limits are the paper's. Taken from
@@ -228,7 +230,7 @@ the rifle a step), the placing of the scenery, and the length of the hunt (25 s,
 passes). Without the `hunt/` folder, `graphics/hunt_field.py` draws plain shapes instead.
 
 
-## Themed (full-colour) assets
+## Themed (full-colour) pictures
 
 A folder with `theme.json` switches off the Apple colour rules (`graphics/canvas.py`): text dots
 take one plain colour (`text_colour`), boxes and lines use the theme's `colours` on every column

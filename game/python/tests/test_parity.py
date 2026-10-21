@@ -22,8 +22,26 @@ def test_the_rom_is_the_default_backend():
     assert applesoft.current().name == "apple-rom"
 
 
+
+_ROM = None
+
+
+def the_rom():
+    """The emulated ROM, built explicitly.
+
+    ``applesoft.current()`` is not good enough here: with no ROM image it is the
+    transcription, and the comparisons below would then be the transcription
+    against itself and would pass for the wrong reason. This raises instead.
+    """
+    global _ROM
+    if _ROM is None:
+        from oregon.applesoft.rom import RomBackend
+        _ROM = RomBackend()
+    return _ROM
+
+
 def both(n=120):
-    rom = applesoft.current()
+    rom = the_rom()
     py = ExactBackend()
     for k in range(n):
         a = py.from_str(f"{(k % 37) + 1}.{(k * 7919) % 100000:05d}")
@@ -43,7 +61,7 @@ def test_rnd_constants_come_from_the_rom():
     """
     assert RND_MULTIPLIER == bytes((0x98, 0x35, 0x44, 0x7A, 0x68))
     assert RND_ADDEND == bytes((0x68, 0x28, 0xB1, 0x46, 0x20))
-    rom = applesoft.current()
+    rom = the_rom()
     mem = bytes(rom.m.memory)
     assert mem[0xEFA6:0xEFAB] == RND_MULTIPLIER
     assert mem[0xEFAA:0xEFAF] == RND_ADDEND
@@ -62,7 +80,7 @@ def test_format_constants():
 
 
 def test_add_matches_the_rom():
-    rom = applesoft.current()
+    rom = the_rom()
     py = ExactBackend()
     for a, b, r, p in both():
         assert r.add(a, b).raw() == p.add(a, b).raw()
@@ -74,11 +92,11 @@ def test_the_games_own_formulas_agree_with_the_rom():
     Rather than every random operand -- where the single guard bit makes a one-ulp
     difference possible -- this walks the formulas from the listing: the health
     total of line 3230, the daily travel of line 3245, the base speed of line 660 and
-    the climate lookup of line 105. ``NOTES.md`` records the one-ulp divergence on
-    random operands and why the ROM is the default.
+    the climate lookup of line 105. The one-ulp divergence on random
+    operands is measured in :func:`test_mul_matches_the_rom_to_within_one_ulp`.
     """
     from oregon import num
-    rom = applesoft.current()
+    rom = the_rom()
     py = ExactBackend()
     cases = [
         ("base speed", num.parse("20"), num.ONE),
@@ -94,20 +112,19 @@ def test_the_games_own_formulas_agree_with_the_rom():
     ]
     for label, a, b in cases:
         for op in ("add", "sub", "mul"):
-            want = getattr(rom, op)(a, b).to_float()
-            got = getattr(py, op)(a, b).to_float()
-            assert want == got or abs(want - got) <= abs(want) * 2.0 ** -30, (
-                f"{label} {op}: {want!r} vs {got!r}")
+            want = getattr(rom, op)(a, b).raw()
+            got = getattr(py, op)(a, b).raw()
+            assert want == got, f"{label} {op}: {want.hex()} vs {got.hex()}"
 
 
 def test_add_and_int_are_exact_on_the_games_formulas():
     """The two operations with no divergence at all.
 
     Addition and ``INT`` agree with the ROM operand for operand, so these are held to
-    exact equality. Multiplication and subtraction can differ by one unit in the last
-    place; see :func:`test_mul_matches_the_rom_to_within_one_ulp`.
+    exact equality. Multiplication and subtraction agree with it byte for byte as
+    well, on these operands; see :func:`test_mul_matches_the_rom`.
     """
-    rom = applesoft.current()
+    rom = the_rom()
     py = ExactBackend()
     for text in ("0.5", "12.5", "0.1", "102", "2000", "266", "1/3", "0.05", "139",
                  "0.9", "0.97", "2.5", "0.51"):
@@ -129,14 +146,14 @@ def test_mul_matches_the_rom():
 
 
 def test_div_matches_the_rom():
-    rom = applesoft.current()
+    rom = the_rom()
     py = ExactBackend()
     for a, b, r, p in both():
         assert r.div(a, b).raw() == p.div(a, b).raw()
 
 
 def test_int_matches_the_rom_and_floors():
-    rom = applesoft.current()
+    rom = the_rom()
     py = ExactBackend()
     for text in ("2.7", "-2.7", "2.5", "-2.5", "0.5", "-0.5", "3", "-3", "100.99",
                  "-0.001"):
@@ -154,7 +171,7 @@ def test_signs_every_way_round():
     the two cases that a naive call into the ROM's operator entry points gets wrong,
     because neither routine compares the signs itself.
     """
-    rom = applesoft.current()
+    rom = the_rom()
     py = ExactBackend()
     for a in (3, -3, 1, -1):
         for b in (3, -3, 1, -1):
@@ -165,7 +182,7 @@ def test_signs_every_way_round():
 
 def test_rnd_sequence_is_in_range_and_advances():
     """Every draw is in [0, 1) and the seed changes each time."""
-    rom = applesoft.current()
+    rom = the_rom()
     rom.set_seed(bytes((0x81, 0x00, 0x00, 0x00, 0x00)))
     seen = set()
     for _ in range(200):
@@ -178,7 +195,7 @@ def test_rnd_sequence_is_in_range_and_advances():
 
 
 def test_rnd_zero_repeats_and_negative_reseeds():
-    rom = applesoft.current()
+    rom = the_rom()
     rom.set_seed(bytes((0x81, 0, 0, 0, 0)))
     first = rom.rnd(Fac.from_int(1))
     rom.rnd(Fac.from_int(0))
@@ -190,7 +207,7 @@ def test_rnd_zero_repeats_and_negative_reseeds():
 
 def test_round_fac_is_the_byte_sequence_the_rom_does():
     """The backend's own ROUND.FAC, and the byte step it stands in for."""
-    rom = applesoft.current()
+    rom = the_rom()
     for text in ("0.5", "0.1", "1/3", "1000"):
         v = ExactBackend().from_str(text) if "/" not in text \
             else ExactBackend().div(Fac.from_int(1), Fac.from_int(3))
@@ -214,7 +231,7 @@ RND_FINAL_SEED = bytes((0x7F, 0x11, 0x0D, 0x1F, 0x95))
 
 
 def test_rnd_from_a_known_seed_matches_the_independent_record():
-    rom = applesoft.current()
+    rom = the_rom()
     rom.set_seed(RND_SEED)
     got = [rom.rnd(Fac.from_int(1)).to_float() for _ in RND_SERIES]
     assert got == RND_SERIES, [f"{g!r} != {w!r}" for g, w in zip(got, RND_SERIES)

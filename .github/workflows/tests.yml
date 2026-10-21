@@ -1,0 +1,33 @@
+name: Tests
+
+# The rebuild's own checks. They need no Apple II ROM image: the transcription of
+# the ROM's arithmetic is what they compare against, and the ROM is never
+# downloaded or referenced here.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        working-directory: game/python
+        run: pip install py65 pytest pillow
+      - name: The suite
+        working-directory: game/python
+        run: python -m pytest -q
+      - name: The TypeScript build
+        working-directory: game/typescript
+        run: |
+          npm install
+          npx tsc
+      - name: The two ports agree, seed by seed
+        working-directory: game/typescript
+        run: python3 compare.py 0 49

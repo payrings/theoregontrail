@@ -76,8 +76,7 @@ def load_state(c):
 
     ``W = INT ((FN W (0) + 10) / 20)`` at line 29000 reads ``WC$(ZO)`` before line
     1000 has ever set ``ZO``, and ``ZO`` is not one of the variables ``VAR.BIN``
-    restores, so it is 0 and the Kansas City row is used whatever the month. See
-    ``NOTES.md``.
+    restores, so it is 0 and the Kansas City row is used whatever the month.
     """
     st = c.st
     st.MY = num.div(num.parse(str(c.mem.peek_word(913))), num.parse("10"))
@@ -235,7 +234,7 @@ def travel_screen(c, daily: bool = False):
 
     Line 310 chooses the border colour from the weather: white when there is snow, the
     dry colour when the rain is 0.2 or less, green otherwise. That has no text
-    equivalent and is noted in ``NOTES.md``.
+    equivalent, so it is not reproduced.
     """
     st = c.st
     half = num.HALF if daily else num.ZERO

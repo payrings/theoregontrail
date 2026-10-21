@@ -538,7 +538,7 @@ The loop does not stop after the first event. It ends early only when `B` is abo
 | 9 | Lose trail or wrong trail | 0.02 | lose 1 to 5 days | 10900 |
 | 10 | Rough or impassible trail | 0.05 in zones 3 and 4, else 0 | 50%: rough trail, `HR = 10`. 50%: impassible trail, lose 1 to 10 days | 11000 |
 | 11 | Find wild fruit | 0.04 from May to September | +20 pounds | 11100 |
-| 12 | Fire, lost member, or stray ox | 0.01 | equal thirds: fire in the wagon; a member is lost, lose 1 to 5 days; an ox wanders off, lose 1 to 3 days | 11200 |
+| 12 | Fire, lost member, or stray ox | 0.01 | equal thirds: fire in the wagon; a member is lost, lose 1 to 5 days; an ox wanders off, lose 1 to 3 days (the count of oxen is not changed: line 11275 never writes `I(2)`) | 11200 |
 | 13 | Abandoned wagon or thief | 0.02 | half each | 11300 |
 | 14 | Water and grass | 0.5 when rain `AR` is below 0.1 | 20%: bad water, `HR = 20`. Of the rest, half: very little water, `HR = 10`; half: inadequate grass, no effect | 11400 |
 
@@ -563,7 +563,7 @@ Each landmark has three monologues, stored as 256-byte records in `OREGON1.SEQ` 
 
 ### 9.2 Trading (`TRADE.LIB`)
 
-A trade attempt always costs one day (line 4900). The seven tradable goods and their unit values are oxen 20, clothing 10, bullets 0.10, wheels 10, axles 10, tongues 10 and food 0.20. Line 4900 also ends with `I(2) = I(2) * (I(2) > 0)`, which leaves the oxen count as it was: the count is multiplied by one when there are oxen and by zero when there are none, so the statement changes nothing on any game the code can play.
+A trade attempt always costs one day (line 4900). The seven tradable goods and their unit values are oxen 20, clothing 10, bullets 0.10, wheels 10, axles 10, tongues 10 and food 0.20. Line 4900 also ends with `I(2) = I(2) * (I(2) > 0)`, which leaves a non-negative oxen count unchanged and sets a negative one to zero. No path traced here makes the count negative. It starts at twice the yokes bought (29005); the river, the raft and the thief clamp it at zero (`RIVER.LIB` 50195, `FLOAT` 50195, `LF.LIB` 52010); and a trade stores the rounded holding less the amount given away, which the trade refuses unless the party has that much (`TRADE.LIB` 50030 and 50035). The one writer without a clamp of its own is the injury of line 10820, which takes half an ox (`I(2) = I(2) - .5`); this paper has not traced whether that event can fire with no oxen, so the statement at line 4900 is at most a safeguard.
 
 1. Draw the good wanted, `X = INT (RND (1) * 7)`, and the good offered, `Y`, the same way; if they match, `Y` moves on by one, wrapping.
 2. Compute the exchange ratio `Z = ZX / (ZY * (1 + 1.2 * RND (1)))`, the value of the wanted good over the value of the offered good, worsened by a random factor between 1 and 2.2.

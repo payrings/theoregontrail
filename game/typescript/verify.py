@@ -245,7 +245,7 @@ def run(oracle, seeds, jobs, extra, state_path, max_bad=50, label=""):
 def check_build():
     """The compiled TypeScript must be newer than its sources, or the run would test an old build."""
     cli = TS / "dist" / "cli.js"
-    newest = max((p.stat().st_mtime for p in (TS / "src").glob("*.ts")), default=0)
+    newest = max((p.stat().st_mtime for p in (TS / "src").rglob("*.ts")), default=0)
     if not cli.exists() or cli.stat().st_mtime < newest:
         print("typescript/dist is missing or older than typescript/src: building it (npx tsc) ...", flush=True)
         r = subprocess.run(["npx", "tsc"], cwd=TS)

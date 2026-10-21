@@ -23,7 +23,6 @@ from oregon.rng import ScriptedRnd
 from oregon.ui import AutoUI, ScriptedUI
 
 DATA = pathlib.Path(__file__).resolve().parent / "data"
-ON_ROM = applesoft.rom_available()
 
 
 def make(tmp_path, answers=(), values=None, fill=0.5, max_prompts=400):
@@ -69,15 +68,24 @@ def test_a_chain_is_stored_once_at_the_end():
     assert chain.raw().hex() == "8520000000"
 
 
-@pytest.mark.skipif(not ON_ROM, reason="the recorded STR$ results are for the ROM")
 def test_str_matches_the_roms_number_to_text_routine():
-    """FOUT ($ED34) rounds to nine digits and puts no space before a positive number."""
+    """FOUT ($ED34) rounds to nine digits and puts no space before a positive number.
+
+    The recorded cases are the ROM's own output, so they are checked against the
+    transcription of its routine: with a ROM image installed the comparison would
+    be the ROM against itself.
+    """
     cases = json.loads((DATA / "str_cases.json").read_text())["cases"]
-    wrong = []
-    for case in cases:
-        got = num.str_(applesoft.Fac(bytes.fromhex(case["fac"])))
-        if got != case["text"]:
-            wrong.append((case["fac"], case["text"], got))
+    was = applesoft.current()
+    applesoft.use("exact")
+    try:
+        wrong = []
+        for case in cases:
+            got = num.str_(applesoft.Fac(bytes.fromhex(case["fac"])))
+            if got != case["text"]:
+                wrong.append((case["fac"], case["text"], got))
+    finally:
+        applesoft.use("rom" if applesoft.rom_available() else "exact")
     assert not wrong, f"{len(wrong)} of {len(cases)} differ; first: {wrong[0]}"
 
 

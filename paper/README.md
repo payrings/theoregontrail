@@ -13,4 +13,4 @@ Read in this order:
 
 The Python rebuild in `../game/python/` exists to test the paper's claims. What it reproduces,
 what it does not, and how the experiment of section 12.7 was run are in
-[`../game/python/NOTES.md`](../game/python/NOTES.md).
+[`../game/python/README.md`](../game/python/README.md).

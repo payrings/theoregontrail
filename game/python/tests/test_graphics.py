@@ -1,8 +1,10 @@
 """The optional graphical mode, tested with a small made-up set of pictures.
 
-Nothing here needs the game's own pictures: the font is a plain block alphabet and the
-pictures are coloured squares, so the checks are about where things are drawn, how text
-wraps and whether the game can be played through the graphical interface from a script.
+Most of what is here needs no pictures of its own: the font is a plain block
+alphabet and the pictures are coloured squares, so the checks are about where
+things are drawn, how text wraps and whether the game can be played through the
+graphical interface from a script. Two tests at the end use the pictures in the
+repository, to check that a clean checkout can start the graphical mode.
 """
 
 import json
@@ -267,10 +269,37 @@ def test_trail_screens_play_through_the_graphical_interface(folder):
     assert num.as_int(c.st.P) == 2 and num.as_int(c.st.R) == 2
 
 
-def test_graphics_option_reports_missing_pictures(tmp_path, capsys):
-    from oregon.__main__ import main
-    assert main(["--graphics", "--assets", str(tmp_path / "nowhere")]) == 2
-    assert "assets folder not found" in capsys.readouterr().err
+def test_graphics_without_pictures_falls_back_to_the_text_mode(tmp_path, capsys):
+    """No pictures: say so, and play in the terminal rather than stopping."""
+    from oregon.__main__ import build_parser, build_ui
+    args = build_parser().parse_args(["--graphics", "--assets", str(tmp_path / "nowhere")])
+    ui = build_ui(args)
+    err = capsys.readouterr().err
+    assert "assets folder not found" in err
+    assert "falling back to the text mode" in err
+    assert type(ui).__name__ == "TerminalUI"
+
+
+def test_the_pictures_in_the_repository_are_the_default_ones():
+    """The graphical mode finds its pictures in a clean checkout."""
+    from oregon.graphics import default_folder
+    folder = default_folder()
+    assert os.path.isdir(folder), folder
+    assert os.path.isfile(os.path.join(folder, "font", "font.png"))
+    assert os.path.isfile(os.path.join(folder, "font", "font.json"))
+    assert os.path.isfile(os.path.join(folder, "screens", "l0.png"))
+    assert os.path.isfile(os.path.join(folder, "screens", "m0.png"))
+
+
+def test_the_graphical_ui_starts_from_the_pictures_in_the_repository():
+    """The window's interface builds from the tracked folder, with no display."""
+    from oregon.graphics import Assets
+    from oregon.graphics.backends import ScriptBackend
+    from oregon.graphics.gui import GraphicalUI
+    ui = GraphicalUI(Assets(), ScriptBackend())
+    assert ui.cv is not None
+    assert ui.assets.glyphs                       # the font loaded
+    assert ui.assets.screen("l0") is not None      # a landmark picture loaded
 
 
 # ----------------------------------------------------------------- lines, map, boxes

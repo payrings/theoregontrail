@@ -1,6 +1,6 @@
 """``python -m oregon`` -- play the game.
 
-Fish-syntax examples are in ``README.md``. The options are:
+Examples are in section 4 of ``game/python/README.md``. The options are:
 
 ``--seed N``
     seed the random generator with the 16-bit value ``N``, which is what the keyboard
@@ -201,6 +201,27 @@ def summary(c, ui, where) -> str:
     })
 
 
+def build_ui(args):
+    """The interface the game is played through.
+
+    ``--graphics`` asks for a window drawn like the Apple II screen. If the
+    pictures are not there, or Pillow is missing, the reason is printed and the
+    game is played in the terminal instead.
+    """
+    if args.demo or args.verbose_demo:
+        return AutoUI(quiet=not args.verbose_demo, wander=args.wander)
+    if args.inputs:
+        return ScriptedUI(answers_from(args.inputs))
+    if args.graphics:
+        from .graphics import AssetError, make_ui
+        try:
+            return make_ui(args.assets, args.scale, show_daily=True)
+        except (AssetError, ImportError) as e:
+            print(f"--graphics: {e}", file=sys.stderr)
+            print("--graphics: falling back to the text mode", file=sys.stderr)
+    return TerminalUI(interrupt=not args.no_interrupt, show_daily=args.daily_screen)
+
+
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     # no --num: keep what importing the package chose (the ROM if it can run, else `exact`)
@@ -209,19 +230,7 @@ def main(argv=None) -> int:
         print(f"arithmetic backend : {backend.name}")
         print(f"Apple IIe ROM      : {applesoft.rom_status()}")
         return 0
-    if args.demo or args.verbose_demo:
-        ui = AutoUI(quiet=not args.verbose_demo, wander=args.wander)
-    elif args.inputs:
-        ui = ScriptedUI(answers_from(args.inputs))
-    elif args.graphics:
-        from .graphics import AssetError, make_ui
-        try:
-            ui = make_ui(args.assets, args.scale, show_daily=True)
-        except (AssetError, ImportError) as e:
-            print(f"--graphics: {e}", file=sys.stderr)
-            return 2
-    else:
-        ui = TerminalUI(interrupt=not args.no_interrupt, show_daily=args.daily_screen)
+    ui = build_ui(args)
     rng = SeededRnd()
     tracer = Tracer(args.trace)
     # a person at the keyboard goes back to the menu when a journey ends (MENU SIDE 2, line
@@ -275,7 +284,7 @@ def main(argv=None) -> int:
                 from .errors import ApplesoftError, handle
                 if isinstance(err, RomError):
                     # the rebuild does not track BASIC line numbers, so an error raised by
-                    # the arithmetic is reported with line 0 (game/NOTES.md, section 2)
+                    # the arithmetic is reported with line 0 (game/python/README.md, section 2)
                     code = getattr(err, "code", 69)         # 69: OVERFLOW
                     err = ApplesoftError(code, 0, getattr(c, "program", "") or "", str(err))
                 if not isinstance(err, ApplesoftError):

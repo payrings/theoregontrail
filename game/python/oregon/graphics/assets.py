@@ -40,6 +40,12 @@ class AssetError(RuntimeError):
 
 
 def default_folder() -> str:
+    """The pictures folder the graphical mode uses when none is given.
+
+    ``assets`` is the folder in this repository: the pictures drawn for
+    this rebuild, in full colour. Any folder in the same layout works; pass it
+    with ``--assets DIR``.
+    """
     here = os.path.dirname(os.path.abspath(__file__))
     return os.path.normpath(os.path.join(here, "..", "..", "assets"))
 

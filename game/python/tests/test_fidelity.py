@@ -21,8 +21,22 @@ import fidelity_cases as FC
 
 DATA = pathlib.Path(__file__).resolve().parent / "data" / "fidelity.json"
 pytestmark = pytest.mark.skipif(
-    not applesoft.rom_available() or not DATA.is_file(),
-    reason="the recorded cases are checked on the ROM backend only")
+    not DATA.is_file(),
+    reason="the recorded cases are missing")
+
+
+@pytest.fixture(autouse=True)
+def _transcription_backend():
+    """Check the recorded cases against the *transcription* of the ROM's routines.
+
+    The recorded cases are the ROM's own output, so comparing them with the
+    installed backend would, with a ROM image present, be the ROM against
+    itself and would prove nothing. The transcription is what the rebuild
+    ships, and it is the thing the recorded cases are here to check.
+    """
+    applesoft.use("exact")
+    yield
+    applesoft.use("rom" if applesoft.rom_available() else "exact")
 
 
 def _doc():

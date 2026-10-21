@@ -54,7 +54,7 @@ class State:
         self.PQ = num.parse(".25")        # a spare constant in VAR.BIN
         self.S = 0                        # disk side: 0 for side one, 1 for side two
         self.RE_max = 14                  # RE, the highest event number
-        self.SR = num.ONE                 # a graphics flag; see ``NOTES.md``
+        self.SR = num.ONE                 # a graphics flag of VAR.BIN, kept for fidelity
         self.DF = num.ONE                 # another
 
         # --- dates, Appendix A ------------------------------------------------

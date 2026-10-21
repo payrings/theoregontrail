@@ -560,8 +560,7 @@ def test_the_command_line_starts_a_journey(tmp_path):
     assert miles > 1000, f"the party got a long way: {miles} miles"
     # The crossing is 1,771 miles to The Dalles by the direct route and 1,871 with
     # the 100-mile Barlow Road; Fort Walla Walla adds 50, giving 1,821. The driver
-    # here takes the Barlow Road as well, so 1,921 is reachable -- see the open
-    # question about milestone 16 in ``NOTES.md``.
+    # here takes the Barlow Road as well, so 1,921 is reachable.
     assert miles <= 1921, f"more miles than any route in the table: {miles}"
     # The game must end one of the two ways it can: arrival writes the top ten,
     # and the death of the whole party writes a tombstone. Which of the two a

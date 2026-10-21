@@ -308,7 +308,7 @@ def test_no_if_can_short_circuit_a_draw():
     evaluates it; a state test first is not.
     """
     offenders = []
-    for path in sorted(SRC.glob("*.py")):
+    for path in sorted(SRC.rglob("*.py")):
         tree = ast.parse(path.read_text())
         for node in ast.walk(tree):
             if not isinstance(node, ast.If):
@@ -329,7 +329,7 @@ def test_no_int_of_a_draw_uses_a_literal_one_and_zero():
     announced loss was announced and none was applied. The shape is recognisable.
     """
     offenders = []
-    for path in sorted(SRC.glob("*.py")):
+    for path in sorted(SRC.rglob("*.py")):
         tree = ast.parse(path.read_text())
         for node in ast.walk(tree):
             if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)

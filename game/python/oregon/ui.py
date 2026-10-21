@@ -27,7 +27,7 @@ method                           the ``&`` command it stands in for
 ===============================  ==========================================
 
 Graphics-only commands (``& IMAGE``, ``& PUT``, ``& TAKE``, ``& UIM``, ``& DUN``)
-have no meaning in a terminal and are recorded in ``NOTES.md`` as deliberately
+have no meaning in a terminal and are recorded in section 2 of ``game/python/README.md`` as deliberately
 replaced; the map and the travel screen are drawn as text instead.
 """
 

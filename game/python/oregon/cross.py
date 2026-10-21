@@ -14,7 +14,7 @@ then, for a failed ford                 22 single draws, each followed by 2 more
 
 So the total is 106 plus 122, or 106 plus 0, or 106 plus 22 groups of three.
 That last reading is the natural one for "22 single draws each followed by 2
-more", but the wording admits others; it is flagged in ``NOTES.md``.
+more", but the wording admits others. This is the reading the code takes.
 
 There is no picture here, so :func:`animate` spends the numbers and returns. The
 draws are tagged so a test can count them, and they go through the game's own

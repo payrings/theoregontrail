@@ -76,7 +76,6 @@ def test_three_thirds_reaches_exactly_one():
     Applesoft keeps one guard byte across the whole of ``1/3 + 1/3 + 1/3`` and gets
     0.9999999998 instead; rounding each operator is the documented deviation, and
     ``Chain`` is there for the expressions where the original's own value matters.
-    ``NOTES.md`` records it.
     """
     third = num.div(num.ONE, num.parse("3"))
     total = num.add(num.add(third, third), third)
