@@ -76,16 +76,50 @@ def as_printed(value, spec):
     return spec.format(number)
 
 
+def unit_of(printed, spec):
+    """One unit in the last digit the rebuild prints.
+
+    The paper's rule for this comparison is "allowing half a unit in the last
+    digit that the rebuild prints": the original prints up to nine digits and
+    the rebuild six, so the two can differ by a rounding at the sixth digit
+    without the values differing at all.
+    """
+    digits = "".join(c for c in spec if c.isdigit())
+    if not digits:
+        return 0.0
+    number = float(printed)
+    if number == 0:
+        return 10.0 ** -(int(digits) - 1)
+    exponent = 0
+    while abs(number) >= 10:
+        number /= 10
+        exponent += 1
+    while abs(number) < 1:
+        number *= 10
+        exponent -= 1
+    return 10.0 ** (exponent - (int(digits) - 1))
+
+
 def compare(days, rows):
-    """The differences between the original's days and the rebuild's, if any."""
+    """The differences between the original's days and the rebuild's, if any.
+
+    The two are compared as numbers, allowing half a unit in the last digit the
+    rebuild prints: the original prints up to nine digits and the rebuild six,
+    so a value can be printed differently and still be the same value.
+    """
     wrong = []
     for day, (block, cells) in enumerate(zip(days, rows), start=1):
         for name, spec in SPECS:
             letter, place = BLOCK[name]
-            want = as_printed(block[letter].split(",")[place], spec)
-            got = cells[SPECS.index((name, spec))]
+            want = float(block[letter].split(",")[place])
+            got_text = cells[SPECS.index((name, spec))]
+            got = float(got_text)
             if want != got:
-                wrong.append(f"day {day}: {name}: original {want!r}, rebuild {got!r}")
+                limit = 0.5 * unit_of(got_text, spec)
+                # the limit is a rounding, so it is allowed a hair of slack: a
+                # value exactly on the boundary differs by a fraction of an ulp
+                if abs(want - got) > limit * (1 + 1e-9):
+                    wrong.append(f"day {day}: {name}: original {want!r}, rebuild {got!r}")
         for letter, place in (("G", 23), ("H", 24)):
             want = "[" + ",".join(str(int(float(v))) for v in block[letter].split(",")) + "]"
             if want != cells[place]:
