@@ -30,11 +30,11 @@ needs to cite.
 | [`game/python/`](game/python/)         | The first implementation of the game, in Python: the `oregon` package, its tests and tools, the experiment script with a small sample of its results.                          |
 | [`game/typescript/`](game/typescript/) | The second implementation, in TypeScript: the whole game for a browser, with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild. The game can be played directly at https://payrings.github.io/theoregontrail/ and works on mobile phones too.|
 
-## Funny facts
+## Curiosities
 
 | Files           | Contents                                                                                                                                                                       |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`funnyfacts.md`](funnyfacts.md) | "Your Broken Arm Is Fine: A wagon full of Oregon Trail curiosities" is a list of interesting fact I discovered by reading R. Philip Bouchard book, writing the paper, or running my experiments!                                                                                                                                               |
+| [`funnyfacts.md`](funnyfacts.md) | "Your Broken Arm Is Fine: A wagon full of Oregon Trail curiosities" is a list of interesting facts I discovered by reading R. Philip Bouchard book, writing the paper, or running my experiments!                                                                                                                                               |
 
 ---
 
