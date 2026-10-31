@@ -29,6 +29,7 @@ needs to cite.
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [`game/python/`](game/python/)         | The first implementation of the game, in Python: the `oregon` package, its tests and tools, the experiment script with a small sample of its results.                          |
 | [`game/typescript/`](game/typescript/) | The second implementation, in TypeScript: the whole game for a browser, with Applesoft's arithmetic transcribed from the ROM, checked seed by seed against the Python rebuild. The game can be played directly at https://payrings.github.io/theoregontrail/ and works on mobile phones too.|
+| [`game/c64/`](game/c64/)               | The third implementation, for the Commodore 64: a disk image to play in the VICE emulator (the source code is not published), and the results of its comparison with the original's arithmetic (§12.9). |
 
 ## Curiosities
 
@@ -85,6 +86,8 @@ How my work went, month by month.
 - **19 October 2026** — Updated the README and reorganised the repo.
 - **20 October 2026** — Some corrections to the paper, the curiosities, and the README in the Python game.
 - **21 October 2026** — Changed the name of the updated graphic for the python game, and made further corrections to the curiosities.
+- **24–25 October 2026** — A Commodore 64 version of the game in C, with pictures, built with cc65 and Claude Sonnet 5.5. Its game logic was compiled for a PC next to a C transcription of the ROM's arithmetic and compared with the original over all 65,536 seeds; 123 departures were found and fixed.
+- **31 October 2026** — Added the C64 disk (`game/c64/`, no source code) and a new section 12.9 of the paper that measures how close the disk's whole-number rules come to the original's arithmetic (Tables 31 to 33, Figures 6 and 7, `paper/figures/disk-rules-figures.xlsx`); the AI disclosure (§1.3) and Appendix G now cover the port.
 
 ---
 ## What is not in this repository
@@ -95,3 +98,4 @@ How my work went, month by month.
 - The dialogues
 - MECC's original artwork
 - The tunes
+- The source code of the Commodore 64 port (only its disk image and the results of its tests are here)

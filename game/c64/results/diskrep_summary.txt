@@ -1,0 +1,19 @@
+Games: 62,880 (2,656 seeds left out because their ROM trace repeats an earlier seed)
+Identical every day (seed bytes exact, other columns within the trace tolerances): 61,689 (98.11%)
+Same ending (arrived / all died): 62,646 (99.63%)
+Same final score: 62,472 (99.35%)
+Arrived in Oregon, ROM and disk rules: 22.86%, 22.88%
+Mean days, ROM and disk rules: 165.33, 165.33
+
+Games that differ: 1,191
+First place where the ROM and the disk would decide differently, in the games that differ:
+     999  arrival: 1.1 x day's miles against the distance left
+      50  rain on the ground against 0.1
+      41  event 3 chance (.01 + H/1500)
+      39  river chance not a whole thousandth
+      32  trade ratio
+      16  river depth rounding
+       7  no place found (see games.csv)
+       5  river swiftness against 5 or 10
+       2  health against 139 (forced illness)
+Median first differing day: 142

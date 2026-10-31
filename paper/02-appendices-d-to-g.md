@@ -335,6 +335,8 @@ The disk sides were swapped by hand at Fort Laramie, where the game asks for sid
 
 The two games cover one start and one player. They do not include hunting, trading, purchases at forts, resting or the raft, and a trace of any of these would need other changes to the programs.
 
+**The port to the Commodore 64.** A second implementation, in C for the 6502, was tested in the same way (section 12.9 of the paper); it and its tests were produced with the assistance of Anthropic Claude Sonnet 5.5. Its game logic was compiled for a PC with a build that follows the ROM's arithmetic (a C transcription of the ROM's add, subtract, multiply, divide, rounding and comparison routines on the five-byte format, used for the distance to the next landmark, the day's miles, the rain and snow on the ground, health and the freeze and starve term) and a build that has only what the disk has (whole thousandths and fixed rounding). Both were fed the draws of the real `RND` for each seed, and each played the preset start of 12.7 with the same fixed player. The day-by-day traces were compared with `tools/cmp_dir.py` and the endings, scores and the places where the two builds decide differently were counted with `tools/disk_report.py`; the tolerances of the traces are given in section 12.9 and the per-game results are in `game/c64/results/` of the repository. The C source of the port and of its test build is not published.
+
 Besides the source code itself, which is not reproduced because it remains under copyright, three things needed for a complete rebuild are not in the paper or these appendices.
 
 **Table G2.** Remaining gaps, their consequences and what would close them.
